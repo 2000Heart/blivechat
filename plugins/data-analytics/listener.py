@@ -53,11 +53,179 @@ class DataAnalyticsHandler(blcsdk.BaseHandler):
     def _on_open_plugin_admin_ui(
         self, client: blcsdk.BlcPluginClient, message: sdk_models.OpenPluginAdminUiMsg, extra: sdk_models.ExtraData
     ):
+        """处理管理按钮点击事件"""
+        try:
+            choice = self._show_admin_choice_dialog()
+            if choice == 'stats':
+                self._open_stats_page()
+            elif choice == 'database':
+                self._open_database_location()
+        except Exception as e:
+            logger.exception('Failed to handle admin UI request: %s', e)
+    
+    def _show_admin_choice_dialog(self) -> Optional[str]:
+        """显示选择对话框，返回用户选择：'stats'、'database' 或 None"""
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+        except ImportError:
+            # 如果没有 tkinter，使用命令行选择
+            return self._show_console_choice()
+        
+        root = tk.Tk()
+        root.withdraw()  # 隐藏主窗口
+        root.attributes('-topmost', True)  # 置顶
+        
+        # 创建选择对话框
+        choice = None
+        
+        def choose_stats():
+            nonlocal choice
+            choice = 'stats'
+            root.quit()
+        
+        def choose_database():
+            nonlocal choice
+            choice = 'database'
+            root.quit()
+        
+        # 创建对话框窗口
+        dialog = tk.Toplevel(root)
+        dialog.title('数据分析插件管理')
+        dialog.attributes('-topmost', True)
+        dialog.resizable(False, False)
+        
+        # 居中显示
+        dialog.update_idletasks()
+        width = 400
+        height = 200
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
+        
+        # 添加说明文字
+        label = tk.Label(
+            dialog,
+            text='请选择要执行的操作：',
+            font=('Microsoft YaHei', 10),
+            pady=20
+        )
+        label.pack()
+        
+        # 添加按钮
+        button_frame = tk.Frame(dialog)
+        button_frame.pack(pady=10)
+        
+        stats_btn = tk.Button(
+            button_frame,
+            text='📊 打开统计页面',
+            command=choose_stats,
+            width=20,
+            height=2,
+            font=('Microsoft YaHei', 9)
+        )
+        stats_btn.pack(side=tk.LEFT, padx=10)
+        
+        db_btn = tk.Button(
+            button_frame,
+            text='📁 打开数据库位置',
+            command=choose_database,
+            width=20,
+            height=2,
+            font=('Microsoft YaHei', 9)
+        )
+        db_btn.pack(side=tk.LEFT, padx=10)
+        
+        # 运行对话框
+        dialog.mainloop()
+        root.destroy()
+        
+        return choice
+    
+    def _show_console_choice(self) -> Optional[str]:
+        """在控制台显示选择（当没有 tkinter 时）"""
+        print('\n=== 数据分析插件管理 ===')
+        print('1. 打开统计页面')
+        print('2. 打开数据库位置')
+        print('0. 取消')
+        
+        try:
+            choice = input('\n请选择 (0-2): ').strip()
+            if choice == '1':
+                return 'stats'
+            elif choice == '2':
+                return 'database'
+        except (EOFError, KeyboardInterrupt):
+            pass
+        
+        return None
+    
+    def _open_stats_page(self):
+        """在浏览器中打开统计页面"""
+        import webbrowser
+        import os
+        
+        web_path = os.path.abspath(config.WEB_PATH)
+        
+        # 检查文件是否存在
+        if not os.path.exists(web_path):
+            logger.error('Stats page not found: %s', web_path)
+            if sys.platform == 'win32':
+                try:
+                    import tkinter.messagebox as messagebox
+                    messagebox.showerror('错误', f'统计页面文件不存在：\n{web_path}')
+                except ImportError:
+                    print(f'错误：统计页面文件不存在：{web_path}')
+            return
+        
+        # 转换为 file:// URL
         if sys.platform == 'win32':
-            import os
-            os.startfile(config.DATA_PATH)
+            # Windows 路径需要特殊处理
+            web_url = 'file:///' + web_path.replace('\\', '/')
         else:
-            logger.info('Data path is "%s"', config.DATA_PATH)
+            web_url = 'file://' + web_path
+        
+        try:
+            webbrowser.open(web_url)
+            logger.info('Opened stats page: %s', web_url)
+        except Exception as e:
+            logger.error('Failed to open stats page: %s', e)
+            # 如果打开失败，尝试使用系统默认方式
+            if sys.platform == 'win32':
+                try:
+                    os.startfile(web_path)
+                except Exception as e2:
+                    logger.error('Failed to open file: %s', e2)
+    
+    def _open_database_location(self):
+        """打开数据库存储位置"""
+        import os
+        
+        if sys.platform == 'win32':
+            # Windows: 打开文件夹并选中数据库文件
+            try:
+                import subprocess
+                subprocess.run(['explorer', '/select,', config.DB_PATH], check=False)
+                logger.info('Opened database location: %s', config.DB_PATH)
+            except Exception as e:
+                logger.error('Failed to open database location: %s', e)
+                # 备用方案：只打开文件夹
+                try:
+                    os.startfile(config.DATA_PATH)
+                except Exception as e2:
+                    logger.error('Failed to open data path: %s', e2)
+        else:
+            # Linux/Mac: 使用 xdg-open 或 open
+            try:
+                import subprocess
+                if sys.platform == 'darwin':
+                    subprocess.run(['open', '-R', config.DB_PATH], check=False)
+                else:
+                    subprocess.run(['xdg-open', os.path.dirname(config.DB_PATH)], check=False)
+                logger.info('Opened database location: %s', config.DB_PATH)
+            except Exception as e:
+                logger.error('Failed to open database location: %s', e)
+                logger.info('Database path: %s', config.DB_PATH)
 
     def _on_add_room(
         self, client: blcsdk.BlcPluginClient, message: sdk_models.AddRoomMsg, extra: sdk_models.ExtraData
