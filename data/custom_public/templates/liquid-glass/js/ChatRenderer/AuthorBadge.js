@@ -10,7 +10,9 @@ function(constants) {
 
   exports.default = {
     template: `
-  <lg-live-chat-author-badge-renderer :type="authorTypeText" :title="readableAuthorTypeText">
+  <lg-live-chat-author-badge-renderer :type="authorTypeText" :title="readableAuthorTypeText"
+    :is-admin="isAdmin ? '' : null" :privilege-type="privilegeType > 0 ? String(privilegeType) : null"
+  >
     <div id="image" class="style-scope lg-live-chat-author-badge-renderer">
       <lg-icon v-if="isAdmin" class="style-scope lg-live-chat-author-badge-renderer">
         <svg viewBox="0 0 16 16" class="style-scope lg-icon" preserveAspectRatio="xMidYMid meet" focusable="false"
