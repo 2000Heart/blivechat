@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="referrer" content="no-referrer">
+
+    <script src="./js/vendor/lodash.min.js"></script>
+    <script src="./js/vendor/vue.min.js"></script>
+    <script src="./js/vendor/blcsdk.js"></script>
+
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-item-list-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-text-message-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-author-chip.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-author-badge-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-paid-message-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-membership-item-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-live-chat-ticker-renderer.css">
+    <link rel="stylesheet" href="./css/zzz-img-shadow.css">
+    <link rel="stylesheet" href="./css/zzz-icon.css">
+  </head>
+  <body>
+    <div id="app">
+      <chat-renderer
+        ref="renderer" :max-number="config.maxNumber" :show-gift-name="config.showGiftName" :merge-gift="config.mergeGift"
+      ></chat-renderer>
+    </div>
+
+    <script src="./js/ChatRenderer/constants.js"></script>
+    <script src="./js/ChatRenderer/ImgShadow.js"></script>
+    <script src="./js/ChatRenderer/AuthorBadge.js"></script>
+    <script src="./js/ChatRenderer/AuthorChip.js"></script>
+    <script src="./js/ChatRenderer/TextMessage.js"></script>
+    <script src="./js/ChatRenderer/PaidMessage.js"></script>
+    <script src="./js/ChatRenderer/MembershipItem.js"></script>
+    <script src="./js/ChatRenderer/Ticker.js"></script>
+    <script src="./js/ChatRenderer/index.js"></script>
+
+    <script src="./js/main.js"></script>
+  </body>
+</html>
+

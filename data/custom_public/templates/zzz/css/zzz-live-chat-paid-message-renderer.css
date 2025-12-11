@@ -1,0 +1,66 @@
+/* 绝区零风格 - 付费消息（礼物/醒目留言） */
+@layer zzz {
+
+zzz-live-chat-paid-message-renderer {
+  position: relative;
+  padding: 12px 16px;
+  margin: 6px 0;
+  border-radius: var(--zzz-border-radius);
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.2) 0%, rgba(0, 122, 255, 0.1) 100%);
+  border: 1px solid var(--zzz-accent-blue);
+  box-shadow: 0 0 12px var(--zzz-glow-blue);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+zzz-live-chat-paid-message-renderer:hover {
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.3) 0%, rgba(0, 122, 255, 0.2) 100%);
+  box-shadow: 0 0 16px var(--zzz-glow-blue);
+  transform: translateX(4px);
+}
+
+#author-photo.zzz-live-chat-paid-message-renderer {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--zzz-accent-blue);
+  box-shadow: 0 0 8px var(--zzz-glow-blue);
+  flex: none;
+}
+
+#content.zzz-live-chat-paid-message-renderer {
+  flex: 1;
+  min-width: 0;
+}
+
+#header.zzz-live-chat-paid-message-renderer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#author-name.zzz-live-chat-paid-message-renderer {
+  font-weight: 600;
+  color: var(--zzz-text-primary);
+  font-size: 14px;
+}
+
+#price.zzz-live-chat-paid-message-renderer {
+  font-weight: 700;
+  color: var(--zzz-accent-blue);
+  font-size: 16px;
+  text-shadow: 0 0 6px var(--zzz-glow-blue);
+}
+
+#message.zzz-live-chat-paid-message-renderer {
+  color: var(--zzz-text-secondary);
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+}
+

@@ -1,0 +1,40 @@
+/* 绝区零风格 - 用户信息 */
+@layer zzz {
+
+zzz-live-chat-author-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#author-name.zzz-live-chat-author-chip {
+  font-weight: 600;
+  color: var(--zzz-text-primary);
+  font-size: 13px;
+}
+
+#author-name.zzz-live-chat-author-chip[type="owner"] {
+  color: var(--zzz-accent-blue);
+  text-shadow: 0 0 4px var(--zzz-glow-blue);
+}
+
+#author-name.zzz-live-chat-author-chip[type="moderator"] {
+  color: #ff6b6b;
+}
+
+#author-name.zzz-live-chat-author-chip[type="member"] {
+  color: #ffd93d;
+}
+
+#author-name.zzz-live-chat-author-chip.member {
+  color: var(--zzz-accent-blue-light);
+}
+
+#chat-badges.zzz-live-chat-author-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+}
+

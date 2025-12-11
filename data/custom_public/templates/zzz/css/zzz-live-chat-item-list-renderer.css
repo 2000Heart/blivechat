@@ -1,0 +1,55 @@
+/* 绝区零风格 - 消息列表容器 */
+@layer zzz {
+
+canvas.zzz-live-chat-item-list-renderer, caption.zzz-live-chat-item-list-renderer, center.zzz-live-chat-item-list-renderer, cite.zzz-live-chat-item-list-renderer, code.zzz-live-chat-item-list-renderer, dd.zzz-live-chat-item-list-renderer, del.zzz-live-chat-item-list-renderer, dfn.zzz-live-chat-item-list-renderer, div.zzz-live-chat-item-list-renderer, dl.zzz-live-chat-item-list-renderer, dt.zzz-live-chat-item-list-renderer, em.zzz-live-chat-item-list-renderer, embed.zzz-live-chat-item-list-renderer, fieldset.zzz-live-chat-item-list-renderer, font.zzz-live-chat-item-list-renderer, form.zzz-live-chat-item-list-renderer, h1.zzz-live-chat-item-list-renderer, h2.zzz-live-chat-item-list-renderer, h3.zzz-live-chat-item-list-renderer, h4.zzz-live-chat-item-list-renderer, h5.zzz-live-chat-item-list-renderer, h6.zzz-live-chat-item-list-renderer, hr.zzz-live-chat-item-list-renderer, i.zzz-live-chat-item-list-renderer, iframe.zzz-live-chat-item-list-renderer, img.zzz-live-chat-item-list-renderer, ins.zzz-live-chat-item-list-renderer, kbd.zzz-live-chat-item-list-renderer, label.zzz-live-chat-item-list-renderer, legend.zzz-live-chat-item-list-renderer, li.zzz-live-chat-item-list-renderer, menu.zzz-live-chat-item-list-renderer, object.zzz-live-chat-item-list-renderer, ol.zzz-live-chat-item-list-renderer, p.zzz-live-chat-item-list-renderer, pre.zzz-live-chat-item-list-renderer, q.zzz-live-chat-item-list-renderer, s.zzz-live-chat-item-list-renderer, samp.zzz-live-chat-item-list-renderer, small.zzz-live-chat-item-list-renderer, span.zzz-live-chat-item-list-renderer, strike.zzz-live-chat-item-list-renderer, strong.zzz-live-chat-item-list-renderer, sub.zzz-live-chat-item-list-renderer, sup.zzz-live-chat-item-list-renderer, table.zzz-live-chat-item-list-renderer, tbody.zzz-live-chat-item-list-renderer, td.zzz-live-chat-item-list-renderer, tfoot.zzz-live-chat-item-list-renderer, th.zzz-live-chat-item-list-renderer, thead.zzz-live-chat-item-list-renderer, tr.zzz-live-chat-item-list-renderer, tt.zzz-live-chat-item-list-renderer, u.zzz-live-chat-item-list-renderer, ul.zzz-live-chat-item-list-renderer, var.zzz-live-chat-item-list-renderer {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.zzz-live-chat-item-list-renderer[hidden] {
+  display: none !important;
+}
+
+zzz-live-chat-item-list-renderer {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#item-scroller.zzz-live-chat-item-list-renderer {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zzz-accent-blue) var(--zzz-bg-secondary);
+}
+
+#item-scroller.zzz-live-chat-item-list-renderer::-webkit-scrollbar {
+  width: 6px;
+}
+
+#item-scroller.zzz-live-chat-item-list-renderer::-webkit-scrollbar-track {
+  background: var(--zzz-bg-secondary);
+}
+
+#item-scroller.zzz-live-chat-item-list-renderer::-webkit-scrollbar-thumb {
+  background: var(--zzz-accent-blue);
+  border-radius: 3px;
+}
+
+#item-scroller.zzz-live-chat-item-list-renderer::-webkit-scrollbar-thumb:hover {
+  background: var(--zzz-accent-blue-light);
+}
+
+#item-offset.zzz-live-chat-item-list-renderer {
+  position: relative;
+}
+
+#items.zzz-live-chat-item-list-renderer {
+  position: relative;
+}
+
+}
+

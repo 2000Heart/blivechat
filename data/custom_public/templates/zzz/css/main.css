@@ -1,0 +1,32 @@
+/* 绝区零风格 - 主样式 */
+html {
+  font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #000;
+  color: #d6d6d6;
+  overflow: hidden;
+}
+
+/* 绝区零配色方案 */
+:root {
+  --zzz-bg-primary: #000000;
+  --zzz-bg-secondary: #0a0a0a;
+  --zzz-bg-tertiary: #121212;
+  --zzz-accent-blue: #007aff;
+  --zzz-accent-blue-light: #0099ff;
+  --zzz-text-primary: #ffffff;
+  --zzz-text-secondary: #d6d6d6;
+  --zzz-text-tertiary: #767678;
+  --zzz-border-color: #646464;
+  --zzz-border-radius: 8px;
+  --zzz-glow-blue: rgba(0, 122, 255, 0.3);
+}
+

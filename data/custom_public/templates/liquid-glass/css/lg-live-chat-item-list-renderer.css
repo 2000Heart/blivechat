@@ -1,0 +1,57 @@
+/* Liquid Glass 风格 - 消息列表容器 */
+@layer lg {
+
+canvas.lg-live-chat-item-list-renderer, caption.lg-live-chat-item-list-renderer, center.lg-live-chat-item-list-renderer, cite.lg-live-chat-item-list-renderer, code.lg-live-chat-item-list-renderer, dd.lg-live-chat-item-list-renderer, del.lg-live-chat-item-list-renderer, dfn.lg-live-chat-item-list-renderer, div.lg-live-chat-item-list-renderer, dl.lg-live-chat-item-list-renderer, dt.lg-live-chat-item-list-renderer, em.lg-live-chat-item-list-renderer, embed.lg-live-chat-item-list-renderer, fieldset.lg-live-chat-item-list-renderer, font.lg-live-chat-item-list-renderer, form.lg-live-chat-item-list-renderer, h1.lg-live-chat-item-list-renderer, h2.lg-live-chat-item-list-renderer, h3.lg-live-chat-item-list-renderer, h4.lg-live-chat-item-list-renderer, h5.lg-live-chat-item-list-renderer, h6.lg-live-chat-item-list-renderer, hr.lg-live-chat-item-list-renderer, i.lg-live-chat-item-list-renderer, iframe.lg-live-chat-item-list-renderer, img.lg-live-chat-item-list-renderer, ins.lg-live-chat-item-list-renderer, kbd.lg-live-chat-item-list-renderer, label.lg-live-chat-item-list-renderer, legend.lg-live-chat-item-list-renderer, li.lg-live-chat-item-list-renderer, menu.lg-live-chat-item-list-renderer, object.lg-live-chat-item-list-renderer, ol.lg-live-chat-item-list-renderer, p.lg-live-chat-item-list-renderer, pre.lg-live-chat-item-list-renderer, q.lg-live-chat-item-list-renderer, s.lg-live-chat-item-list-renderer, samp.lg-live-chat-item-list-renderer, small.lg-live-chat-item-list-renderer, span.lg-live-chat-item-list-renderer, strike.lg-live-chat-item-list-renderer, strong.lg-live-chat-item-list-renderer, sub.lg-live-chat-item-list-renderer, sup.lg-live-chat-item-list-renderer, table.lg-live-chat-item-list-renderer, tbody.lg-live-chat-item-list-renderer, td.lg-live-chat-item-list-renderer, tfoot.lg-live-chat-item-list-renderer, th.lg-live-chat-item-list-renderer, thead.lg-live-chat-item-list-renderer, tr.lg-live-chat-item-list-renderer, tt.lg-live-chat-item-list-renderer, u.lg-live-chat-item-list-renderer, ul.lg-live-chat-item-list-renderer, var.lg-live-chat-item-list-renderer {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lg-live-chat-item-list-renderer[hidden] {
+  display: none !important;
+}
+
+lg-live-chat-item-list-renderer {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#item-scroller.lg-live-chat-item-list-renderer {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+#item-scroller.lg-live-chat-item-list-renderer::-webkit-scrollbar {
+  width: 8px;
+}
+
+#item-scroller.lg-live-chat-item-list-renderer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#item-scroller.lg-live-chat-item-list-renderer::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#item-scroller.lg-live-chat-item-list-renderer::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+#item-offset.lg-live-chat-item-list-renderer {
+  position: relative;
+}
+
+#items.lg-live-chat-item-list-renderer {
+  position: relative;
+}
+
+}
+

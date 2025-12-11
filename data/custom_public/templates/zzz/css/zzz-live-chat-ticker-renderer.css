@@ -1,0 +1,61 @@
+/* 绝区零风格 - 顶部滚动消息 */
+@layer zzz {
+
+zzz-live-chat-ticker-renderer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  overflow: hidden;
+  z-index: 10;
+  pointer-events: none;
+}
+
+zzz-live-chat-ticker-paid-message-item-renderer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: linear-gradient(90deg, rgba(0, 122, 255, 0.3) 0%, transparent 100%);
+  border-bottom: 1px solid var(--zzz-accent-blue);
+  animation: ticker-slide 15s linear;
+}
+
+@keyframes ticker-slide {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+#content.zzz-live-chat-ticker-paid-message-item-renderer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+#author-name.zzz-live-chat-ticker-paid-message-item-renderer {
+  font-weight: 600;
+  color: var(--zzz-text-primary);
+}
+
+#price.zzz-live-chat-ticker-paid-message-item-renderer {
+  font-weight: 700;
+  color: var(--zzz-accent-blue);
+  text-shadow: 0 0 6px var(--zzz-glow-blue);
+}
+
+#message.zzz-live-chat-ticker-paid-message-item-renderer {
+  color: var(--zzz-text-secondary);
+}
+
+}
+

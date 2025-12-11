@@ -1,0 +1,29 @@
+/* 绝区零风格 - 聊天容器 */
+@layer zzz {
+
+canvas.zzz-live-chat-renderer, caption.zzz-live-chat-renderer, center.zzz-live-chat-renderer, cite.zzz-live-chat-renderer, code.zzz-live-chat-renderer, dd.zzz-live-chat-renderer, del.zzz-live-chat-renderer, dfn.zzz-live-chat-renderer, div.zzz-live-chat-renderer, dl.zzz-live-chat-renderer, dt.zzz-live-chat-renderer, em.zzz-live-chat-renderer, embed.zzz-live-chat-renderer, fieldset.zzz-live-chat-renderer, font.zzz-live-chat-renderer, form.zzz-live-chat-renderer, h1.zzz-live-chat-renderer, h2.zzz-live-chat-renderer, h3.zzz-live-chat-renderer, h4.zzz-live-chat-renderer, h5.zzz-live-chat-renderer, h6.zzz-live-chat-renderer, hr.zzz-live-chat-renderer, i.zzz-live-chat-renderer, iframe.zzz-live-chat-renderer, img.zzz-live-chat-renderer, ins.zzz-live-chat-renderer, kbd.zzz-live-chat-renderer, label.zzz-live-chat-renderer, legend.zzz-live-chat-renderer, li.zzz-live-chat-renderer, menu.zzz-live-chat-renderer, object.zzz-live-chat-renderer, ol.zzz-live-chat-renderer, p.zzz-live-chat-renderer, pre.zzz-live-chat-renderer, q.zzz-live-chat-renderer, s.zzz-live-chat-renderer, samp.zzz-live-chat-renderer, small.zzz-live-chat-renderer, span.zzz-live-chat-renderer, strike.zzz-live-chat-renderer, strong.zzz-live-chat-renderer, sub.zzz-live-chat-renderer, sup.zzz-live-chat-renderer, table.zzz-live-chat-renderer, tbody.zzz-live-chat-renderer, td.zzz-live-chat-renderer, tfoot.zzz-live-chat-renderer, th.zzz-live-chat-renderer, thead.zzz-live-chat-renderer, tr.zzz-live-chat-renderer, tt.zzz-live-chat-renderer, u.zzz-live-chat-renderer, ul.zzz-live-chat-renderer, var.zzz-live-chat-renderer {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.zzz-live-chat-renderer[hidden] {
+  display: none !important;
+}
+
+zzz-live-chat-renderer {
+  position: relative;
+  background: var(--zzz-bg-primary);
+  color: var(--zzz-text-primary);
+  overflow: hidden;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-size: 14px;
+}
+
+
+}
+

@@ -1,0 +1,82 @@
+/* Liquid Glass 风格 - 顶部滚动消息 */
+@layer lg {
+
+lg-live-chat-ticker-renderer {
+  position: relative;
+  display: block;
+  height: 50px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#items.lg-live-chat-ticker-renderer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+}
+
+lg-live-chat-ticker-paid-message-item-renderer {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  margin-right: 10px;
+  border-radius: 18px;
+  overflow: hidden;
+  transition: width 0.2s ease-out, opacity 0.2s ease-out;
+  flex-shrink: 0;
+}
+
+lg-live-chat-ticker-paid-message-item-renderer.sliding-down {
+  opacity: 0;
+}
+
+lg-live-chat-ticker-paid-message-item-renderer.collapsing {
+  width: 0 !important;
+  margin-right: 0;
+}
+
+#container.lg-live-chat-ticker-paid-message-item-renderer {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  background: linear-gradient(90deg, rgba(0, 122, 255, 0.4) 0%, rgba(88, 86, 214, 0.4) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.2);
+}
+
+#content.lg-live-chat-ticker-paid-message-item-renderer {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#author-photo.lg-live-chat-ticker-paid-message-item-renderer {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#text.lg-live-chat-ticker-paid-message-item-renderer {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+}
+

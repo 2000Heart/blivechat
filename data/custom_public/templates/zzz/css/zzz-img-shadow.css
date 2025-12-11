@@ -1,0 +1,17 @@
+/* 绝区零风格 - 图片阴影组件 */
+@layer zzz {
+
+zzz-img-shadow {
+  display: block;
+  position: relative;
+}
+
+zzz-img-shadow img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+}
+
