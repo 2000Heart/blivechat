@@ -1,0 +1,65 @@
+@layer lg {
+
+lg-live-chat-author-chip {
+  display: inline-flex;
+  -ms-flex-align: baseline;
+  -webkit-align-items: baseline;
+  align-items: baseline;
+}
+
+lg-live-chat-author-chip[hidden] {
+  display: none !important;
+}
+
+#author-name.lg-live-chat-author-chip {
+  box-sizing: border-box;
+  border-radius: 2px;
+  color: var(--lg-live-chat-secondary-text-color);
+  font-weight: 600;
+}
+
+lg-live-chat-author-chip[is-highlighted] #author-name.lg-live-chat-author-chip {
+  padding: 2px 4px;
+  color: #606060;
+  background-color: #CCCCCC;
+}
+
+#author-name.lg-live-chat-author-chip[type='moderator'] {
+  color: #5e84f1;
+}
+
+lg-live-chat-author-chip[is-highlighted] #author-name.lg-live-chat-author-chip[type='owner'], #author-name.lg-live-chat-author-chip[type='owner'] {
+  background-color: transparent;
+  color: rgba(0,0,0,0.87);
+}
+
+#author-name.lg-live-chat-author-chip[type='member'] {
+  color: #107516;
+}
+
+#author-name.lg-live-chat-author-chip.member {
+  color: rgba(255,255,255,0.9);
+}
+
+#chip-badges.lg-live-chat-author-chip:empty {
+  display: none;
+}
+
+lg-live-chat-author-chip[is-highlighted] #chat-badges.lg-live-chat-author-chip:not(:empty) {
+  margin-left: 1px;
+}
+
+lg-live-chat-author-badge-renderer.lg-live-chat-author-chip {
+  margin: 0 0 0 2px;
+  vertical-align: sub;
+}
+
+lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip lg-live-chat-author-badge-renderer.lg-live-chat-author-chip {
+  color: inherit;
+}
+
+#chip-badges.lg-live-chat-author-chip lg-live-chat-author-badge-renderer.lg-live-chat-author-chip:last-of-type {
+  margin-right: -2px;
+}
+
+}

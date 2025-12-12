@@ -1,0 +1,34 @@
+@layer lg {
+
+canvas.lg-icon, caption.lg-icon, center.lg-icon, cite.lg-icon, code.lg-icon, dd.lg-icon, del.lg-icon, dfn.lg-icon, div.lg-icon, dl.lg-icon, dt.lg-icon, em.lg-icon, embed.lg-icon, fieldset.lg-icon, font.lg-icon, form.lg-icon, h1.lg-icon, h2.lg-icon, h3.lg-icon, h4.lg-icon, h5.lg-icon, h6.lg-icon, hr.lg-icon, i.lg-icon, iframe.lg-icon, img.lg-icon, ins.lg-icon, kbd.lg-icon, label.lg-icon, legend.lg-icon, li.lg-icon, menu.lg-icon, object.lg-icon, ol.lg-icon, p.lg-icon, pre.lg-icon, q.lg-icon, s.lg-icon, samp.lg-icon, small.lg-icon, span.lg-icon, strike.lg-icon, strong.lg-icon, sub.lg-icon, sup.lg-icon, table.lg-icon, tbody.lg-icon, td.lg-icon, tfoot.lg-icon, th.lg-icon, thead.lg-icon, tr.lg-icon, tt.lg-icon, u.lg-icon, ul.lg-icon, var.lg-icon {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lg-icon[hidden] {
+  display: none !important;
+}
+
+lg-icon, .lg-icon-container.lg-icon {
+  display: inline-flex;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  -ms-flex-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  position: relative;
+  vertical-align: middle;
+  fill: currentcolor;
+  stroke: none;
+  width: var(--iron-icon-width, 24px);
+  height: var(--iron-icon-height, 24px);
+}
+
+lg-icon.external-container {
+  display: none !important;
+}
+
+}

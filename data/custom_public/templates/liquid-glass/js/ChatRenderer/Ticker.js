@@ -22,16 +22,20 @@ function(constants, ImgShadow) {
       <lg-live-chat-ticker-paid-message-item-renderer v-for="message in showMessages" :key="message.raw.id"
         tabindex="0" class="style-scope lg-live-chat-ticker-renderer" style="overflow: hidden;"
       >
-        <div id="container" dir="ltr" class="style-scope lg-live-chat-ticker-paid-message-item-renderer" :style="{
-          background: message.bgColor,
-        }">
-          <div id="content" class="style-scope lg-live-chat-ticker-paid-message-item-renderer" :style="{
-            color: message.color
-          }">
+        <div class="liquidGlass-wrapper">
+          <div class="liquidGlass-effect"></div>
+          <div class="liquidGlass-tint"></div>
+          <div class="liquidGlass-shine"></div>
+          <div class="liquidGlass-text">
+            <div class="ticker-decoration" :style="{
+              background: message.decorationGradient
+            }"></div>
             <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-ticker-paid-message-item-renderer"
               :imgUrl="message.raw.avatarUrl"
             ></img-shadow>
-            <span id="text" dir="ltr" class="style-scope lg-live-chat-ticker-paid-message-item-renderer">{{ message.text }}</span>
+            <span id="text" dir="ltr" class="style-scope lg-live-chat-ticker-paid-message-item-renderer" :style="{
+              color: message.color
+            }">{{ message.text }}</span>
           </div>
         </div>
       </lg-live-chat-ticker-paid-message-item-renderer>
@@ -63,9 +67,9 @@ function(constants, ImgShadow) {
           }
           res.push({
             raw: message,
-            bgColor: this.getBgColor(message),
             color: this.getColor(message),
-            text: this.getText(message)
+            text: this.getText(message),
+            decorationGradient: this.getDecorationGradient(message)
           })
         }
         return res
@@ -105,36 +109,58 @@ function(constants, ImgShadow) {
         let pinTime = this.getPinTime(message)
         return (new Date() - message.addTime) / (60 * 1000) < pinTime
       },
-      getBgColor(message) {
-        let color1, color2
-        if (message.type === constants.MESSAGE_TYPE_MEMBER) {
-          color1 = 'rgba(15,157,88,1)'
-          color2 = 'rgba(11,128,67,1)'
-        } else {
-          let config = constants.getPriceConfig(message.price)
-          color1 = config.colors.contentBg
-          color2 = config.colors.headerBg
-        }
-        let pinTime = this.getPinTime(message)
-        let progress = (1 - ((this.curTime - message.addTime) / (60 * 1000) / pinTime)) * 100
-        if (progress < 0) {
-          progress = 0
-        } else if (progress > 100) {
-          progress = 100
-        }
-        return `linear-gradient(90deg, ${color1}, ${color1} ${progress}%, ${color2} ${progress}%, ${color2})`
-      },
       getColor(message) {
         if (message.type === constants.MESSAGE_TYPE_MEMBER) {
-          return 'rgb(255,255,255)'
+          return 'rgba(15, 157, 88, 0.9)'
         }
-        return constants.getPriceConfig(message.price).colors.header
+        let config = constants.getPriceConfig(message.price)
+        // 使用更柔和的颜色，确保在液态玻璃上可见
+        if (config.priceLevel === 0) {
+          return 'rgba(153, 236, 255, 0.9)'
+        } else if (config.priceLevel === 1) {
+          return 'rgba(30, 136, 229, 0.9)'
+        } else if (config.priceLevel === 2) {
+          return 'rgba(0, 229, 255, 0.9)'
+        } else if (config.priceLevel === 3) {
+          return 'rgba(29, 233, 182, 0.9)'
+        } else if (config.priceLevel === 4) {
+          return 'rgba(255, 202, 40, 0.9)'
+        } else if (config.priceLevel === 5) {
+          return 'rgba(245, 124, 0, 0.9)'
+        } else if (config.priceLevel === 6) {
+          return 'rgba(233, 30, 99, 0.9)'
+        } else {
+          return 'rgba(230, 33, 23, 0.9)'
+        }
       },
       getText(message) {
         if (message.type === constants.MESSAGE_TYPE_MEMBER) {
           return '会员'
         }
         return `CN¥${constants.formatCurrency(message.price)}`
+      },
+      getDecorationGradient(message) {
+        if (message.type === constants.MESSAGE_TYPE_MEMBER) {
+          return 'linear-gradient(135deg, rgba(15, 157, 88, 0.8), rgba(33, 150, 243, 0.8))'
+        }
+        let config = constants.getPriceConfig(message.price)
+        if (config.priceLevel === 0) {
+          return 'linear-gradient(135deg, rgba(153, 236, 255, 0.8), rgba(30, 136, 229, 0.8))'
+        } else if (config.priceLevel === 1) {
+          return 'linear-gradient(135deg, rgba(30, 136, 229, 0.8), rgba(0, 229, 255, 0.8))'
+        } else if (config.priceLevel === 2) {
+          return 'linear-gradient(135deg, rgba(0, 229, 255, 0.8), rgba(29, 233, 182, 0.8))'
+        } else if (config.priceLevel === 3) {
+          return 'linear-gradient(135deg, rgba(29, 233, 182, 0.8), rgba(255, 202, 40, 0.8))'
+        } else if (config.priceLevel === 4) {
+          return 'linear-gradient(135deg, rgba(255, 202, 40, 0.8), rgba(245, 124, 0, 0.8))'
+        } else if (config.priceLevel === 5) {
+          return 'linear-gradient(135deg, rgba(245, 124, 0, 0.8), rgba(233, 30, 99, 0.8))'
+        } else if (config.priceLevel === 6) {
+          return 'linear-gradient(135deg, rgba(233, 30, 99, 0.8), rgba(230, 33, 23, 0.8))'
+        } else {
+          return 'linear-gradient(135deg, rgba(230, 33, 23, 0.8), rgba(255, 0, 0, 0.8))'
+        }
       },
       getPinTime(message) {
         if (message.type === constants.MESSAGE_TYPE_MEMBER) {

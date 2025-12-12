@@ -1,9 +1,8 @@
 {
-  "name": "Liquid Glass 风格",
+  "name": "liquid-glass",
   "version": "1.0.0",
-  "author": "blivechat",
-  "description": "苹果 Liquid Glass（液态玻璃）风格的弹幕聊天界面，采用毛玻璃效果和半透明设计",
+  "author": "xfgryujk",
+  "description": "基于苹果液态玻璃效果的弹幕模板",
   "thumbnail": "",
   "url": "index.html"
 }
-

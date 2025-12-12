@@ -18,24 +18,27 @@ function(constants, ImgShadow, AuthorChip) {
 
   exports.default = {
     template: `
-  <lg-live-chat-membership-item-renderer class="style-scope lg-live-chat-item-list-renderer" show-only-header
+  <lg-live-chat-membership-item-renderer class="style-scope lg-live-chat-item-list-renderer"
     :blc-guard-level="privilegeType"
   >
-    <div id="card" class="style-scope lg-live-chat-membership-item-renderer">
-      <div id="header" class="style-scope lg-live-chat-membership-item-renderer">
-        <img-shadow id="author-photo" height="40" width="40" class="style-scope lg-live-chat-membership-item-renderer"
-          :imgUrl="avatarUrl"
-        ></img-shadow>
-        <div id="header-content" class="style-scope lg-live-chat-membership-item-renderer">
-          <div id="header-content-primary-column" class="style-scope lg-live-chat-membership-item-renderer">
-            <div id="header-content-inner-column" class="style-scope lg-live-chat-membership-item-renderer">
-              <author-chip class="style-scope lg-live-chat-membership-item-renderer"
-                isInMemberMessage :authorName="authorName" :authorType="0" :privilegeType="privilegeType"
-              ></author-chip>
-            </div>
-            <div id="title" class="style-scope lg-live-chat-membership-item-renderer">{{ title }}</div>
-          </div>
-          <div id="timestamp" class="style-scope lg-live-chat-membership-item-renderer">{{ timeText }}</div>
+    <div class="liquidGlass-wrapper">
+      <div class="liquidGlass-effect"></div>
+      <div class="liquidGlass-tint"></div>
+      <div class="liquidGlass-shine"></div>
+      <div class="liquidGlass-text">
+        <div class="member-decoration"></div>
+        <div class="member-header">
+          <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-membership-item-renderer"
+            :imgUrl="avatarUrl"
+          ></img-shadow>
+          <author-chip class="style-scope lg-live-chat-membership-item-renderer"
+            isInMemberMessage :authorName="authorName" :authorType="0" :privilegeType="privilegeType"
+          ></author-chip>
+          <span v-if="title" id="title" class="style-scope lg-live-chat-membership-item-renderer">{{ title }}</span>
+          <span id="timestamp" class="style-scope lg-live-chat-membership-item-renderer">{{ timeText }}</span>
+        </div>
+        <div class="member-message">
+          <span class="membership-text">{{ membershipText }}</span>
         </div>
       </div>
     </div>
@@ -56,6 +59,18 @@ function(constants, ImgShadow, AuthorChip) {
     computed: {
       timeText() {
         return constants.getTimeTextHourMin(this.time)
+      },
+      membershipText() {
+        // 根据舰长等级生成不同的开通文案
+        // level 1 = 总督, level 2 = 提督, level 3 = 舰长
+        if (this.privilegeType === 1) {
+          return '开通了总督'
+        } else if (this.privilegeType === 2) {
+          return '开通了提督'
+        } else if (this.privilegeType === 3) {
+          return '开通了舰长'
+        }
+        return '开通了会员'
       }
     }
   }

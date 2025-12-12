@@ -1,37 +1,16 @@
-/* Liquid Glass 风格 - 主样式 */
 html {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\5FAE \8F6F \96C5 \9ED1 ", "微软雅黑", Arial, sans-serif;
 }
 
 html, body, #app {
   height: 100%;
-  margin: 0;
-  padding: 0;
 }
 
 body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-attachment: fixed;
-  color: rgba(0, 0, 0, 0.85);
-  overflow: hidden;
+  margin: 0;
+  background: transparent;
 }
 
-/* Liquid Glass 配色方案 */
-:root {
-  --lg-bg-primary: rgba(255, 255, 255, 0.7);
-  --lg-bg-secondary: rgba(255, 255, 255, 0.5);
-  --lg-bg-tertiary: rgba(255, 255, 255, 0.3);
-  --lg-text-primary: rgba(0, 0, 0, 0.85);
-  --lg-text-secondary: rgba(0, 0, 0, 0.65);
-  --lg-text-tertiary: rgba(0, 0, 0, 0.45);
-  --lg-border-color: rgba(255, 255, 255, 0.3);
-  --lg-border-radius: 12px;
-  --lg-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --lg-shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.15);
-  --lg-blur: blur(20px);
-  --lg-blur-strong: blur(40px);
-  /* SVG Filter references for Liquid Glass effect */
-  --lg-filter: url(#lg-liquid-glass);
-  --lg-filter-light: url(#lg-liquid-glass-light);
+#app {
+  background: transparent;
 }
-

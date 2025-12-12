@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="referrer" content="no-referrer">
+  <title>模板预览</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .controls {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #2a2a2a;
+      border-radius: 8px;
+    }
+    .controls h2 {
+      margin: 0 0 15px 0;
+      font-size: 18px;
+    }
+    .control-group {
+      margin-bottom: 15px;
+    }
+    .control-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    select, input {
+      width: 100%;
+      max-width: 400px;
+      padding: 8px;
+      background: #3a3a3a;
+      border: 1px solid #4a4a4a;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #007aff;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .preview-container {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      border: 2px solid #4a4a4a;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    iframe {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+    }
+    .info {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2a2a2a;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <h2>模板预览工具</h2>
+    <div class="control-group">
+      <label for="template-select">选择模板：</label>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <select id="template-select" style="flex: 1;">
+          <option value="">加载中...</option>
+        </select>
+        <button id="refresh-templates-btn" style="padding: 8px 15px; margin: 0;">刷新列表</button>
+      </div>
+      <div id="template-info" style="margin-top: 5px; font-size: 12px; color: #aaa; min-height: 20px;"></div>
+    </div>
+    <div class="control-group">
+      <label for="template-url">或输入模板 URL：</label>
+      <input type="text" id="template-url" placeholder="/custom_public/templates/xxx/index.html">
+    </div>
+    <div class="control-group">
+      <label for="background-image-url">预览背景图片 URL（可选，用于展示液态玻璃等效果）：</label>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="background-image-url" placeholder="https://example.com/image.jpg" style="flex: 1;">
+        <button id="clear-bg-btn" style="padding: 8px 15px; margin: 0;">清除背景</button>
+      </div>
+      <div style="margin-top: 5px; font-size: 12px; color: #aaa;">
+        提示：可以输入图片URL，或使用以下预设背景：
+        <button id="preset-bg-1" style="padding: 4px 8px; margin: 2px; font-size: 11px;">花朵</button>
+        <button id="preset-bg-2" style="padding: 4px 8px; margin: 2px; font-size: 11px;">渐变</button>
+        <button id="preset-bg-3" style="padding: 4px 8px; margin: 2px; font-size: 11px;">星空</button>
+      </div>
+    </div>
+    <button id="load-btn">加载模板</button>
+    <div class="button-group" style="margin-top: 15px;">
+      <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #ccc;">发送测试消息：</h3>
+      <button id="test-text-btn" disabled>普通弹幕</button>
+      <button id="test-member-btn" disabled>舰长弹幕</button>
+      <button id="test-admin-btn" disabled>房管弹幕</button>
+      <button id="test-owner-btn" disabled>主播弹幕</button>
+      <button id="test-gift-btn" disabled>礼物</button>
+      <button id="test-member-join-btn" disabled>上舰（舰长）</button>
+      <button id="test-member-join-lv2-btn" disabled>上舰（提督）</button>
+      <button id="test-member-join-lv3-btn" disabled>上舰（总督）</button>
+      <button id="test-sc-btn" disabled>醒目留言（30元）</button>
+      <button id="test-sc-100-btn" disabled>醒目留言（100元）</button>
+      <button id="test-sc-500-btn" disabled>醒目留言（500元）</button>
+    </div>
+    <div class="button-group" style="margin-top: 15px;">
+      <button id="auto-btn" disabled>自动发送随机消息</button>
+      <button id="send-all-btn" disabled>发送所有类型示例</button>
+      <button id="clear-btn" disabled>清空弹幕</button>
+    </div>
+    <div class="info">
+      提示：加载模板后，可以点击上方按钮发送各种类型的测试消息，查看不同样式的显示效果。
+    </div>
+  </div>
+  <div class="preview-container">
+    <iframe id="template-iframe" src="about:blank"></iframe>
+  </div>
+
+  <script>
+    const templateSelect = document.getElementById('template-select')
+    const templateUrl = document.getElementById('template-url')
+    const loadBtn = document.getElementById('load-btn')
+    const refreshTemplatesBtn = document.getElementById('refresh-templates-btn')
+    const templateInfo = document.getElementById('template-info')
+    const backgroundImageUrl = document.getElementById('background-image-url')
+    const clearBgBtn = document.getElementById('clear-bg-btn')
+    const presetBg1 = document.getElementById('preset-bg-1')
+    const presetBg2 = document.getElementById('preset-bg-2')
+    const presetBg3 = document.getElementById('preset-bg-3')
+    const previewContainer = document.querySelector('.preview-container')
+    
+    let templates = []
+    
+    // 预设背景图片
+    const PRESET_BACKGROUNDS = {
+      1: 'https://raw.githubusercontent.com/lucasromerodb/liquid-glass-effect-macos/refs/heads/main/assets/flowers.jpg',
+      2: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1920&q=80',
+      3: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=1920&q=80'
+    }
+    
+    // 设置背景图片
+    function setBackgroundImage(url) {
+      if (url && url.trim()) {
+        previewContainer.style.backgroundImage = `url("${url}")`
+        backgroundImageUrl.value = url
+      } else {
+        previewContainer.style.backgroundImage = 'none'
+        backgroundImageUrl.value = ''
+      }
+    }
+    
+    // 清除背景
+    clearBgBtn.addEventListener('click', () => {
+      setBackgroundImage('')
+    })
+    
+    // 预设背景按钮
+    presetBg1.addEventListener('click', () => {
+      setBackgroundImage(PRESET_BACKGROUNDS[1])
+    })
+    
+    presetBg2.addEventListener('click', () => {
+      setBackgroundImage(PRESET_BACKGROUNDS[2])
+    })
+    
+    presetBg3.addEventListener('click', () => {
+      setBackgroundImage(PRESET_BACKGROUNDS[3])
+    })
+    
+    // 背景图片URL输入框变化
+    backgroundImageUrl.addEventListener('change', () => {
+      setBackgroundImage(backgroundImageUrl.value.trim())
+    })
+    
+    backgroundImageUrl.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        setBackgroundImage(backgroundImageUrl.value.trim())
+      }
+    })
+    
+    // 加载模板列表
+    async function loadTemplates() {
+      try {
+        templateSelect.disabled = true
+        templateSelect.innerHTML = '<option value="">加载中...</option>'
+        templateInfo.textContent = ''
+        
+        const response = await fetch('/api/templates')
+        const data = await response.json()
+        templates = data.templates || []
+        
+        // 清空选择框
+        templateSelect.innerHTML = ''
+        
+        if (templates.length === 0) {
+          const option = document.createElement('option')
+          option.value = ''
+          option.textContent = '未找到模板'
+          templateSelect.appendChild(option)
+          templateInfo.textContent = '未找到任何模板，请检查 templates 目录'
+          return
+        }
+        
+        // 填充模板选项
+        templates.forEach(template => {
+          const option = document.createElement('option')
+          option.value = template.url
+          option.textContent = `${template.name} (${template.version}) - ${template.author}`
+          option.title = template.description || ''
+          templateSelect.appendChild(option)
+        })
+        
+        templateSelect.disabled = false
+        templateInfo.textContent = `已加载 ${templates.length} 个模板`
+        
+        // 如果选择了模板，更新信息显示
+        updateTemplateInfo()
+      } catch (error) {
+        console.error('加载模板列表失败:', error)
+        templateSelect.innerHTML = '<option value="">加载失败</option>'
+        templateInfo.textContent = '加载失败: ' + error.message
+        templateSelect.disabled = false
+      }
+    }
+    
+    // 更新模板信息显示
+    function updateTemplateInfo() {
+      const selectedUrl = templateSelect.value
+      if (!selectedUrl) {
+        templateInfo.textContent = ''
+        return
+      }
+      
+      const template = templates.find(t => t.url === selectedUrl)
+      if (template) {
+        let info = `${template.name} - ${template.author}`
+        if (template.description) {
+          info += ` | ${template.description}`
+        }
+        templateInfo.textContent = info
+      } else {
+        templateInfo.textContent = ''
+      }
+    }
+    
+    // 页面加载时获取模板列表
+    loadTemplates()
+    
+    // 刷新按钮事件
+    refreshTemplatesBtn.addEventListener('click', () => {
+      loadTemplates()
+    })
+    
+    // 模板选择变化时更新信息
+    templateSelect.addEventListener('change', () => {
+      updateTemplateInfo()
+    })
+    const testTextBtn = document.getElementById('test-text-btn')
+    const testMemberBtn = document.getElementById('test-member-btn')
+    const testAdminBtn = document.getElementById('test-admin-btn')
+    const testOwnerBtn = document.getElementById('test-owner-btn')
+    const testGiftBtn = document.getElementById('test-gift-btn')
+    const testMemberJoinBtn = document.getElementById('test-member-join-btn')
+    const testMemberJoinLv2Btn = document.getElementById('test-member-join-lv2-btn')
+    const testMemberJoinLv3Btn = document.getElementById('test-member-join-lv3-btn')
+    const testScBtn = document.getElementById('test-sc-btn')
+    const testSc100Btn = document.getElementById('test-sc-100-btn')
+    const testSc500Btn = document.getElementById('test-sc-500-btn')
+    const autoBtn = document.getElementById('auto-btn')
+    const sendAllBtn = document.getElementById('send-all-btn')
+    const clearBtn = document.getElementById('clear-btn')
+    const iframe = document.getElementById('template-iframe')
+    
+    let autoInterval = null
+    let messageId = 0
+
+    // 消息类型常量
+    const MESSAGE_TYPE_TEXT = 0
+    const MESSAGE_TYPE_GIFT = 1
+    const MESSAGE_TYPE_MEMBER = 2
+    const MESSAGE_TYPE_SUPER_CHAT = 3
+    
+    const AUTHOR_TYPE_NORMAL = 0
+    const AUTHOR_TYPE_MEMBER = 1
+    const AUTHOR_TYPE_ADMIN = 2
+    const AUTHOR_TYPE_OWNER = 3
+    
+    const GUARD_LEVEL_NONE = 0
+    const GUARD_LEVEL_LV3 = 1  // 总督
+    const GUARD_LEVEL_LV2 = 2  // 提督
+    const GUARD_LEVEL_LV1 = 3  // 舰长
+
+    // 生成随机消息
+    const NAMES = ['用户A', '用户B', '用户C', '测试用户', '观众1', '观众2', '张三', '李四', '王五']
+    const CONTENTS = [
+      '这是一条测试消息',
+      '模板预览效果不错',
+      'Hello World!',
+      '测试弹幕内容',
+      '看看样式效果如何',
+      '这是一条较长的测试消息，用来测试模板的显示效果和换行处理',
+      '支持各种类型的弹幕展示',
+      '可以预览舰长、礼物、醒目留言等样式'
+    ]
+
+    function generateId() {
+      return `test-${Date.now()}-${++messageId}`
+    }
+
+    function generateTextMessage(authorType = AUTHOR_TYPE_NORMAL, privilegeType = GUARD_LEVEL_NONE, content = null) {
+      const textContent = content || CONTENTS[Math.floor(Math.random() * CONTENTS.length)]
+      return {
+        type: 'blcAddMsg',
+        data: {
+          type: MESSAGE_TYPE_TEXT,
+          id: generateId(),
+          avatarUrl: 'https://i0.hdslb.com/bfs/face/member/noface.jpg',
+          time: new Date(),
+          authorName: NAMES[Math.floor(Math.random() * NAMES.length)],
+          authorType: authorType,
+          content: textContent,
+          contentParts: [{
+            type: 0, // TEXT
+            text: textContent
+          }],
+          privilegeType: privilegeType,
+          repeated: 1,
+          translation: '',
+          uid: '',
+          medalLevel: 0,
+          medalName: ''
+        }
+      }
+    }
+
+    function generateGiftMessage() {
+      const gifts = [
+        { name: '粉丝团灯牌', coin: 200, icon: '' },
+        { name: '可爱捏', coin: 9900, icon: '' },
+        { name: '花式夸夸', coin: 29900, icon: '' },
+        { name: '情书', coin: 52000, icon: '' },
+        { name: '极速超跑', coin: 100000, icon: '' },
+        { name: '为你摘星', coin: 520000, icon: '' }
+      ]
+      const gift = gifts[Math.floor(Math.random() * gifts.length)]
+      
+      return {
+        type: 'blcAddMsg',
+        data: {
+          type: MESSAGE_TYPE_GIFT,
+          id: generateId(),
+          avatarUrl: 'https://i0.hdslb.com/bfs/face/member/noface.jpg',
+          time: new Date(),
+          authorName: NAMES[Math.floor(Math.random() * NAMES.length)],
+          authorNamePronunciation: '',
+          price: gift.coin / 1000,
+          giftName: gift.name,
+          num: Math.floor(Math.random() * 10) + 1,
+          totalFreeCoin: 0,
+          giftId: 0,
+          giftIconUrl: gift.icon,
+          uid: '',
+          privilegeType: Math.random() < 0.3 ? GUARD_LEVEL_LV1 : GUARD_LEVEL_NONE,
+          medalLevel: 0,
+          medalName: ''
+        }
+      }
+    }
+
+    function generateMemberMessage(privilegeType = GUARD_LEVEL_LV1) {
+      const guardLevelToPrice = {
+        [GUARD_LEVEL_LV1]: 198,  // 舰长（元）
+        [GUARD_LEVEL_LV2]: 1998,  // 提督（元）
+        [GUARD_LEVEL_LV3]: 19998  // 总督（元）
+      }
+      
+      return {
+        type: 'blcAddMsg',
+        data: {
+          type: MESSAGE_TYPE_MEMBER,
+          id: generateId(),
+          avatarUrl: 'https://i0.hdslb.com/bfs/face/member/noface.jpg',
+          time: new Date(),
+          authorName: NAMES[Math.floor(Math.random() * NAMES.length)],
+          authorNamePronunciation: '',
+          privilegeType: privilegeType,
+          num: 1,
+          unit: '月',
+          price: guardLevelToPrice[privilegeType] || 198,
+          uid: '',
+          medalLevel: 0,
+          medalName: ''
+        }
+      }
+    }
+
+    function generateSuperChatMessage(price = 30) {
+      return {
+        type: 'blcAddMsg',
+        data: {
+          type: MESSAGE_TYPE_SUPER_CHAT,
+          id: generateId(),
+          avatarUrl: 'https://i0.hdslb.com/bfs/face/member/noface.jpg',
+          time: new Date(),
+          authorName: NAMES[Math.floor(Math.random() * NAMES.length)],
+          authorNamePronunciation: '',
+          price: price,
+          content: CONTENTS[Math.floor(Math.random() * CONTENTS.length)],
+          translation: '',
+          uid: '',
+          privilegeType: Math.random() < 0.3 ? GUARD_LEVEL_LV1 : GUARD_LEVEL_NONE,
+          medalLevel: 0,
+          medalName: ''
+        }
+      }
+    }
+
+    function sendInitMessage() {
+      const initMsg = {
+        type: 'blcInit',
+        data: {
+          blcVersion: 'v1.0.0-preview',
+          sdkVersion: '1.0.1',
+          config: {
+            showGiftName: false,
+            mergeSimilarDanmaku: false,
+            mergeGift: true,
+            maxNumber: 60
+          }
+        }
+      }
+      iframe.contentWindow.postMessage(initMsg, '*')
+    }
+
+    function sendMessage(msg) {
+      // postMessage 使用结构化克隆，Date 对象会被保留
+      iframe.contentWindow.postMessage(msg, '*')
+    }
+
+    function startAutoSend() {
+      if (autoInterval) {
+        clearInterval(autoInterval)
+        autoInterval = null
+        autoBtn.textContent = '自动发送随机消息'
+        return
+      }
+      
+      autoBtn.textContent = '停止自动发送'
+      const messageTypes = [
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE),
+        () => generateTextMessage(AUTHOR_TYPE_MEMBER, GUARD_LEVEL_LV1),
+        () => generateTextMessage(AUTHOR_TYPE_ADMIN, GUARD_LEVEL_NONE),
+        () => generateGiftMessage(),
+        () => generateMemberMessage(GUARD_LEVEL_LV1),
+        () => generateSuperChatMessage(30),
+        () => generateSuperChatMessage(100)
+      ]
+      
+      autoInterval = setInterval(() => {
+        const generator = messageTypes[Math.floor(Math.random() * messageTypes.length)]
+        sendMessage(generator())
+      }, 2000) // 每2秒发送一条
+    }
+
+    function sendAllExamples() {
+      // 延迟发送，避免一次性发送太多
+      const messages = [
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '普通用户弹幕'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_LV1, '舰长弹幕'),
+        () => generateTextMessage(AUTHOR_TYPE_ADMIN, GUARD_LEVEL_NONE, '房管弹幕'),
+        () => generateTextMessage(AUTHOR_TYPE_OWNER, GUARD_LEVEL_NONE, '主播弹幕'),
+        () => generateGiftMessage(),
+        () => generateMemberMessage(GUARD_LEVEL_LV1),
+        () => generateMemberMessage(GUARD_LEVEL_LV2),
+        () => generateMemberMessage(GUARD_LEVEL_LV3),
+        () => generateSuperChatMessage(30),
+        () => generateSuperChatMessage(100),
+        () => generateSuperChatMessage(500)
+      ]
+      
+      messages.forEach((generator, index) => {
+        setTimeout(() => {
+          sendMessage(generator())
+        }, index * 500) // 每500ms发送一条
+      })
+    }
+
+    function clearMessages() {
+      // 发送清空消息（删除所有消息）
+      // 注意：这需要模板支持，如果模板不支持，可能需要刷新iframe
+      iframe.src = iframe.src
+      setTimeout(() => {
+        sendInitMessage()
+      }, 500)
+    }
+
+    function enableButtons() {
+      testTextBtn.disabled = false
+      testMemberBtn.disabled = false
+      testAdminBtn.disabled = false
+      testOwnerBtn.disabled = false
+      testGiftBtn.disabled = false
+      testMemberJoinBtn.disabled = false
+      testMemberJoinLv2Btn.disabled = false
+      testMemberJoinLv3Btn.disabled = false
+      testScBtn.disabled = false
+      testSc100Btn.disabled = false
+      testSc500Btn.disabled = false
+      autoBtn.disabled = false
+      sendAllBtn.disabled = false
+      clearBtn.disabled = false
+    }
+
+    loadBtn.addEventListener('click', () => {
+      let url = templateUrl.value.trim() || templateSelect.value
+      if (!url) {
+        alert('请选择或输入模板 URL')
+        return
+      }
+      
+      iframe.src = url
+      enableButtons()
+      
+      // 等待 iframe 加载完成后发送初始化消息
+      iframe.onload = () => {
+        setTimeout(() => {
+          sendInitMessage()
+        }, 500)
+      }
+    })
+
+    testTextBtn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '普通用户弹幕'))
+    })
+
+    testMemberBtn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_LV1, '舰长弹幕'))
+    })
+
+    testAdminBtn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_ADMIN, GUARD_LEVEL_NONE, '房管弹幕'))
+    })
+
+    testOwnerBtn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_OWNER, GUARD_LEVEL_NONE, '主播弹幕'))
+    })
+
+    testGiftBtn.addEventListener('click', () => {
+      sendMessage(generateGiftMessage())
+    })
+
+    testMemberJoinBtn.addEventListener('click', () => {
+      sendMessage(generateMemberMessage(GUARD_LEVEL_LV1))
+    })
+
+    testMemberJoinLv2Btn.addEventListener('click', () => {
+      sendMessage(generateMemberMessage(GUARD_LEVEL_LV2))
+    })
+
+    testMemberJoinLv3Btn.addEventListener('click', () => {
+      sendMessage(generateMemberMessage(GUARD_LEVEL_LV3))
+    })
+
+    testScBtn.addEventListener('click', () => {
+      sendMessage(generateSuperChatMessage(30))
+    })
+
+    testSc100Btn.addEventListener('click', () => {
+      sendMessage(generateSuperChatMessage(100))
+    })
+
+    testSc500Btn.addEventListener('click', () => {
+      sendMessage(generateSuperChatMessage(500))
+    })
+
+    autoBtn.addEventListener('click', () => {
+      startAutoSend()
+    })
+
+    sendAllBtn.addEventListener('click', () => {
+      sendAllExamples()
+    })
+
+    clearBtn.addEventListener('click', () => {
+      clearMessages()
+    })
+
+    // 监听模板发送的消息
+    window.addEventListener('message', (event) => {
+      if (event.source === iframe.contentWindow) {
+        console.log('收到模板消息:', event.data)
+        if (event.data === 'blcTemplateConnect') {
+          sendInitMessage()
+        }
+      }
+    })
+
+    // 默认加载第一个模板
+    iframe.onload = () => {
+      setTimeout(() => {
+        sendInitMessage()
+      }, 500)
+    }
+  </script>
+</body>
+</html>
+

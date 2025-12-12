@@ -1,0 +1,39 @@
+@layer lg {
+
+lg-live-chat-author-badge-renderer {
+  display: inline-block;
+}
+
+lg-live-chat-author-badge-renderer[hidden] {
+  display: none !important;
+}
+
+lg-live-chat-author-badge-renderer[type='moderator'] {
+  color: #5e84f1;
+}
+
+lg-live-chat-author-badge-renderer[type='owner'] {
+  color: #ffd600;
+}
+
+lg-live-chat-author-badge-renderer[type='member'] {
+  color: #107516;
+}
+
+lg-live-chat-author-badge-renderer[type='verified'] {
+  color: #999;
+}
+
+img.lg-live-chat-author-badge-renderer, lg-icon.lg-live-chat-author-badge-renderer {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+#image.lg-live-chat-author-badge-renderer {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+
+}

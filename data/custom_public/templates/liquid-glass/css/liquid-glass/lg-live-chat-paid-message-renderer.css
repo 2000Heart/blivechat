@@ -1,0 +1,296 @@
+@layer lg {
+
+lg-live-chat-paid-message-renderer {
+  position: relative;
+  display: block;
+  padding: 0;
+  font-size: 13px;
+  margin: 0;
+  text-align: left;
+  width: 100%;
+}
+
+lg-live-chat-paid-message-renderer[hidden] {
+  display: none !important;
+}
+
+/* Liquid Glass Wrapper for Paid Message */
+lg-live-chat-paid-message-renderer .liquidGlass-wrapper {
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+  overflow: hidden;
+  color: black;
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  border-radius: 1.2rem;
+  margin: 4px 8px 4px 8px;
+  padding: 0.4rem 0.8rem;
+  min-height: 40px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+lg-live-chat-paid-message-renderer .liquidGlass-effect {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.2rem;
+}
+
+lg-live-chat-paid-message-renderer .liquidGlass-tint {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1.2rem;
+}
+
+lg-live-chat-paid-message-renderer .liquidGlass-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+  border-radius: 1.2rem;
+}
+
+lg-live-chat-paid-message-renderer .liquidGlass-text {
+  z-index: 3;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: auto;
+  padding-left: 10px;
+}
+
+/* 左侧渐变装饰条 */
+lg-live-chat-paid-message-renderer .paid-decoration {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 4;
+  border-radius: 1.2rem 0 0 1.2rem;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.8), rgba(255, 165, 0, 0.8));
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+  animation: paidGlow 2s ease-in-out infinite;
+}
+
+/* 根据价格等级调整装饰条颜色 */
+lg-live-chat-paid-message-renderer[blc-price-level="1"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(30, 136, 229, 0.8), rgba(0, 100, 200, 0.8));
+  box-shadow: 0 0 8px rgba(30, 136, 229, 0.4);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="2"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(0, 229, 255, 0.8), rgba(0, 150, 200, 0.8));
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="3"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(29, 233, 182, 0.8), rgba(0, 180, 150, 0.8));
+  box-shadow: 0 0 8px rgba(29, 233, 182, 0.4);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="4"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(255, 202, 40, 0.8), rgba(255, 165, 0, 0.8));
+  box-shadow: 0 0 8px rgba(255, 202, 40, 0.4);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="5"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(245, 124, 0, 0.8), rgba(255, 100, 0, 0.8));
+  box-shadow: 0 0 8px rgba(245, 124, 0, 0.4);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="6"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(233, 30, 99, 0.8), rgba(200, 0, 80, 0.8));
+  box-shadow: 0 0 8px rgba(233, 30, 99, 0.4);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="7"] .paid-decoration {
+  background: linear-gradient(180deg, rgba(230, 33, 23, 0.8), rgba(200, 0, 0, 0.8));
+  box-shadow: 0 0 10px rgba(230, 33, 23, 0.5);
+}
+
+@keyframes paidGlow {
+  0%, 100% {
+    opacity: 0.8;
+    box-shadow: 0 0 8px currentColor;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12px currentColor;
+  }
+}
+
+lg-live-chat-paid-message-renderer .liquidGlass-text .paid-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+#author-photo.lg-live-chat-paid-message-renderer {
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  -ms-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+
+#author-name.lg-live-chat-paid-message-renderer {
+  color: var(--lg-paid-message-color, rgba(0,0,0,0.87));
+  font-weight: 600;
+  font-size: 13px;
+}
+
+#purchase-amount.lg-live-chat-paid-message-renderer {
+  font-weight: 700;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 165, 0, 0.25));
+  border: 1.5px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+#purchase-amount.lg-live-chat-paid-message-renderer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+#timestamp.lg-live-chat-paid-message-renderer {
+  display: var(--lg-live-chat-item-timestamp-display, inline);
+  margin-left: auto;
+  color: rgba(0,0,0,0.5);
+  font-size: 11px;
+  -ms-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+
+#message.lg-live-chat-paid-message-renderer {
+  color: var(--lg-paid-message-color, rgba(0,0,0,0.87));
+  line-height: 16px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  display: block;
+  width: 100%;
+  padding-left: 0;
+}
+
+/* 根据价格等级调整颜色 */
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #message {
+  color: rgba(30, 136, 229, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #purchase-amount {
+  color: rgba(30, 136, 229, 0.95);
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.25), rgba(0, 100, 200, 0.25));
+  border-color: rgba(30, 136, 229, 0.4);
+  box-shadow: 0 2px 4px rgba(30, 136, 229, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #message {
+  color: rgba(0, 229, 255, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #purchase-amount {
+  color: rgba(0, 229, 255, 0.95);
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(0, 150, 200, 0.25));
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 2px 4px rgba(0, 229, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #message {
+  color: rgba(29, 233, 182, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #purchase-amount {
+  color: rgba(29, 233, 182, 0.95);
+  background: linear-gradient(135deg, rgba(29, 233, 182, 0.25), rgba(0, 180, 150, 0.25));
+  border-color: rgba(29, 233, 182, 0.4);
+  box-shadow: 0 2px 4px rgba(29, 233, 182, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #message {
+  color: rgba(255, 202, 40, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #purchase-amount {
+  color: rgba(255, 202, 40, 0.95);
+  background: linear-gradient(135deg, rgba(255, 202, 40, 0.25), rgba(255, 165, 0, 0.25));
+  border-color: rgba(255, 202, 40, 0.4);
+  box-shadow: 0 2px 4px rgba(255, 202, 40, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #message {
+  color: rgba(245, 124, 0, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #purchase-amount {
+  color: rgba(245, 124, 0, 0.95);
+  background: linear-gradient(135deg, rgba(245, 124, 0, 0.25), rgba(255, 100, 0, 0.25));
+  border-color: rgba(245, 124, 0, 0.4);
+  box-shadow: 0 2px 4px rgba(245, 124, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #message {
+  color: rgba(233, 30, 99, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #purchase-amount {
+  color: rgba(233, 30, 99, 0.95);
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.25), rgba(200, 0, 80, 0.25));
+  border-color: rgba(233, 30, 99, 0.4);
+  box-shadow: 0 2px 4px rgba(233, 30, 99, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #author-name,
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #message {
+  color: rgba(230, 33, 23, 0.9);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #purchase-amount {
+  color: rgba(230, 33, 23, 0.95);
+  background: linear-gradient(135deg, rgba(230, 33, 23, 0.25), rgba(200, 0, 0, 0.25));
+  border-color: rgba(230, 33, 23, 0.4);
+  box-shadow: 0 2px 6px rgba(230, 33, 23, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+}

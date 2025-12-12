@@ -1,0 +1,11 @@
+@layer lg {
+
+html:not(.style-scope) {
+  --lg-live-chat-background-color: hsl(0, 0%, 100%);
+  --lg-live-chat-primary-text-color: hsl(0, 0%, 6.7%);
+  --lg-live-chat-secondary-text-color: hsla(0, 0%, 6.7%, .6);
+  --lg-live-chat-tertiary-text-color: hsla(0, 0%, 6.7%, .4);
+  --lg-live-chat-emoji-size: 24px;
+}
+
+}

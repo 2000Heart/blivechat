@@ -1,0 +1,72 @@
+@layer lg {
+
+canvas.lg-img-shadow, caption.lg-img-shadow, center.lg-img-shadow, cite.lg-img-shadow, code.lg-img-shadow, dd.lg-img-shadow, del.lg-img-shadow, dfn.lg-img-shadow, div.lg-img-shadow, dl.lg-img-shadow, dt.lg-img-shadow, em.lg-img-shadow, embed.lg-img-shadow, fieldset.lg-img-shadow, font.lg-img-shadow, form.lg-img-shadow, h1.lg-img-shadow, h2.lg-img-shadow, h3.lg-img-shadow, h4.lg-img-shadow, h5.lg-img-shadow, h6.lg-img-shadow, hr.lg-img-shadow, i.lg-img-shadow, iframe.lg-img-shadow, img.lg-img-shadow, ins.lg-img-shadow, kbd.lg-img-shadow, label.lg-img-shadow, legend.lg-img-shadow, li.lg-img-shadow, menu.lg-img-shadow, object.lg-img-shadow, ol.lg-img-shadow, p.lg-img-shadow, pre.lg-img-shadow, q.lg-img-shadow, s.lg-img-shadow, samp.lg-img-shadow, small.lg-img-shadow, span.lg-img-shadow, strike.lg-img-shadow, strong.lg-img-shadow, sub.lg-img-shadow, sup.lg-img-shadow, table.lg-img-shadow, tbody.lg-img-shadow, td.lg-img-shadow, tfoot.lg-img-shadow, th.lg-img-shadow, thead.lg-img-shadow, tr.lg-img-shadow, tt.lg-img-shadow, u.lg-img-shadow, ul.lg-img-shadow, var.lg-img-shadow {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lg-img-shadow[hidden] {
+  display: none !important;
+}
+
+lg-img-shadow {
+  display: inline-block;
+  opacity: 0;
+  transition: opacity 0.2s;
+  -ms-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+
+lg-img-shadow.no-transition {
+  opacity: 1;
+  transition: none;
+}
+
+lg-img-shadow.with-placeholder {
+  background-color: transparent;
+  min-height: unset;
+  min-width: unset;
+}
+
+lg-img-shadow[loaded] {
+  opacity: 1;
+}
+
+lg-img-shadow.empty img.lg-img-shadow {
+  visibility: hidden;
+}
+
+lg-img-shadow[object-fit="FILL"] img.lg-img-shadow, lg-img-shadow[fit] img.lg-img-shadow {
+  width: 100%;
+  height: 100%;
+}
+
+lg-img-shadow[object-fit="COVER"] img.lg-img-shadow {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+lg-img-shadow[object-fit="CONTAIN"] img.lg-img-shadow {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+lg-img-shadow[object-position="LEFT"] img.lg-img-shadow {
+  object-position: left;
+}
+
+img.lg-img-shadow {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  max-height: none;
+  max-width: 100%;
+  border-radius: none;
+}
+
+}

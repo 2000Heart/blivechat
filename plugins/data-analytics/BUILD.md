@@ -53,25 +53,35 @@
    ```
 
 3. **打包结果**
-   - exe 文件位于: `dist/data-analytics/data-analytics.exe`
-   - 打包后的目录: `dist/data-analytics/`
-   - 压缩包: `dist/data-analytics.zip`
+   - 打包后的目录: `dist/data-analytics/`（包含 exe、_internal 目录和数据文件）
+   - 压缩包: `dist/data-analytics.zip`（推荐使用）
 
 ### 使用打包后的文件
 
-1. **方法一：使用压缩包**
-   - 解压 `data-analytics.zip` 到 `data/plugins/data-analytics/`
+**重要提示**：必须使用完整的目录结构，不能只复制 exe 文件！
+
+1. **方法一：使用压缩包（推荐）**
+   - 解压 `dist/data-analytics.zip` 到 `data/plugins/data-analytics/`
    - 确保目录结构如下：
      ```
      data/plugins/data-analytics/
      ├── data-analytics.exe
      ├── plugin.json
+     ├── _internal/          # 包含所有依赖和 Python DLL（必需！）
+     │   ├── python313.dll
+     │   └── ... (其他依赖文件)
      ├── log/
      └── data/
      ```
 
 2. **方法二：直接复制目录**
-   - 将 `dist/data-analytics/` 目录复制到 `data/plugins/data-analytics/`
+   - 将整个 `dist/data-analytics/` 目录复制到 `data/plugins/data-analytics/`
+   - 确保复制时包含所有文件和子目录，特别是 `_internal/` 目录
+
+**错误的使用方式**：
+- ❌ 只复制 `data-analytics.exe` 文件（会缺少 `_internal/` 目录和 `plugin.json`）
+- ❌ 只复制部分文件
+- ✅ 必须使用 `dist/data-analytics.zip` 解压，或复制整个 `dist/data-analytics/` 目录
 
 ### 注意事项
 
@@ -109,10 +119,20 @@ A: 这通常发生在 macOS 上。解决方案：
 A: 确保在 blivechat 项目根目录下运行打包命令，PYTHONPATH 会指向项目根目录
 
 **Q: 打包后的 exe 文件很大**
-A: 这是正常的，PyInstaller 会打包 Python 解释器和所有依赖。可以使用 `--onefile` 选项创建单文件版本，但启动会稍慢。
+A: 这是正常的，PyInstaller 会打包 Python 解释器和所有依赖。当前使用目录模式，启动速度较快，但需要确保 `_internal/` 目录和 exe 文件在同一目录下。
 
 **Q: 打包后无法创建数据库文件**
 A: 确保 `data/` 目录有写权限，或者检查 exe 文件是否在正确的目录下运行
+
+**Q: 运行时提示 "Failed to load Python DLL"**
+A: 这通常是因为：
+1. **缺少 `_internal/` 目录**：确保使用了完整的目录结构，不能只复制 exe 文件
+2. **PyInstaller 版本过旧**：确保使用最新版本的 PyInstaller（支持 Python 3.13）
+   ```bash
+   pip install --upgrade pyinstaller
+   ```
+3. **Python 版本兼容性**：如果使用 Python 3.13，需要 PyInstaller 6.0.0 或更高版本
+4. **如果仍有问题**：可以尝试使用 Python 3.12 重新打包
 
 **Q: 不想打包，直接使用 Python 脚本可以吗？**
 A: 可以！修改 `plugin.json` 中的 `run` 字段为 `"run": "python -u main.py"`，然后确保从 blivechat 项目根目录运行即可。

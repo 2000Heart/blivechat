@@ -1,0 +1,263 @@
+@layer lg {
+
+lg-live-chat-membership-item-renderer {
+  position: relative;
+  display: block;
+  padding: 0;
+  font-size: 13px;
+  margin: 0;
+  text-align: left;
+  width: 100%;
+}
+
+lg-live-chat-membership-item-renderer[hidden] {
+  display: none !important;
+}
+
+/* Liquid Glass Wrapper for Membership Item */
+lg-live-chat-membership-item-renderer .liquidGlass-wrapper {
+  position: relative;
+  display: inline-flex;
+  font-weight: 600;
+  overflow: hidden;
+  color: black;
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  border-radius: 1.2rem;
+  margin: 4px 8px 4px 8px;
+  padding: 0.4rem 0.8rem;
+  min-height: 40px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+lg-live-chat-membership-item-renderer .liquidGlass-wrapper::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: membershipShimmer 2s infinite;
+  pointer-events: none;
+  z-index: 5;
+}
+
+lg-live-chat-membership-item-renderer .liquidGlass-effect {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  filter: url(#glass-distortion);
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.2rem;
+}
+
+lg-live-chat-membership-item-renderer .liquidGlass-tint {
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 1.2rem;
+}
+
+lg-live-chat-membership-item-renderer .liquidGlass-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
+    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
+  border-radius: 1.2rem;
+}
+
+lg-live-chat-membership-item-renderer .liquidGlass-text {
+  z-index: 3;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: auto;
+  padding-left: 10px;
+}
+
+lg-live-chat-membership-item-renderer .member-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+lg-live-chat-membership-item-renderer .member-message {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-left: 0;
+}
+
+lg-live-chat-membership-item-renderer .membership-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  font-style: italic;
+  position: relative;
+  padding: 2px 0;
+}
+
+/* 根据舰长等级调整开通文案颜色 */
+/* level 1 = 总督(紫色), level 2 = 提督(蓝色), level 3 = 舰长(绿色) */
+lg-live-chat-membership-item-renderer[blc-guard-level="1"] .membership-text {
+  color: rgba(156, 39, 176, 0.9);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="2"] .membership-text {
+  color: rgba(33, 150, 243, 0.9);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="3"] .membership-text {
+  color: rgba(15, 157, 88, 0.9);
+}
+
+@keyframes membershipShimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* 左侧渐变装饰条 */
+lg-live-chat-membership-item-renderer .member-decoration {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 4;
+  border-radius: 1.2rem 0 0 1.2rem;
+  background: linear-gradient(180deg, rgba(15, 157, 88, 0.8), rgba(33, 150, 243, 0.8));
+  box-shadow: 0 0 8px rgba(15, 157, 88, 0.4);
+  animation: memberGlow 2s ease-in-out infinite;
+}
+
+@keyframes memberGlow {
+  0%, 100% {
+    opacity: 0.8;
+    box-shadow: 0 0 8px currentColor;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 12px currentColor;
+  }
+}
+
+#author-photo.lg-live-chat-membership-item-renderer {
+  display: block;
+  overflow: hidden;
+  border-radius: 50%;
+  -ms-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+
+#title.lg-live-chat-membership-item-renderer {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(15, 157, 88, 0.25), rgba(33, 150, 243, 0.25));
+  border: 1.5px solid rgba(15, 157, 88, 0.4);
+  box-shadow: 0 2px 4px rgba(15, 157, 88, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+#title.lg-live-chat-membership-item-renderer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+#timestamp.lg-live-chat-membership-item-renderer {
+  display: var(--lg-live-chat-item-timestamp-display, inline);
+  margin-left: auto;
+  color: rgba(0,0,0,0.5);
+  font-size: 11px;
+  -ms-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+
+/* 根据舰长等级调整装饰条和标题颜色 */
+/* level 1 = 总督(紫色), level 2 = 提督(蓝色), level 3 = 舰长(绿色) */
+lg-live-chat-membership-item-renderer[blc-guard-level="1"] .member-decoration {
+  background: linear-gradient(180deg, rgba(156, 39, 176, 0.8), rgba(120, 20, 140, 0.8));
+  box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="1"] #title {
+  color: rgba(156, 39, 176, 0.95);
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.25), rgba(120, 20, 140, 0.25));
+  border-color: rgba(156, 39, 176, 0.4);
+  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="1"] #author-name.lg-live-chat-author-chip {
+  color: rgba(156, 39, 176, 0.9);
+}
+
+
+lg-live-chat-membership-item-renderer[blc-guard-level="2"] .member-decoration {
+  background: linear-gradient(180deg, rgba(33, 150, 243, 0.8), rgba(20, 100, 200, 0.8));
+  box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="2"] #title {
+  color: rgba(33, 150, 243, 0.95);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.25), rgba(20, 100, 200, 0.25));
+  border-color: rgba(33, 150, 243, 0.4);
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="2"] #author-name.lg-live-chat-author-chip {
+  color: rgba(33, 150, 243, 0.9);
+}
+
+
+lg-live-chat-membership-item-renderer[blc-guard-level="3"] .member-decoration {
+  background: linear-gradient(180deg, rgba(15, 157, 88, 0.8), rgba(10, 120, 70, 0.8));
+  box-shadow: 0 0 8px rgba(15, 157, 88, 0.4);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="3"] #title {
+  color: rgba(15, 157, 88, 0.95);
+  background: linear-gradient(135deg, rgba(15, 157, 88, 0.25), rgba(10, 120, 70, 0.25));
+  border-color: rgba(15, 157, 88, 0.4);
+  box-shadow: 0 2px 4px rgba(15, 157, 88, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="3"] #author-name.lg-live-chat-author-chip {
+  color: rgba(15, 157, 88, 0.9);
+}
+
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+}

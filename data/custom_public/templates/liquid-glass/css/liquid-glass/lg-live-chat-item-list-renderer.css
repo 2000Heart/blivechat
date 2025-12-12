@@ -1,0 +1,52 @@
+@layer lg {
+
+lg-live-chat-item-list-renderer {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  z-index: 0;
+}
+
+#item-scroller.lg-live-chat-item-list-renderer {
+  -ms-flex: 1 1 0.000000001px;
+  -webkit-flex: 1;
+  flex: 1;
+  -webkit-flex-basis: 0.000000001px;
+  flex-basis: 0.000000001px;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding-right: var(--scrollbar-width);
+}
+
+lg-live-chat-item-list-renderer[allow-scroll] #item-scroller.lg-live-chat-item-list-renderer {
+  overflow-y: scroll;
+  padding-right: 0;
+}
+
+#item-offset.lg-live-chat-item-list-renderer {
+  position: relative;
+}
+
+#item-scroller.animated.lg-live-chat-item-list-renderer #item-offset.lg-live-chat-item-list-renderer {
+  overflow: hidden;
+}
+
+#items.lg-live-chat-item-list-renderer {
+  -ms-flex: 1 1 0.000000001px;
+  -webkit-flex: 1;
+  flex: 1;
+  -webkit-flex-basis: 0.000000001px;
+  flex-basis: 0.000000001px;
+  padding: var(--lg-live-chat-item-list-renderer-padding, 4px 0);
+  text-align: left;
+}
+
+#item-scroller.animated.lg-live-chat-item-list-renderer #items.lg-live-chat-item-list-renderer {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+  transform: translateY(0);
+}
+
+}

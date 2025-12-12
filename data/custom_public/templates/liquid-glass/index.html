@@ -8,67 +8,79 @@
     <script src="./js/vendor/vue.min.js"></script>
     <script src="./js/vendor/blcsdk.js"></script>
 
+    <link rel="stylesheet" href="./css/liquid-glass/lg-html.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-icon.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-img-shadow.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-author-badge-renderer.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-author-chip.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-item-list-renderer.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-membership-item-renderer.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-paid-message-renderer.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-renderer.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-text-message-renderer.css">
+    <link rel="stylesheet" href="./css/liquid-glass/lg-live-chat-ticker-renderer.css">
+
     <link rel="stylesheet" href="./css/main.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-renderer.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-item-list-renderer.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-text-message-renderer.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-author-chip.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-author-badge-renderer.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-paid-message-renderer.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-membership-item-renderer.css">
-    <link rel="stylesheet" href="./css/lg-live-chat-ticker-renderer.css">
-    <link rel="stylesheet" href="./css/lg-img-shadow.css">
-    <link rel="stylesheet" href="./css/lg-icon.css">
-
-    <!-- SVG Filters for Liquid Glass Effect -->
-    <svg style="position: absolute; width: 0; height: 0;">
-      <defs>
-        <!-- Displacement map for refraction effect (edge distortion) -->
-        <filter id="lg-displacement" x="0%" y="0%" width="100%" height="100%">
-          <!-- Create a radial gradient for displacement -->
-          <feImage href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3CradialGradient id='displace'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='0.5'/%3E%3Cstop offset='50%25' stop-color='%23808080' stop-opacity='0.3'/%3E%3Cstop offset='100%25' stop-color='%23000000' stop-opacity='0.1'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23displace)'/%3E%3C/svg%3E" result="displacement-map" />
-          <feDisplacementMap in="SourceGraphic" in2="displacement-map" scale="8" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-        </filter>
-
-        <!-- Enhanced Liquid Glass filter with refraction and reflection -->
-        <filter id="lg-liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
-          <!-- Step 1: Blur the background for glassmorphism base -->
-          <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blurred" />
-          
-          <!-- Step 2: Create displacement map for refraction -->
-          <feImage href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='100'%3E%3Cdefs%3E%3ClinearGradient id='edge' x1='0%25' y1='0%25' x2='100%25' y2='0%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='0.8'/%3E%3Cstop offset='10%25' stop-color='%23ffffff' stop-opacity='0.4'/%3E%3Cstop offset='90%25' stop-color='%23ffffff' stop-opacity='0.4'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0.8'/%3E%3C/linearGradient%3E%3ClinearGradient id='vert' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='0.8'/%3E%3Cstop offset='10%25' stop-color='%23ffffff' stop-opacity='0.4'/%3E%3Cstop offset='90%25' stop-color='%23ffffff' stop-opacity='0.4'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0.8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='300' height='100' fill='url(%23edge)'/%3E%3Crect width='300' height='100' fill='url(%23vert)'/%3E%3C/svg%3E" result="displacement-map" />
-          
-          <!-- Step 3: Apply displacement for refraction effect -->
-          <feDisplacementMap in="blurred" in2="displacement-map" scale="6" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-          
-          <!-- Step 4: Increase saturation for more vibrant colors -->
-          <feColorMatrix in="displaced" type="saturate" values="1.3" result="saturated" />
-          
-          <!-- Step 5: Create specular rim (reflection highlight) -->
-          <feImage href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='100'%3E%3Cdefs%3E%3CradialGradient id='spec'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3Cstop offset='30%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3Cstop offset='50%25' stop-color='%23ffffff' stop-opacity='0.3'/%3E%3Cstop offset='70%25' stop-color='%23ffffff' stop-opacity='0.5'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0.8'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='300' height='100' fill='url(%23spec)'/%3E%3C/svg%3E" result="specular-map" />
-          
-          <!-- Step 6: Blur the specular rim -->
-          <feGaussianBlur in="specular-map" stdDeviation="4" result="specular-blurred" />
-          
-          <!-- Step 7: Composite specular highlight with saturated layer -->
-          <feComposite in="saturated" in2="specular-blurred" operator="screen" result="specular-highlight" />
-          
-          <!-- Step 8: Final blend -->
-          <feBlend in="specular-highlight" in2="displaced" mode="normal" />
-        </filter>
-
-        <!-- Simplified Liquid Glass for smaller elements -->
-        <filter id="lg-liquid-glass-light" x="-10%" y="-10%" width="120%" height="120%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blurred" />
-          <feColorMatrix in="blurred" type="saturate" values="1.2" result="saturated" />
-          <feImage href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cdefs%3E%3CradialGradient id='rim'%3E%3Cstop offset='0%25' stop-color='%23ffffff' stop-opacity='0'/%3E%3Cstop offset='80%25' stop-color='%23ffffff' stop-opacity='0.2'/%3E%3Cstop offset='100%25' stop-color='%23ffffff' stop-opacity='0.5'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23rim)'/%3E%3C/svg%3E" result="rim" />
-          <feGaussianBlur in="rim" stdDeviation="3" result="rim-blur" />
-          <feComposite in="saturated" in2="rim-blur" operator="screen" />
-        </filter>
-      </defs>
-    </svg>
+    <link rel="stylesheet" href="./css/custom.css">
   </head>
   <body>
+    <!-- SVG Filter for Liquid Glass Effect -->
+    <svg style="display: none">
+      <filter
+        id="glass-distortion"
+        x="0%"
+        y="0%"
+        width="100%"
+        height="100%"
+        filterUnits="objectBoundingBox"
+      >
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.001 0.005"
+          numOctaves="1"
+          seed="17"
+          result="turbulence"
+        />
+
+        <feComponentTransfer in="turbulence" result="mapped">
+          <feFuncR type="gamma" amplitude="1" exponent="10" offset="0.5" />
+          <feFuncG type="gamma" amplitude="0" exponent="1" offset="0" />
+          <feFuncB type="gamma" amplitude="0" exponent="1" offset="0.5" />
+        </feComponentTransfer>
+
+        <feGaussianBlur in="turbulence" stdDeviation="3" result="softMap" />
+
+        <feSpecularLighting
+          in="softMap"
+          surfaceScale="5"
+          specularConstant="1"
+          specularExponent="100"
+          lighting-color="white"
+          result="specLight"
+        >
+          <fePointLight x="-200" y="-200" z="300" />
+        </feSpecularLighting>
+
+        <feComposite
+          in="specLight"
+          operator="arithmetic"
+          k1="0"
+          k2="1"
+          k3="1"
+          k4="0"
+          result="litImage"
+        />
+
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="softMap"
+          scale="200"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+    </svg>
+
     <div id="app">
       <chat-renderer
         ref="renderer" :max-number="config.maxNumber" :show-gift-name="config.showGiftName" :merge-gift="config.mergeGift"
