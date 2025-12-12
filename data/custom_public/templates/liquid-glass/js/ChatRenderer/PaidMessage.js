@@ -32,6 +32,10 @@ function(constants, ImgShadow) {
             :imgUrl="avatarUrl"
           ></img-shadow>
           <span id="author-name" class="style-scope lg-live-chat-paid-message-renderer">{{ authorName }}</span>
+          <span v-if="medalName && medalLevel > 0" id="medal" class="style-scope lg-live-chat-paid-message-renderer" :data-level="medalLevel">
+            <span class="medal-name">{{ medalName }}</span>
+            <span class="medal-level">{{ medalLevel }}</span>
+          </span>
           <span id="purchase-amount" class="style-scope lg-live-chat-paid-message-renderer">{{ showPriceText }}</span>
           <span id="timestamp" class="style-scope lg-live-chat-paid-message-renderer">{{ timeText }}</span>
         </div>
@@ -50,7 +54,9 @@ function(constants, ImgShadow) {
       price: Number, // 价格，人民币
       priceText: String,
       time: Date,
-      content: String
+      content: String,
+      medalLevel: Number,
+      medalName: String
     },
     computed: {
       priceConfig() {

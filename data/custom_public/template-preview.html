@@ -134,6 +134,21 @@
       <button id="test-sc-500-btn" disabled>醒目留言（500元）</button>
     </div>
     <div class="button-group" style="margin-top: 15px;">
+      <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #ccc;">测试房间勋章：</h3>
+      <button id="test-medal-1-btn" disabled>勋章等级1（浅蓝色）</button>
+      <button id="test-medal-5-btn" disabled>勋章等级5（浅蓝色）</button>
+      <button id="test-medal-10-btn" disabled>勋章等级10（深蓝色）</button>
+      <button id="test-medal-15-btn" disabled>勋章等级15（粉色）</button>
+      <button id="test-medal-20-btn" disabled>勋章等级20（青色）</button>
+      <button id="test-medal-24-btn" disabled>勋章等级24（紫色，无shimmer）</button>
+      <button id="test-medal-25-btn" disabled>勋章等级25（紫色，有shimmer）</button>
+      <button id="test-medal-30-btn" disabled>勋章等级30（红色，有shimmer）</button>
+      <button id="test-medal-40-btn" disabled>勋章等级40（金色，有shimmer）</button>
+      <button id="test-medal-50-btn" disabled>勋章等级50（金色，有shimmer）</button>
+      <button id="test-medal-120-btn" disabled>勋章等级120（金色，有shimmer）</button>
+      <button id="test-medal-member-btn" disabled>舰长+勋章弹幕</button>
+    </div>
+    <div class="button-group" style="margin-top: 15px;">
       <button id="auto-btn" disabled>自动发送随机消息</button>
       <button id="send-all-btn" disabled>发送所有类型示例</button>
       <button id="clear-btn" disabled>清空弹幕</button>
@@ -296,6 +311,18 @@
     const testScBtn = document.getElementById('test-sc-btn')
     const testSc100Btn = document.getElementById('test-sc-100-btn')
     const testSc500Btn = document.getElementById('test-sc-500-btn')
+    const testMedal1Btn = document.getElementById('test-medal-1-btn')
+    const testMedal5Btn = document.getElementById('test-medal-5-btn')
+    const testMedal10Btn = document.getElementById('test-medal-10-btn')
+    const testMedal15Btn = document.getElementById('test-medal-15-btn')
+    const testMedal20Btn = document.getElementById('test-medal-20-btn')
+    const testMedal24Btn = document.getElementById('test-medal-24-btn')
+    const testMedal25Btn = document.getElementById('test-medal-25-btn')
+    const testMedal30Btn = document.getElementById('test-medal-30-btn')
+    const testMedal40Btn = document.getElementById('test-medal-40-btn')
+    const testMedal50Btn = document.getElementById('test-medal-50-btn')
+    const testMedal120Btn = document.getElementById('test-medal-120-btn')
+    const testMedalMemberBtn = document.getElementById('test-medal-member-btn')
     const autoBtn = document.getElementById('auto-btn')
     const sendAllBtn = document.getElementById('send-all-btn')
     const clearBtn = document.getElementById('clear-btn')
@@ -332,13 +359,26 @@
       '支持各种类型的弹幕展示',
       '可以预览舰长、礼物、醒目留言等样式'
     ]
+    const MEDAL_NAMES = ['粉丝团', '真爱粉', '守护者', '忠实观众', '铁粉', '超级粉丝']
 
     function generateId() {
       return `test-${Date.now()}-${++messageId}`
     }
 
-    function generateTextMessage(authorType = AUTHOR_TYPE_NORMAL, privilegeType = GUARD_LEVEL_NONE, content = null) {
+    function generateTextMessage(authorType = AUTHOR_TYPE_NORMAL, privilegeType = GUARD_LEVEL_NONE, content = null, medalLevel = null, medalName = null) {
       const textContent = content || CONTENTS[Math.floor(Math.random() * CONTENTS.length)]
+      // 如果没有指定勋章，随机决定是否显示勋章（30%概率）
+      let finalMedalLevel = medalLevel
+      let finalMedalName = medalName
+      if (finalMedalLevel === null) {
+        if (Math.random() < 0.3) {
+          finalMedalLevel = Math.floor(Math.random() * 120) + 1 // 1-120级
+          finalMedalName = MEDAL_NAMES[Math.floor(Math.random() * MEDAL_NAMES.length)]
+        } else {
+          finalMedalLevel = 0
+          finalMedalName = ''
+        }
+      }
       return {
         type: 'blcAddMsg',
         data: {
@@ -357,13 +397,13 @@
           repeated: 1,
           translation: '',
           uid: '',
-          medalLevel: 0,
-          medalName: ''
+          medalLevel: finalMedalLevel,
+          medalName: finalMedalName
         }
       }
     }
 
-    function generateGiftMessage() {
+    function generateGiftMessage(medalLevel = null, medalName = null) {
       const gifts = [
         { name: '粉丝团灯牌', coin: 200, icon: '' },
         { name: '可爱捏', coin: 9900, icon: '' },
@@ -373,7 +413,18 @@
         { name: '为你摘星', coin: 520000, icon: '' }
       ]
       const gift = gifts[Math.floor(Math.random() * gifts.length)]
-      
+      // 如果没有指定勋章，随机决定是否显示勋章（30%概率）
+      let finalMedalLevel = medalLevel
+      let finalMedalName = medalName
+      if (finalMedalLevel === null) {
+        if (Math.random() < 0.3) {
+          finalMedalLevel = Math.floor(Math.random() * 120) + 1 // 1-120级
+          finalMedalName = MEDAL_NAMES[Math.floor(Math.random() * MEDAL_NAMES.length)]
+        } else {
+          finalMedalLevel = 0
+          finalMedalName = ''
+        }
+      }
       return {
         type: 'blcAddMsg',
         data: {
@@ -391,19 +442,30 @@
           giftIconUrl: gift.icon,
           uid: '',
           privilegeType: Math.random() < 0.3 ? GUARD_LEVEL_LV1 : GUARD_LEVEL_NONE,
-          medalLevel: 0,
-          medalName: ''
+          medalLevel: finalMedalLevel,
+          medalName: finalMedalName
         }
       }
     }
 
-    function generateMemberMessage(privilegeType = GUARD_LEVEL_LV1) {
+    function generateMemberMessage(privilegeType = GUARD_LEVEL_LV1, medalLevel = null, medalName = null) {
       const guardLevelToPrice = {
         [GUARD_LEVEL_LV1]: 198,  // 舰长（元）
         [GUARD_LEVEL_LV2]: 1998,  // 提督（元）
         [GUARD_LEVEL_LV3]: 19998  // 总督（元）
       }
-      
+      // 如果没有指定勋章，随机决定是否显示勋章（40%概率）
+      let finalMedalLevel = medalLevel
+      let finalMedalName = medalName
+      if (finalMedalLevel === null) {
+        if (Math.random() < 0.4) {
+          finalMedalLevel = Math.floor(Math.random() * 120) + 1 // 1-120级
+          finalMedalName = MEDAL_NAMES[Math.floor(Math.random() * MEDAL_NAMES.length)]
+        } else {
+          finalMedalLevel = 0
+          finalMedalName = ''
+        }
+      }
       return {
         type: 'blcAddMsg',
         data: {
@@ -418,13 +480,25 @@
           unit: '月',
           price: guardLevelToPrice[privilegeType] || 198,
           uid: '',
-          medalLevel: 0,
-          medalName: ''
+          medalLevel: finalMedalLevel,
+          medalName: finalMedalName
         }
       }
     }
 
-    function generateSuperChatMessage(price = 30) {
+    function generateSuperChatMessage(price = 30, medalLevel = null, medalName = null) {
+      // 如果没有指定勋章，随机决定是否显示勋章（30%概率）
+      let finalMedalLevel = medalLevel
+      let finalMedalName = medalName
+      if (finalMedalLevel === null) {
+        if (Math.random() < 0.3) {
+          finalMedalLevel = Math.floor(Math.random() * 120) + 1 // 1-120级
+          finalMedalName = MEDAL_NAMES[Math.floor(Math.random() * MEDAL_NAMES.length)]
+        } else {
+          finalMedalLevel = 0
+          finalMedalName = ''
+        }
+      }
       return {
         type: 'blcAddMsg',
         data: {
@@ -439,8 +513,8 @@
           translation: '',
           uid: '',
           privilegeType: Math.random() < 0.3 ? GUARD_LEVEL_LV1 : GUARD_LEVEL_NONE,
-          medalLevel: 0,
-          medalName: ''
+          medalLevel: finalMedalLevel,
+          medalName: finalMedalName
         }
       }
     }
@@ -480,6 +554,7 @@
         () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE),
         () => generateTextMessage(AUTHOR_TYPE_MEMBER, GUARD_LEVEL_LV1),
         () => generateTextMessage(AUTHOR_TYPE_ADMIN, GUARD_LEVEL_NONE),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, null, Math.floor(Math.random() * 120) + 1, MEDAL_NAMES[Math.floor(Math.random() * MEDAL_NAMES.length)]),
         () => generateGiftMessage(),
         () => generateMemberMessage(GUARD_LEVEL_LV1),
         () => generateSuperChatMessage(30),
@@ -499,11 +574,26 @@
         () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_LV1, '舰长弹幕'),
         () => generateTextMessage(AUTHOR_TYPE_ADMIN, GUARD_LEVEL_NONE, '房管弹幕'),
         () => generateTextMessage(AUTHOR_TYPE_OWNER, GUARD_LEVEL_NONE, '主播弹幕'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级1（浅蓝色）', 1, '粉丝团'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级5（浅蓝色）', 5, '守护者'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级10（深蓝色）', 10, '真爱粉'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级15（粉色）', 15, '忠实观众'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级20（青色）', 20, '铁粉'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级24（紫色，无shimmer）', 24, '超级粉丝'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级25（紫色，有shimmer）', 25, '超级粉丝'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级30（红色，有shimmer）', 30, '真爱粉'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级40（金色，有shimmer）', 40, '守护者'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级50（金色，有shimmer）', 50, '忠实观众'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级120（金色，有shimmer）', 120, '超级粉丝'),
+        () => generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_LV1, '舰长+勋章弹幕', 25, '守护者'),
         () => generateGiftMessage(),
+        () => generateGiftMessage(3, '超级粉丝'),
         () => generateMemberMessage(GUARD_LEVEL_LV1),
+        () => generateMemberMessage(GUARD_LEVEL_LV1, 2, '真爱粉'),
         () => generateMemberMessage(GUARD_LEVEL_LV2),
         () => generateMemberMessage(GUARD_LEVEL_LV3),
         () => generateSuperChatMessage(30),
+        () => generateSuperChatMessage(30, 1, '粉丝团'),
         () => generateSuperChatMessage(100),
         () => generateSuperChatMessage(500)
       ]
@@ -536,6 +626,18 @@
       testScBtn.disabled = false
       testSc100Btn.disabled = false
       testSc500Btn.disabled = false
+      testMedal1Btn.disabled = false
+      testMedal5Btn.disabled = false
+      testMedal10Btn.disabled = false
+      testMedal15Btn.disabled = false
+      testMedal20Btn.disabled = false
+      testMedal24Btn.disabled = false
+      testMedal25Btn.disabled = false
+      testMedal30Btn.disabled = false
+      testMedal40Btn.disabled = false
+      testMedal50Btn.disabled = false
+      testMedal120Btn.disabled = false
+      testMedalMemberBtn.disabled = false
       autoBtn.disabled = false
       sendAllBtn.disabled = false
       clearBtn.disabled = false
@@ -601,6 +703,54 @@
 
     testSc500Btn.addEventListener('click', () => {
       sendMessage(generateSuperChatMessage(500))
+    })
+
+    testMedal1Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级1（浅蓝色）', 1, '粉丝团'))
+    })
+
+    testMedal5Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级5（浅蓝色）', 5, '守护者'))
+    })
+
+    testMedal10Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级10（深蓝色）', 10, '真爱粉'))
+    })
+
+    testMedal15Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级15（粉色）', 15, '忠实观众'))
+    })
+
+    testMedal20Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级20（青色）', 20, '铁粉'))
+    })
+
+    testMedal24Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级24（紫色，无shimmer）', 24, '超级粉丝'))
+    })
+
+    testMedal25Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级25（紫色，有shimmer）', 25, '超级粉丝'))
+    })
+
+    testMedal30Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级30（红色，有shimmer）', 30, '真爱粉'))
+    })
+
+    testMedal40Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级40（金色，有shimmer）', 40, '守护者'))
+    })
+
+    testMedal50Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级50（金色，有shimmer）', 50, '忠实观众'))
+    })
+
+    testMedal120Btn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_NONE, '勋章等级120（金色，有shimmer）', 120, '超级粉丝'))
+    })
+
+    testMedalMemberBtn.addEventListener('click', () => {
+      sendMessage(generateTextMessage(AUTHOR_TYPE_NORMAL, GUARD_LEVEL_LV1, '舰长+房间勋章弹幕', 25, '超级粉丝'))
     })
 
     autoBtn.addEventListener('click', () => {

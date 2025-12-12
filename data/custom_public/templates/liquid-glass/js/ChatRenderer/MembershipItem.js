@@ -33,6 +33,7 @@ function(constants, ImgShadow, AuthorChip) {
           ></img-shadow>
           <author-chip class="style-scope lg-live-chat-membership-item-renderer"
             isInMemberMessage :authorName="authorName" :authorType="0" :privilegeType="privilegeType"
+            :medalLevel="medalLevel" :medalName="medalName"
           ></author-chip>
           <span v-if="title" id="title" class="style-scope lg-live-chat-membership-item-renderer">{{ title }}</span>
           <span id="timestamp" class="style-scope lg-live-chat-membership-item-renderer">{{ timeText }}</span>
@@ -54,7 +55,9 @@ function(constants, ImgShadow, AuthorChip) {
       authorName: String,
       privilegeType: Number,
       title: String,
-      time: Date
+      time: Date,
+      medalLevel: Number,
+      medalName: String
     },
     computed: {
       timeText() {

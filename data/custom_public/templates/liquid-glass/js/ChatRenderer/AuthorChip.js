@@ -20,6 +20,10 @@ function(constants, AuthorBadge) {
       <!-- 这里是已验证勋章 -->
       <span id="chip-badges" class="style-scope lg-live-chat-author-chip"></span>
     </span>
+    <span v-if="medalName && medalLevel > 0" id="medal" class="style-scope lg-live-chat-author-chip" :data-level="medalLevel">
+      <span class="medal-name">{{ medalName }}</span>
+      <span class="medal-level">{{ medalLevel }}</span>
+    </span>
     <span id="chat-badges" class="style-scope lg-live-chat-author-chip">
       <author-badge v-if="isInMemberMessage" class="style-scope lg-live-chat-author-chip"
         :isAdmin="false" :privilegeType="privilegeType"
@@ -43,7 +47,9 @@ function(constants, AuthorBadge) {
       isInMemberMessage: Boolean,
       authorName: String,
       authorType: Number,
-      privilegeType: Number
+      privilegeType: Number,
+      medalLevel: Number,
+      medalName: String
     },
     data() {
       return {

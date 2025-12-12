@@ -31,6 +31,7 @@ function(constants, ImgShadow, AuthorChip) {
           <span id="timestamp" class="style-scope lg-live-chat-text-message-renderer">{{ timeText }}</span>
           <author-chip class="style-scope lg-live-chat-text-message-renderer"
             :isInMemberMessage="false" :authorName="authorName" :authorType="authorType" :privilegeType="privilegeType"
+            :medalLevel="medalLevel" :medalName="medalName"
           ></author-chip>
           <span id="message" class="style-scope lg-live-chat-text-message-renderer">
             <template v-for="(content, index) in contentParts">
@@ -61,6 +62,8 @@ function(constants, ImgShadow, AuthorChip) {
       authorType: Number,
       contentParts: Array,
       privilegeType: Number,
+      medalLevel: Number,
+      medalName: String
     },
     data() {
       return {

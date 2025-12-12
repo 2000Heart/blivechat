@@ -50,6 +50,8 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
                 :authorType="message.authorType"
                 :privilegeType="message.privilegeType"
                 :contentParts="getShowContentParts(message)"
+                :medalLevel="message.medalLevel"
+                :medalName="message.medalName"
               ></text-message>
               <paid-message :key="message.id" v-else-if="message.type === MESSAGE_TYPE_GIFT"
                 class="style-scope lg-live-chat-item-list-renderer"
@@ -59,6 +61,8 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
                 :price="message.price"
                 :priceText="message.price <= 0 ? getGiftShowNameAndNum(message) : ''"
                 :content="message.price <= 0 ? '' : getGiftShowContent(message)"
+                :medalLevel="message.medalLevel"
+                :medalName="message.medalName"
               ></paid-message>
               <membership-item :key="message.id" v-else-if="message.type === MESSAGE_TYPE_MEMBER"
                 class="style-scope lg-live-chat-item-list-renderer"
@@ -67,6 +71,8 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
                 :authorName="getShowAuthorName(message)"
                 :privilegeType="message.privilegeType"
                 :title="message.title"
+                :medalLevel="message.medalLevel"
+                :medalName="message.medalName"
               ></membership-item>
               <paid-message :key="message.id" v-else-if="message.type === MESSAGE_TYPE_SUPER_CHAT"
                 class="style-scope lg-live-chat-item-list-renderer"
@@ -75,6 +81,8 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
                 :authorName="getShowAuthorName(message)"
                 :price="message.price"
                 :content="getShowContent(message)"
+                :medalLevel="message.medalLevel"
+                :medalName="message.medalName"
               ></paid-message>
             </template>
           </div>

@@ -154,6 +154,416 @@ lg-live-chat-paid-message-renderer .liquidGlass-text .paid-header {
   font-size: 13px;
 }
 
+/* 房间勋章样式（在付费消息中） */
+#medal.lg-live-chat-paid-message-renderer {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  margin-right: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  background: linear-gradient(135deg, rgba(200, 200, 200, 0.2), rgba(150, 150, 150, 0.2));
+  border: 1px solid rgba(200, 200, 200, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 25级以后添加shimmer效果 */
+#medal.lg-live-chat-paid-message-renderer[data-level]::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: medalShimmer 3s infinite;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#medal.lg-live-chat-paid-message-renderer .medal-name {
+  color: rgba(100, 149, 237, 0.95);
+  margin-right: 2px;
+}
+
+#medal.lg-live-chat-paid-message-renderer .medal-level {
+  color: rgba(100, 149, 237, 0.95);
+  font-size: 10px;
+  padding: 0 2px;
+  background: rgba(100, 149, 237, 0.15);
+  border-radius: 2px;
+  min-width: 12px;
+  text-align: center;
+}
+
+/* 根据勋章等级调整颜色 - 每5级一个颜色，40级以后颜色不变 */
+/* 1-5级：浅蓝色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="1"],
+#medal.lg-live-chat-paid-message-renderer[data-level="2"],
+#medal.lg-live-chat-paid-message-renderer[data-level="3"],
+#medal.lg-live-chat-paid-message-renderer[data-level="4"],
+#medal.lg-live-chat-paid-message-renderer[data-level="5"] {
+  background: linear-gradient(135deg, rgba(135, 206, 250, 0.2), rgba(100, 149, 237, 0.2));
+  border-color: rgba(135, 206, 250, 0.3);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="1"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="1"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="2"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="2"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="3"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="3"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="4"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="4"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="5"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="5"] .medal-level {
+  color: rgba(100, 149, 237, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="1"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="2"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="3"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="4"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="5"] .medal-level {
+  background: rgba(100, 149, 237, 0.15);
+}
+
+/* 6-10级：深蓝色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="6"],
+#medal.lg-live-chat-paid-message-renderer[data-level="7"],
+#medal.lg-live-chat-paid-message-renderer[data-level="8"],
+#medal.lg-live-chat-paid-message-renderer[data-level="9"],
+#medal.lg-live-chat-paid-message-renderer[data-level="10"] {
+  background: linear-gradient(135deg, rgba(25, 25, 112, 0.25), rgba(0, 0, 139, 0.25));
+  border-color: rgba(25, 25, 112, 0.4);
+  box-shadow: 0 1px 3px rgba(25, 25, 112, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="6"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="6"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="7"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="7"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="8"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="8"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="9"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="9"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="10"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="10"] .medal-level {
+  color: rgba(0, 0, 139, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="6"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="7"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="8"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="9"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="10"] .medal-level {
+  background: rgba(0, 0, 139, 0.2);
+}
+
+/* 11-15级：粉色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="11"],
+#medal.lg-live-chat-paid-message-renderer[data-level="12"],
+#medal.lg-live-chat-paid-message-renderer[data-level="13"],
+#medal.lg-live-chat-paid-message-renderer[data-level="14"],
+#medal.lg-live-chat-paid-message-renderer[data-level="15"] {
+  background: linear-gradient(135deg, rgba(255, 20, 147, 0.25), rgba(255, 105, 180, 0.25));
+  border-color: rgba(255, 20, 147, 0.4);
+  box-shadow: 0 1px 3px rgba(255, 20, 147, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="11"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="11"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="12"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="12"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="13"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="13"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="14"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="14"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="15"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="15"] .medal-level {
+  color: rgba(255, 20, 147, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="11"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="12"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="13"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="14"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="15"] .medal-level {
+  background: rgba(255, 20, 147, 0.2);
+}
+
+/* 16-20级：青色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="16"],
+#medal.lg-live-chat-paid-message-renderer[data-level="17"],
+#medal.lg-live-chat-paid-message-renderer[data-level="18"],
+#medal.lg-live-chat-paid-message-renderer[data-level="19"],
+#medal.lg-live-chat-paid-message-renderer[data-level="20"] {
+  background: linear-gradient(135deg, rgba(0, 191, 255, 0.25), rgba(30, 144, 255, 0.25));
+  border-color: rgba(0, 191, 255, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 191, 255, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="16"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="16"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="17"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="17"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="18"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="18"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="19"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="19"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="20"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="20"] .medal-level {
+  color: rgba(0, 191, 255, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="16"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="17"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="18"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="19"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="20"] .medal-level {
+  background: rgba(0, 191, 255, 0.2);
+}
+
+/* 21-25级：紫色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="21"],
+#medal.lg-live-chat-paid-message-renderer[data-level="22"],
+#medal.lg-live-chat-paid-message-renderer[data-level="23"],
+#medal.lg-live-chat-paid-message-renderer[data-level="24"],
+#medal.lg-live-chat-paid-message-renderer[data-level="25"] {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.25), rgba(148, 0, 211, 0.25));
+  border-color: rgba(138, 43, 226, 0.4);
+  box-shadow: 0 1px 3px rgba(138, 43, 226, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="21"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="21"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="22"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="22"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="23"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="23"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="24"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="24"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="25"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="25"] .medal-level {
+  color: rgba(138, 43, 226, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="21"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="22"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="23"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="24"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="25"] .medal-level {
+  background: rgba(138, 43, 226, 0.2);
+}
+
+/* 26-30级：红色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="26"],
+#medal.lg-live-chat-paid-message-renderer[data-level="27"],
+#medal.lg-live-chat-paid-message-renderer[data-level="28"],
+#medal.lg-live-chat-paid-message-renderer[data-level="29"],
+#medal.lg-live-chat-paid-message-renderer[data-level="30"] {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.25), rgba(255, 0, 0, 0.25));
+  border-color: rgba(220, 20, 60, 0.4);
+  box-shadow: 0 1px 3px rgba(220, 20, 60, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="26"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="26"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="27"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="27"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="28"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="28"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="29"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="29"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="30"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="30"] .medal-level {
+  color: rgba(220, 20, 60, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="26"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="27"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="28"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="29"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="30"] .medal-level {
+  background: rgba(220, 20, 60, 0.2);
+}
+
+/* 31-35级：橙色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="31"],
+#medal.lg-live-chat-paid-message-renderer[data-level="32"],
+#medal.lg-live-chat-paid-message-renderer[data-level="33"],
+#medal.lg-live-chat-paid-message-renderer[data-level="34"],
+#medal.lg-live-chat-paid-message-renderer[data-level="35"] {
+  background: linear-gradient(135deg, rgba(255, 69, 0, 0.25), rgba(255, 140, 0, 0.25));
+  border-color: rgba(255, 69, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(255, 69, 0, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="31"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="31"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="32"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="32"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="33"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="33"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="34"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="34"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="35"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="35"] .medal-level {
+  color: rgba(255, 69, 0, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="31"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="32"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="33"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="34"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="35"] .medal-level {
+  background: rgba(255, 69, 0, 0.2);
+}
+
+/* 36-40级：金色 */
+#medal.lg-live-chat-paid-message-renderer[data-level="36"],
+#medal.lg-live-chat-paid-message-renderer[data-level="37"],
+#medal.lg-live-chat-paid-message-renderer[data-level="38"],
+#medal.lg-live-chat-paid-message-renderer[data-level="39"],
+#medal.lg-live-chat-paid-message-renderer[data-level="40"] {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 140, 0, 0.25));
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(255, 215, 0, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="36"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="36"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="37"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="37"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="38"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="38"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="39"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="39"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="40"] .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level="40"] .medal-level {
+  color: rgba(255, 140, 0, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level="36"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="37"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="38"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="39"] .medal-level,
+#medal.lg-live-chat-paid-message-renderer[data-level="40"] .medal-level {
+  background: rgba(255, 140, 0, 0.2);
+}
+
+/* 41-120级：使用40级的颜色（金色） */
+#medal.lg-live-chat-paid-message-renderer[data-level]:not([data-level="1"]):not([data-level="2"]):not([data-level="3"]):not([data-level="4"]):not([data-level="5"]):not([data-level="6"]):not([data-level="7"]):not([data-level="8"]):not([data-level="9"]):not([data-level="10"]):not([data-level="11"]):not([data-level="12"]):not([data-level="13"]):not([data-level="14"]):not([data-level="15"]):not([data-level="16"]):not([data-level="17"]):not([data-level="18"]):not([data-level="19"]):not([data-level="20"]):not([data-level="21"]):not([data-level="22"]):not([data-level="23"]):not([data-level="24"]):not([data-level="25"]):not([data-level="26"]):not([data-level="27"]):not([data-level="28"]):not([data-level="29"]):not([data-level="30"]):not([data-level="31"]):not([data-level="32"]):not([data-level="33"]):not([data-level="34"]):not([data-level="35"]):not([data-level="36"]):not([data-level="37"]):not([data-level="38"]):not([data-level="39"]):not([data-level="40"]) {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 140, 0, 0.25));
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(255, 215, 0, 0.2);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level]:not([data-level="1"]):not([data-level="2"]):not([data-level="3"]):not([data-level="4"]):not([data-level="5"]):not([data-level="6"]):not([data-level="7"]):not([data-level="8"]):not([data-level="9"]):not([data-level="10"]):not([data-level="11"]):not([data-level="12"]):not([data-level="13"]):not([data-level="14"]):not([data-level="15"]):not([data-level="16"]):not([data-level="17"]):not([data-level="18"]):not([data-level="19"]):not([data-level="20"]):not([data-level="21"]):not([data-level="22"]):not([data-level="23"]):not([data-level="24"]):not([data-level="25"]):not([data-level="26"]):not([data-level="27"]):not([data-level="28"]):not([data-level="29"]):not([data-level="30"]):not([data-level="31"]):not([data-level="32"]):not([data-level="33"]):not([data-level="34"]):not([data-level="35"]):not([data-level="36"]):not([data-level="37"]):not([data-level="38"]):not([data-level="39"]):not([data-level="40"]) .medal-name,
+#medal.lg-live-chat-paid-message-renderer[data-level]:not([data-level="1"]):not([data-level="2"]):not([data-level="3"]):not([data-level="4"]):not([data-level="5"]):not([data-level="6"]):not([data-level="7"]):not([data-level="8"]):not([data-level="9"]):not([data-level="10"]):not([data-level="11"]):not([data-level="12"]):not([data-level="13"]):not([data-level="14"]):not([data-level="15"]):not([data-level="16"]):not([data-level="17"]):not([data-level="18"]):not([data-level="19"]):not([data-level="20"]):not([data-level="21"]):not([data-level="22"]):not([data-level="23"]):not([data-level="24"]):not([data-level="25"]):not([data-level="26"]):not([data-level="27"]):not([data-level="28"]):not([data-level="29"]):not([data-level="30"]):not([data-level="31"]):not([data-level="32"]):not([data-level="33"]):not([data-level="34"]):not([data-level="35"]):not([data-level="36"]):not([data-level="37"]):not([data-level="38"]):not([data-level="39"]):not([data-level="40"]) .medal-level {
+  color: rgba(255, 140, 0, 0.95);
+}
+#medal.lg-live-chat-paid-message-renderer[data-level]:not([data-level="1"]):not([data-level="2"]):not([data-level="3"]):not([data-level="4"]):not([data-level="5"]):not([data-level="6"]):not([data-level="7"]):not([data-level="8"]):not([data-level="9"]):not([data-level="10"]):not([data-level="11"]):not([data-level="12"]):not([data-level="13"]):not([data-level="14"]):not([data-level="15"]):not([data-level="16"]):not([data-level="17"]):not([data-level="18"]):not([data-level="19"]):not([data-level="20"]):not([data-level="21"]):not([data-level="22"]):not([data-level="23"]):not([data-level="24"]):not([data-level="25"]):not([data-level="26"]):not([data-level="27"]):not([data-level="28"]):not([data-level="29"]):not([data-level="30"]):not([data-level="31"]):not([data-level="32"]):not([data-level="33"]):not([data-level="34"]):not([data-level="35"]):not([data-level="36"]):not([data-level="37"]):not([data-level="38"]):not([data-level="39"]):not([data-level="40"]) .medal-level {
+  background: rgba(255, 140, 0, 0.2);
+}
+
+/* 25级以后显示shimmer效果 */
+#medal.lg-live-chat-paid-message-renderer[data-level="25"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="26"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="27"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="28"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="29"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="30"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="31"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="32"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="33"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="34"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="35"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="36"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="37"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="38"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="39"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="40"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="41"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="42"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="43"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="44"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="45"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="46"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="47"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="48"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="49"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="50"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="51"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="52"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="53"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="54"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="55"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="56"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="57"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="58"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="59"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="60"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="61"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="62"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="63"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="64"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="65"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="66"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="67"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="68"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="69"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="70"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="71"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="72"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="73"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="74"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="75"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="76"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="77"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="78"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="79"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="80"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="81"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="82"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="83"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="84"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="85"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="86"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="87"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="88"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="89"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="90"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="91"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="92"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="93"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="94"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="95"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="96"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="97"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="98"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="99"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="100"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="101"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="102"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="103"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="104"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="105"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="106"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="107"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="108"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="109"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="110"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="111"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="112"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="113"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="114"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="115"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="116"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="117"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="118"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="119"]::before,
+#medal.lg-live-chat-paid-message-renderer[data-level="120"]::before {
+  opacity: 1;
+}
+
+@keyframes medalShimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
 #purchase-amount.lg-live-chat-paid-message-renderer {
   font-weight: 700;
   font-size: 13px;
