@@ -1,0 +1,131 @@
+# -*- mode: python ; coding: utf-8 -*-
+import os
+import shutil
+import subprocess
+import sys
+
+from PyInstaller.building.api import COLLECT, EXE, PYZ
+from PyInstaller.building.build_main import Analysis
+
+# 获取 spec 文件所在目录
+try:
+    SPECPATH = os.path.dirname(os.path.abspath(SPEC))
+except NameError:
+    # 如果 SPEC 未定义，使用当前文件路径
+    SPECPATH = os.path.dirname(os.path.abspath(__file__))
+DISTPATH = os.path.join(SPECPATH, 'dist')
+
+
+# exe文件名、打包目录名
+NAME = 'data-analytics'
+# 模块搜索路径
+PYTHONPATH = [
+    os.path.join(SPECPATH, '..', '..'),  # 为了找到blcsdk
+]
+# 数据
+DATAS = [
+    ('plugin.json', '.'),
+    ('log/.gitkeep', 'log'),
+    ('data/.gitkeep', 'data'),
+]
+
+block_cipher = None
+
+
+a = Analysis(
+    ['main.py'],
+    pathex=PYTHONPATH,
+    binaries=[],
+    datas=DATAS,
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(
+    a.pure,
+    a.zipped_data,
+    cipher=block_cipher,
+)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name=NAME,
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name=NAME,
+)
+
+# 打包
+print('Start to package')
+target_dir = os.path.join(DISTPATH, NAME)
+if os.path.exists(target_dir):
+    # 将数据文件从 _internal 目录复制到根目录
+    internal_dir = os.path.join(target_dir, '_internal')
+    if os.path.exists(internal_dir):
+        # 复制 plugin.json
+        plugin_json_src = os.path.join(internal_dir, 'plugin.json')
+        plugin_json_dst = os.path.join(target_dir, 'plugin.json')
+        if os.path.exists(plugin_json_src):
+            shutil.copy2(plugin_json_src, plugin_json_dst)
+            print(f'Copied plugin.json to root')
+        
+        # 复制 log 目录
+        log_src = os.path.join(internal_dir, 'log')
+        log_dst = os.path.join(target_dir, 'log')
+        if os.path.exists(log_src) and not os.path.exists(log_dst):
+            shutil.copytree(log_src, log_dst)
+            print(f'Copied log directory to root')
+        
+        # 复制 data 目录
+        data_src = os.path.join(internal_dir, 'data')
+        data_dst = os.path.join(target_dir, 'data')
+        if os.path.exists(data_src) and not os.path.exists(data_dst):
+            shutil.copytree(data_src, data_dst)
+            print(f'Copied data directory to root')
+    
+    # 如果数据文件不在 _internal 中，从源目录复制
+    for src, dst in DATAS:
+        src_path = os.path.join(SPECPATH, src)
+        dst_path = os.path.join(target_dir, dst)
+        if os.path.exists(src_path) and not os.path.exists(dst_path):
+            if os.path.isdir(src_path):
+                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                shutil.copytree(src_path, dst_path)
+            else:
+                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                shutil.copy2(src_path, dst_path)
+            print(f'Copied {src} to {dst}')
+    
+    # 创建压缩包
+    shutil.make_archive(os.path.join(DISTPATH, NAME), 'zip', target_dir)
+    print(f'Package created: {os.path.join(DISTPATH, NAME + ".zip")}')
+else:
+    print(f'Error: {target_dir} not found')
