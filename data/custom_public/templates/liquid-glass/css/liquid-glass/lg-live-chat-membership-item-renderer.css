@@ -14,73 +14,13 @@ lg-live-chat-membership-item-renderer[hidden] {
   display: none !important;
 }
 
-/* Liquid Glass Wrapper for Membership Item */
-lg-live-chat-membership-item-renderer .liquidGlass-wrapper {
-  position: relative;
-  display: inline-flex;
-  font-weight: 600;
-  overflow: hidden;
-  color: black;
-  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
-  border-radius: 1.2rem;
-  margin: 4px 8px 4px 8px;
-  padding: 0.4rem 0.8rem;
-  min-height: 40px;
-  width: fit-content;
-  max-width: 100%;
-}
-
-lg-live-chat-membership-item-renderer .liquidGlass-wrapper::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: membershipShimmer 2s infinite;
-  pointer-events: none;
-  z-index: 5;
-}
-
-lg-live-chat-membership-item-renderer .liquidGlass-effect {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  filter: url(#glass-distortion);
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: 1.2rem;
-}
-
-lg-live-chat-membership-item-renderer .liquidGlass-tint {
-  z-index: 1;
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 1.2rem;
-}
-
-lg-live-chat-membership-item-renderer .liquidGlass-shine {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  overflow: hidden;
-  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
-    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5);
-  border-radius: 1.2rem;
-}
-
-lg-live-chat-membership-item-renderer .liquidGlass-text {
-  z-index: 3;
-  position: relative;
+/* LiquidGlass 组件样式 - 旧的液态玻璃效果已移除，现在使用新的 LiquidGlass 组件 */
+lg-live-chat-membership-item-renderer .glass {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: auto;
+  width: 100%;
+  min-height: 40px;
   padding-left: 10px;
 }
 

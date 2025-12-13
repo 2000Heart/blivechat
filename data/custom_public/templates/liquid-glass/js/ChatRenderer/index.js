@@ -34,7 +34,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
   exports.default = {
     template: `
   <lg-live-chat-renderer class="style-scope lg-live-chat-app" style="--scrollbar-width:11px;" hide-timestamps>
-    <ticker class="style-scope lg-live-chat-renderer" :messages.sync="paidMessages" :showGiftName="showGiftName"></ticker>
+    <ticker class="style-scope lg-live-chat-renderer" v-model:messages="paidMessages" :showGiftName="showGiftName"></ticker>
     <lg-live-chat-item-list-renderer class="style-scope lg-live-chat-renderer" allow-scroll>
       <div ref="scroller" id="item-scroller" class="style-scope lg-live-chat-item-list-renderer animated">
         <div ref="itemOffset" id="item-offset" class="style-scope lg-live-chat-item-list-renderer">
@@ -127,7 +127,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
     mounted() {
       this.scrollToBottom()
     },
-    beforeDestroy() {
+    beforeUnmount() {
       this.clearMessages()
     },
     methods: {

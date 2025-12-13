@@ -1,52 +1,16 @@
 /* 自定义样式可以在这里添加 */
 
-/* 全局液态玻璃样式 - 确保样式能够应用 */
-.liquidGlass-wrapper {
-  position: relative !important;
-  font-weight: 600;
-  overflow: hidden;
-  color: black;
-  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1) !important;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 2.2);
-  border-radius: 1.2rem;
-  margin: 4px 8px;
-  padding: 0.4rem 0.8rem;
+/* LiquidGlass 组件样式调整 */
+.liquid-glass-container {
+  position: relative;
+  width: 100%;
 }
 
-.liquidGlass-effect {
-  position: absolute !important;
-  z-index: 0;
-  inset: 0;
-  backdrop-filter: blur(3px) !important;
-  -webkit-backdrop-filter: blur(3px) !important;
-  filter: url(#glass-distortion) !important;
-  overflow: hidden;
-  isolation: isolate;
-  border-radius: inherit;
+/* 确保内容在 LiquidGlass 组件中正确显示 */
+.glass {
+  width: 100%;
 }
 
-.liquidGlass-tint {
-  z-index: 1;
-  position: absolute !important;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.25) !important;
-  border-radius: inherit;
-}
-
-.liquidGlass-shine {
-  position: absolute !important;
-  inset: 0;
-  z-index: 2;
-  overflow: hidden;
-  box-shadow: inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5),
-    inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5) !important;
-  border-radius: inherit;
-}
-
-.liquidGlass-text {
-  z-index: 3;
-  position: relative !important;
-  display: flex;
-  width: auto;
-  align-items: center;
+.glass__warp {
+  pointer-events: none;
 }

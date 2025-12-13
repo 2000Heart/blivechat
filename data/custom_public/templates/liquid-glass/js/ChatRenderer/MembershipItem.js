@@ -3,17 +3,20 @@
     root.chatRendererConstants,
     root.chatRendererImgShadow.default,
     root.chatRendererAuthorChip.default,
+    root.liquidGlassLiquidGlass.default,
   )
 }(this,
 /**
  * @import * as constants from './constants'
  * @import * as ImgShadow from './ImgShadow'
  * @import * as AuthorChip from './AuthorChip'
+ * @import LiquidGlass from './liquid-glass/LiquidGlass'
  * @param {typeof constants} constants
  * @param {typeof ImgShadow.default} ImgShadow
  * @param {typeof AuthorChip.default} AuthorChip
+ * @param {typeof LiquidGlass.default} LiquidGlass
  */
-function(constants, ImgShadow, AuthorChip) {
+function(constants, ImgShadow, AuthorChip, LiquidGlass) {
   const exports = {}
 
   exports.default = {
@@ -21,34 +24,39 @@ function(constants, ImgShadow, AuthorChip) {
   <lg-live-chat-membership-item-renderer class="style-scope lg-live-chat-item-list-renderer"
     :blc-guard-level="privilegeType"
   >
-    <div class="liquidGlass-wrapper">
-      <div class="liquidGlass-effect"></div>
-      <div class="liquidGlass-tint"></div>
-      <div class="liquidGlass-shine"></div>
-      <div class="liquidGlass-text">
-        <div class="member-decoration"></div>
-        <div class="member-header">
-          <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-membership-item-renderer"
-            :imgUrl="avatarUrl"
-          ></img-shadow>
-          <author-chip class="style-scope lg-live-chat-membership-item-renderer"
-            isInMemberMessage :authorName="authorName" :authorType="0" :privilegeType="privilegeType"
-            :medalLevel="medalLevel" :medalName="medalName"
-          ></author-chip>
-          <span v-if="title" id="title" class="style-scope lg-live-chat-membership-item-renderer">{{ title }}</span>
-          <span id="timestamp" class="style-scope lg-live-chat-membership-item-renderer">{{ timeText }}</span>
-        </div>
-        <div class="member-message">
-          <span class="membership-text">{{ membershipText }}</span>
-        </div>
+    <LiquidGlass
+      :displacementScale="50"
+      :blurAmount="0.05"
+      :saturation="160"
+      :aberrationIntensity="1.5"
+      :cornerRadius="12"
+      :padding="'12px 16px'"
+      :mode="'standard'"
+      style="position: relative; width: 100%;"
+    >
+      <div class="member-decoration"></div>
+      <div class="member-header">
+        <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-membership-item-renderer"
+          :imgUrl="avatarUrl"
+        ></img-shadow>
+        <author-chip class="style-scope lg-live-chat-membership-item-renderer"
+          isInMemberMessage :authorName="authorName" :authorType="0" :privilegeType="privilegeType"
+          :medalLevel="medalLevel" :medalName="medalName"
+        ></author-chip>
+        <span v-if="title" id="title" class="style-scope lg-live-chat-membership-item-renderer">{{ title }}</span>
+        <span id="timestamp" class="style-scope lg-live-chat-membership-item-renderer">{{ timeText }}</span>
       </div>
-    </div>
+      <div class="member-message">
+        <span class="membership-text">{{ membershipText }}</span>
+      </div>
+    </LiquidGlass>
   </lg-live-chat-membership-item-renderer>
     `,
     name: 'MembershipItem',
     components: {
       ImgShadow,
-      AuthorChip
+      AuthorChip,
+      LiquidGlass
     },
     props: {
       avatarUrl: String,

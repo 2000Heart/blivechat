@@ -1,16 +1,20 @@
 (function(root, factory) {
-  factory(root.blcsdk, root.chatRendererConstants, root.chatRenderer.default)
+  factory(root.Vue, root.blcsdk, root.chatRendererConstants, root.chatRenderer.default)
 }(this,
 /**
+ * @import Vue from './vendor/vue.global.prod'
  * @import * as blcsdk from './vendor/blcsdk'
  * @import * as constants from './ChatRenderer/constants'
  * @import * as ChatRenderer from './ChatRenderer'
+ * @param {typeof Vue} Vue
  * @param {typeof blcsdk} blcsdk
  * @param {typeof constants} constants
  * @param {typeof ChatRenderer.default} ChatRenderer
  */
-function(blcsdk, constants, ChatRenderer) {
-  new Vue({
+function(Vue, blcsdk, constants, ChatRenderer) {
+  const { createApp } = Vue
+  
+  const app = createApp({
     components: {
       ChatRenderer,
     },
@@ -53,5 +57,7 @@ function(blcsdk, constants, ChatRenderer) {
         this.$refs.renderer.handleMessageGroup([message])
       },
     }
-  }).$mount('#app')
+  })
+  
+  app.mount('#app')
 }))

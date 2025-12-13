@@ -2,15 +2,18 @@
   root.chatRendererTicker = factory(
     root.chatRendererConstants,
     root.chatRendererImgShadow.default,
+    root.liquidGlassLiquidGlass.default,
   )
 }(this,
 /**
  * @import * as constants from './constants'
  * @import * as ImgShadow from './ImgShadow'
+ * @import LiquidGlass from './liquid-glass/LiquidGlass'
  * @param {typeof constants} constants
  * @param {typeof ImgShadow.default} ImgShadow
+ * @param {typeof LiquidGlass.default} LiquidGlass
  */
-function(constants, ImgShadow) {
+function(constants, ImgShadow, LiquidGlass) {
   const exports = {}
 
   exports.default = {
@@ -22,29 +25,34 @@ function(constants, ImgShadow) {
       <lg-live-chat-ticker-paid-message-item-renderer v-for="message in showMessages" :key="message.raw.id"
         tabindex="0" class="style-scope lg-live-chat-ticker-renderer" style="overflow: hidden;"
       >
-        <div class="liquidGlass-wrapper">
-          <div class="liquidGlass-effect"></div>
-          <div class="liquidGlass-tint"></div>
-          <div class="liquidGlass-shine"></div>
-          <div class="liquidGlass-text">
-            <div class="ticker-decoration" :style="{
-              background: message.decorationGradient
-            }"></div>
-            <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-ticker-paid-message-item-renderer"
-              :imgUrl="message.raw.avatarUrl"
-            ></img-shadow>
-            <span id="text" dir="ltr" class="style-scope lg-live-chat-ticker-paid-message-item-renderer" :style="{
-              color: message.color
-            }">{{ message.text }}</span>
-          </div>
-        </div>
+        <LiquidGlass
+          :displacementScale="55"
+          :blurAmount="0.06"
+          :saturation="170"
+          :aberrationIntensity="1.8"
+          :cornerRadius="10"
+          :padding="'10px 16px'"
+          :mode="'standard'"
+          style="position: relative; width: 100%;"
+        >
+          <div class="ticker-decoration" :style="{
+            background: message.decorationGradient
+          }"></div>
+          <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-ticker-paid-message-item-renderer"
+            :imgUrl="message.raw.avatarUrl"
+          ></img-shadow>
+          <span id="text" dir="ltr" class="style-scope lg-live-chat-ticker-paid-message-item-renderer" :style="{
+            color: message.color
+          }">{{ message.text }}</span>
+        </LiquidGlass>
       </lg-live-chat-ticker-paid-message-item-renderer>
     </transition-group>
   </lg-live-chat-ticker-renderer>
     `,
     name: 'Ticker',
     components: {
-      ImgShadow
+      ImgShadow,
+      LiquidGlass
     },
     props: {
       messages: Array,
@@ -75,7 +83,7 @@ function(constants, ImgShadow) {
         return res
       },
     },
-    beforeDestroy() {
+    beforeUnmount() {
       window.clearInterval(this.updateTimerId)
     },
     methods: {
