@@ -18,10 +18,11 @@ lg-live-chat-membership-item-renderer[hidden] {
 lg-live-chat-membership-item-renderer .glass {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   padding-left: 10px;
+  font-size: 13px;
 }
 
 lg-live-chat-membership-item-renderer .member-header {
@@ -29,6 +30,7 @@ lg-live-chat-membership-item-renderer .member-header {
   align-items: center;
   gap: 8px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 lg-live-chat-membership-item-renderer .member-message {
@@ -39,26 +41,72 @@ lg-live-chat-membership-item-renderer .member-message {
 }
 
 lg-live-chat-membership-item-renderer .membership-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(0, 0, 0, 0.7);
-  font-style: italic;
-  position: relative;
-  padding: 2px 0;
+  font-size: inherit;
+  font-weight: 400;
+  color: #ffffff;
+  line-height: 1.5;
+  overflow: visible;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  /* 增强文字可读性：添加文字阴影和描边效果 */
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 4px rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.01em;
+  width: 100%;
+  display: inline-block;
 }
 
-/* 根据舰长等级调整开通文案颜色 */
-/* level 1 = 总督(紫色), level 2 = 提督(蓝色), level 3 = 舰长(绿色) */
+/* 根据舰长等级调整开通文案颜色和特殊效果 */
+/* level 1 = 总督(金色), level 2 = 提督(红色), level 3 = 舰长(蓝色) */
 lg-live-chat-membership-item-renderer[blc-guard-level="1"] .membership-text {
-  color: rgba(156, 39, 176, 0.9);
+  color: rgba(255, 215, 0, 1);
+  text-shadow: 
+    0 0 4px rgba(255, 215, 0, 0.8),
+    0 0 8px rgba(255, 215, 0, 0.5),
+    0 0 12px rgba(255, 215, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  animation: textGlow 2s ease-in-out infinite;
 }
 
 lg-live-chat-membership-item-renderer[blc-guard-level="2"] .membership-text {
-  color: rgba(33, 150, 243, 0.9);
+  color: rgba(220, 20, 60, 1);
+  text-shadow: 
+    0 0 4px rgba(220, 20, 60, 0.8),
+    0 0 8px rgba(220, 20, 60, 0.5),
+    0 0 12px rgba(220, 20, 60, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  animation: textGlow 2s ease-in-out infinite;
 }
 
 lg-live-chat-membership-item-renderer[blc-guard-level="3"] .membership-text {
-  color: rgba(15, 157, 88, 0.9);
+  color: rgba(33, 150, 243, 1);
+  text-shadow: 
+    0 0 4px rgba(33, 150, 243, 0.8),
+    0 0 8px rgba(33, 150, 243, 0.5),
+    0 0 12px rgba(33, 150, 243, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  animation: textGlow 2s ease-in-out infinite;
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 
+      0 0 4px currentColor,
+      0 0 8px currentColor,
+      0 0 12px currentColor,
+      0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    text-shadow: 
+      0 0 6px currentColor,
+      0 0 12px currentColor,
+      0 0 18px currentColor,
+      0 1px 2px rgba(0, 0, 0, 0.3);
+  }
 }
 
 @keyframes membershipShimmer {
@@ -70,30 +118,7 @@ lg-live-chat-membership-item-renderer[blc-guard-level="3"] .membership-text {
   }
 }
 
-/* 左侧渐变装饰条 */
-lg-live-chat-membership-item-renderer .member-decoration {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  z-index: 4;
-  border-radius: 1.2rem 0 0 1.2rem;
-  background: linear-gradient(180deg, rgba(15, 157, 88, 0.8), rgba(33, 150, 243, 0.8));
-  box-shadow: 0 0 8px rgba(15, 157, 88, 0.4);
-  animation: memberGlow 2s ease-in-out infinite;
-}
-
-@keyframes memberGlow {
-  0%, 100% {
-    opacity: 0.8;
-    box-shadow: 0 0 8px currentColor;
-  }
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 12px currentColor;
-  }
-}
+/* 装饰条已移除，使用其他视觉元素区分等级 */
 
 #author-photo.lg-live-chat-membership-item-renderer {
   display: block;
@@ -102,6 +127,11 @@ lg-live-chat-membership-item-renderer .member-decoration {
   -ms-flex: none;
   -webkit-flex: none;
   flex: none;
+  /* 为头像添加边框和阴影，增强视觉层次 */
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 #title.lg-live-chat-membership-item-renderer {
@@ -109,12 +139,16 @@ lg-live-chat-membership-item-renderer .member-decoration {
   font-weight: 700;
   padding: 3px 8px;
   border-radius: 6px;
-  background: linear-gradient(135deg, rgba(15, 157, 88, 0.25), rgba(33, 150, 243, 0.25));
-  border: 1.5px solid rgba(15, 157, 88, 0.4);
-  box-shadow: 0 2px 4px rgba(15, 157, 88, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.3), rgba(20, 100, 200, 0.3));
+  border: 1.5px solid rgba(33, 150, 243, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(33, 150, 243, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 10px rgba(33, 150, 243, 0.25);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  animation: titleGlow 2s ease-in-out infinite;
 }
 
 #title.lg-live-chat-membership-item-renderer::before {
@@ -136,58 +170,105 @@ lg-live-chat-membership-item-renderer .member-decoration {
   -ms-flex: none;
   -webkit-flex: none;
   flex: none;
+  opacity: 0.7;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
-/* 根据舰长等级调整装饰条和标题颜色 */
-/* level 1 = 总督(紫色), level 2 = 提督(蓝色), level 3 = 舰长(绿色) */
-lg-live-chat-membership-item-renderer[blc-guard-level="1"] .member-decoration {
-  background: linear-gradient(180deg, rgba(156, 39, 176, 0.8), rgba(120, 20, 140, 0.8));
-  box-shadow: 0 0 10px rgba(156, 39, 176, 0.5);
-}
-
+/* 根据舰长等级调整标题、头像和用户名颜色，提供情绪价值 */
+/* level 1 = 总督(金色), level 2 = 提督(红色), level 3 = 舰长(蓝色) */
 lg-live-chat-membership-item-renderer[blc-guard-level="1"] #title {
-  color: rgba(156, 39, 176, 0.95);
-  background: linear-gradient(135deg, rgba(156, 39, 176, 0.25), rgba(120, 20, 140, 0.25));
-  border-color: rgba(156, 39, 176, 0.4);
-  box-shadow: 0 2px 6px rgba(156, 39, 176, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: rgba(255, 215, 0, 0.95);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 200, 0, 0.3));
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 
+    0 2px 8px rgba(255, 215, 0, 0.4), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 12px rgba(255, 215, 0, 0.3);
+  animation: titleGlow 2s ease-in-out infinite;
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="1"] #author-photo {
+  border-color: rgba(255, 215, 0, 0.6);
+  box-shadow: 
+    0 2px 6px rgba(255, 215, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 10px rgba(255, 215, 0, 0.2);
 }
 
 lg-live-chat-membership-item-renderer[blc-guard-level="1"] #author-name.lg-live-chat-author-chip {
-  color: rgba(156, 39, 176, 0.9);
+  color: rgba(255, 215, 0, 1);
+  text-shadow: 
+    0 0 4px rgba(255, 215, 0, 0.6),
+    0 0 8px rgba(255, 215, 0, 0.3);
 }
 
-
-lg-live-chat-membership-item-renderer[blc-guard-level="2"] .member-decoration {
-  background: linear-gradient(180deg, rgba(33, 150, 243, 0.8), rgba(20, 100, 200, 0.8));
-  box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
-}
 
 lg-live-chat-membership-item-renderer[blc-guard-level="2"] #title {
-  color: rgba(33, 150, 243, 0.95);
-  background: linear-gradient(135deg, rgba(33, 150, 243, 0.25), rgba(20, 100, 200, 0.25));
-  border-color: rgba(33, 150, 243, 0.4);
-  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: rgba(220, 20, 60, 0.95);
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.3), rgba(200, 0, 50, 0.3));
+  border-color: rgba(220, 20, 60, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(220, 20, 60, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 10px rgba(220, 20, 60, 0.25);
+  animation: titleGlow 2s ease-in-out infinite;
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="2"] #author-photo {
+  border-color: rgba(220, 20, 60, 0.6);
+  box-shadow: 
+    0 2px 6px rgba(220, 20, 60, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 10px rgba(220, 20, 60, 0.2);
 }
 
 lg-live-chat-membership-item-renderer[blc-guard-level="2"] #author-name.lg-live-chat-author-chip {
-  color: rgba(33, 150, 243, 0.9);
+  color: rgba(220, 20, 60, 1);
+  text-shadow: 
+    0 0 4px rgba(220, 20, 60, 0.6),
+    0 0 8px rgba(220, 20, 60, 0.3);
 }
 
-
-lg-live-chat-membership-item-renderer[blc-guard-level="3"] .member-decoration {
-  background: linear-gradient(180deg, rgba(15, 157, 88, 0.8), rgba(10, 120, 70, 0.8));
-  box-shadow: 0 0 8px rgba(15, 157, 88, 0.4);
-}
 
 lg-live-chat-membership-item-renderer[blc-guard-level="3"] #title {
-  color: rgba(15, 157, 88, 0.95);
-  background: linear-gradient(135deg, rgba(15, 157, 88, 0.25), rgba(10, 120, 70, 0.25));
-  border-color: rgba(15, 157, 88, 0.4);
-  box-shadow: 0 2px 4px rgba(15, 157, 88, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: rgba(33, 150, 243, 0.95);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.3), rgba(20, 100, 200, 0.3));
+  border-color: rgba(33, 150, 243, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(33, 150, 243, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 10px rgba(33, 150, 243, 0.25);
+  animation: titleGlow 2s ease-in-out infinite;
+}
+
+lg-live-chat-membership-item-renderer[blc-guard-level="3"] #author-photo {
+  border-color: rgba(33, 150, 243, 0.6);
+  box-shadow: 
+    0 2px 6px rgba(33, 150, 243, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 10px rgba(33, 150, 243, 0.2);
 }
 
 lg-live-chat-membership-item-renderer[blc-guard-level="3"] #author-name.lg-live-chat-author-chip {
-  color: rgba(15, 157, 88, 0.9);
+  color: rgba(33, 150, 243, 1);
+  text-shadow: 
+    0 0 4px rgba(33, 150, 243, 0.6),
+    0 0 8px rgba(33, 150, 243, 0.3);
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    box-shadow: 
+      0 2px 6px currentColor, 
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 0 10px currentColor;
+  }
+  50% {
+    box-shadow: 
+      0 2px 8px currentColor, 
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 0 14px currentColor;
+  }
 }
 
 

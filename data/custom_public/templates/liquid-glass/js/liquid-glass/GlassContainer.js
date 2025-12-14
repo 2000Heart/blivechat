@@ -107,10 +107,10 @@ function(Vue, GlassFilterModule, ShaderDisplacementGenerator, utils, GlassMode) 
         }
       }, { immediate: true })
 
+      // 关闭 backdrop-filter：在 OBS 透明弹幕页中无法模糊到直播画面（不在 DOM 背景里），且会增加不确定性/开销。
       const backdropStyle = computed(() => {
         return {
           filter: isFirefox ? undefined : `url(#${filterId})`,
-          backdropFilter: `blur(${(props.overLight ? 12 : 4) + props.blurAmount * 32}px) saturate(${props.saturation}%)`,
         }
       })
 
@@ -132,6 +132,7 @@ function(Vue, GlassFilterModule, ShaderDisplacementGenerator, utils, GlassMode) 
           position: 'relative',
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: 'flex-start',
           gap: '24px',
           padding: padding,
           overflow: 'hidden',
@@ -142,13 +143,15 @@ function(Vue, GlassFilterModule, ShaderDisplacementGenerator, utils, GlassMode) 
             ...backdropStyle,
             position: 'absolute',
             inset: '0',
+            borderRadius: \`\${cornerRadius}px\`,
           }"></span>
 
           <div class="transition-all duration-150 ease-in-out text-white" :style="{
             position: 'relative',
             zIndex: 1,
             font: '500 20px/1 system-ui',
-            textShadow: overLight ? '0px 2px 12px rgba(0, 0, 0, 0)' : '0px 2px 12px rgba(0, 0, 0, 0.4)',
+            // 无模糊时用更强的阴影确保各种背景可读
+            textShadow: overLight ? '0px 2px 10px rgba(0, 0, 0, 0.25)' : '0px 2px 12px rgba(0, 0, 0, 0.55)',
           }">
             <slot />
           </div>

@@ -76,13 +76,20 @@ function(Vue, utils, GlassMode) {
             <feImage id="feimage" x="0" y="0" width="100%" height="100%" result="DISPLACEMENT_MAP"
               :href="getMap(mode, shaderMapUrl)" preserveAspectRatio="xMidYMid slice" />
 
-            <feColorMatrix in="DISPLACEMENT_MAP" type="matrix" values="0.3 0.3 0.3 0 0
-              0.3 0.3 0.3 0 0
-              0.3 0.3 0.3 0 0
-              0 0 0 1 0" result="EDGE_INTENSITY" />
-            <feComponentTransfer in="EDGE_INTENSITY" result="EDGE_MASK">
-              <feFuncA type="discrete" :tableValues="\`0 \${aberrationIntensity * 0.05} 1\`" />
-            </feComponentTransfer>
+            <!--
+              关键修复点：
+              你的玻璃材质本身是“半透明渐变”，直接用 SourceAlpha 做边缘环会把渐变的 alpha 变化也当成“边缘”，
+              于是内部会出现一块更深的“模糊/脏影”，甚至看起来像“整块都糊”。
+              这里先把 SourceGraphic 的 A 通道强制设为 1（仅保留形状，忽略渐变 alpha），再做 erode/out 得到纯边缘环。
+            -->
+            <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0
+              0 1 0 0 0
+              0 0 1 0 0
+              0 0 0 0 1" result="SOURCE_SOLID_ALPHA" />
+            <feMorphology in="SOURCE_SOLID_ALPHA" operator="erode"
+              :radius="Math.max(1, Math.min(6, Math.round(1 + aberrationIntensity * 0.8)))"
+              result="ALPHA_ERODED" />
+            <feComposite in="SOURCE_SOLID_ALPHA" in2="ALPHA_ERODED" operator="out" result="EDGE_MASK" />
 
             <feOffset in="SourceGraphic" dx="0" dy="0" result="CENTER_ORIGINAL" />
 

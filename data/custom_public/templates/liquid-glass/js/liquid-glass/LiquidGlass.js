@@ -213,8 +213,24 @@ function(Vue, GlassContainerModule, utils, GlassMode) {
         })
       })
 
+      // 先计算 positionStyles，基于 props.style
+      const positionStyles = computed(() => {
+        const position = props.style?.position || "relative"
+        // 如果 position 是 relative 或者 style 中指定了 position，不使用居中定位
+        const shouldUseCentered = position !== "relative" && !props.style?.position && !props.style?.top && !props.style?.left
+        return {
+          position: position,
+          top: shouldUseCentered ? (props.style?.top || "50%") : (props.style?.top || "auto"),
+          left: shouldUseCentered ? (props.style?.left || "50%") : (props.style?.left || "auto"),
+        }
+      })
+
       const transformStyle = computed(() => {
-        return `translate(calc(-50% + ${calculateElasticTranslation.value.x}px), calc(-50% + ${calculateElasticTranslation.value.y}px)) ${isActive.value && props.onClick ? "scale(0.96)" : calculateDirectionalScale.value}`
+        const position = props.style?.position || "relative"
+        const shouldUseCentered = position !== "relative" && !props.style?.position && !props.style?.top && !props.style?.left
+        const translateX = shouldUseCentered ? `calc(-50% + ${calculateElasticTranslation.value.x}px)` : `${calculateElasticTranslation.value.x}px`
+        const translateY = shouldUseCentered ? `calc(-50% + ${calculateElasticTranslation.value.y}px)` : `${calculateElasticTranslation.value.y}px`
+        return `translate(${translateX}, ${translateY}) ${isActive.value && props.onClick ? "scale(0.96)" : calculateDirectionalScale.value}`
       })
 
       const baseStyle = computed(() => {
@@ -222,14 +238,6 @@ function(Vue, GlassContainerModule, utils, GlassMode) {
           ...props.style,
           transform: transformStyle.value,
           transition: "all ease-out 0.2s",
-        }
-      })
-
-      const positionStyles = computed(() => {
-        return {
-          position: baseStyle.value.position || "relative",
-          top: baseStyle.value.top || "50%",
-          left: baseStyle.value.left || "50%",
         }
       })
 
@@ -245,38 +253,47 @@ function(Vue, GlassContainerModule, utils, GlassMode) {
       }
     },
     template: `
-      <div
-        :class="\`bg-black transition-all duration-150 ease-in-out pointer-events-none \${overLight ? 'opacity-20' : 'opacity-0'}\`"
-        :style="{
-          ...positionStyles,
-          height: glassSize.height,
-          width: glassSize.width,
-          borderRadius: \`\${cornerRadius}px\`,
-          transform: baseStyle.transform,
-          transition: baseStyle.transition,
-        }"></div>
-      <div
-        :class="\`bg-black transition-all duration-150 ease-in-out pointer-events-none mix-blend-overlay \${overLight ? 'opacity-100' : 'opacity-0'}\`"
-        :style="{
-          ...positionStyles,
-          height: glassSize.height,
-          width: glassSize.width,
-          borderRadius: \`\${cornerRadius}px\`,
-          transform: baseStyle.transform,
-          transition: baseStyle.transition,
-        }"></div>
+      <div style="position: relative; display: inline-block; width: fit-content;">
+        <div
+          :style="{
+            ...positionStyles,
+            height: glassSize.height,
+            width: glassSize.width,
+            borderRadius: \`\${cornerRadius}px\`,
+            transform: baseStyle.transform,
+            transition: baseStyle.transition,
+            pointerEvents: 'none',
+            background: 'black',
+            opacity: overLight ? 0.2 : 0,
+          }"></div>
+        <div
+          :style="{
+            ...positionStyles,
+            height: glassSize.height,
+            width: glassSize.width,
+            borderRadius: \`\${cornerRadius}px\`,
+            transform: baseStyle.transform,
+            transition: baseStyle.transition,
+            pointerEvents: 'none',
+            background: 'black',
+            mixBlendMode: 'overlay',
+            opacity: overLight ? 1 : 0,
+          }"></div>
 
-      <GlassContainer ref="glassRef" :effect="effect" :style="baseStyle" :cornerRadius="cornerRadius"
-        :displacementScale="overLight ? displacementScale * 0.5 : displacementScale" :blurAmount="blurAmount"
-        :saturation="saturation" :aberrationIntensity="aberrationIntensity" :glassSize="glassSize" :padding="padding"
-        :mouseOffset="mouseOffset" :onMouseEnter="() => isHovered = true" :onMouseLeave="() => isHovered = false"
-        :onMouseDown="() => isActive = true" :onMouseUp="() => isActive = false" :active="isActive" :overLight="overLight"
-        :onClick="onClick" :mode="mode">
-        <slot />
-      </GlassContainer>
+        <GlassContainer ref="glassRef" :effect="effect" :style="baseStyle" :cornerRadius="cornerRadius"
+          :displacementScale="overLight ? displacementScale * 0.5 : displacementScale" :blurAmount="blurAmount"
+          :saturation="saturation" :aberrationIntensity="aberrationIntensity" :glassSize="glassSize" :padding="padding"
+          :mouseOffset="mouseOffset" :onMouseEnter="() => isHovered = true" :onMouseLeave="() => isHovered = false"
+          :onMouseDown="() => isActive = true" :onMouseUp="() => isActive = false" :active="isActive" :overLight="overLight"
+          :onClick="onClick" :mode="mode">
+          <slot />
+        </GlassContainer>
 
-      <span :style="{
-        ...positionStyles,
+        <span :style="{
+        position: positionStyles.position === 'relative' ? 'absolute' : positionStyles.position,
+        top: positionStyles.position === 'relative' ? '0' : positionStyles.top,
+        left: positionStyles.position === 'relative' ? '0' : positionStyles.left,
+        boxSizing: 'border-box',
         height: autoPx(glassSize.height),
         width: autoPx(glassSize.width),
         borderRadius: \`\${cornerRadius}px\`,
@@ -291,10 +308,13 @@ function(Vue, GlassContainerModule, utils, GlassMode) {
         maskComposite: 'exclude',
         boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.5) inset, 0 1px 3px rgba(255, 255, 255, 0.25) inset, 0 1px 4px rgba(0, 0, 0, 0.35)',
         background: \`linear-gradient( \${135 + mouseOffset.x * 1.2}deg, rgba(255, 255, 255, 0.0) 0%, rgba(255, 255, 255,\${0.12 + Math.abs(mouseOffset.x) * 0.008}) \${Math.max(10, 33 + mouseOffset.y * 0.3)}%, rgba(255, 255, 255, \${0.4 + Math.abs(mouseOffset.x) * 0.012}) \${Math.min(90, 66 + mouseOffset.y * 0.4)}%, rgba(255, 255, 255, 0.0) 100% )\`
-      }"></span>
+        }"></span>
 
-      <span :style="{
-        ...positionStyles,
+        <span :style="{
+        position: positionStyles.position === 'relative' ? 'absolute' : positionStyles.position,
+        top: positionStyles.position === 'relative' ? '0' : positionStyles.top,
+        left: positionStyles.position === 'relative' ? '0' : positionStyles.left,
+        boxSizing: 'border-box',
         height: autoPx(glassSize.height),
         width: autoPx(glassSize.width),
         borderRadius: \`\${cornerRadius}px\`,
@@ -308,7 +328,8 @@ function(Vue, GlassContainerModule, utils, GlassMode) {
         maskComposite: 'exclude',
         boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.5) inset, 0 1px 3px rgba(255, 255, 255, 0.25) inset, 0 1px 4px rgba(0, 0, 0, 0.35)',
         background: \`linear-gradient( \${135 + mouseOffset.x * 1.2}deg, rgba(255, 255, 255, 0.0) 0%, rgba(255, 255, 255, \${0.32 + Math.abs(mouseOffset.x) * 0.008}) \${Math.max(10, 33 + mouseOffset.y * 0.3)}%, rgba(255, 255, 255, \${0.6 + Math.abs(mouseOffset.x) * 0.012}) \${Math.min(90, 66 + mouseOffset.y * 0.4)}%, rgba(255, 255, 255, 0.0) 100% )\`
-      }"></span>
+        }"></span>
+      </div>
     `
   })
 

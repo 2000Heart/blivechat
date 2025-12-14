@@ -32,9 +32,9 @@ function(constants, ImgShadow, AuthorChip, LiquidGlass) {
       :cornerRadius="12"
       :padding="'12px 16px'"
       :mode="'standard'"
-      style="position: relative; width: 100%;"
+      :elasticity="0"
+      style="position: relative; width: auto; display: inline-block;"
     >
-      <div class="member-decoration"></div>
       <div class="member-header">
         <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-membership-item-renderer"
           :imgUrl="avatarUrl"

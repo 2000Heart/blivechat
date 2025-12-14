@@ -16,11 +16,15 @@ function(constants, AuthorBadge) {
     <span id="author-name" dir="auto" class="style-scope lg-live-chat-author-chip" :class="{ member: isInMemberMessage }"
       :type="authorTypeText"
     >
-      <template>{{ authorName }}</template>
+      {{ authorName }}
       <!-- 这里是已验证勋章 -->
       <span id="chip-badges" class="style-scope lg-live-chat-author-chip"></span>
     </span>
     <span v-if="medalName && medalLevel > 0" id="medal" class="style-scope lg-live-chat-author-chip" :data-level="medalLevel">
+      <!-- 如果有舰长身份，将舰长徽章显示在粉丝团组件内 -->
+      <author-badge v-if="!isInMemberMessage && privilegeType > 0" class="style-scope lg-live-chat-author-chip medal-guard-badge"
+        :isAdmin="false" :privilegeType="privilegeType"
+      ></author-badge>
       <span class="medal-name">{{ medalName }}</span>
       <span class="medal-level">{{ medalLevel }}</span>
     </span>
@@ -32,7 +36,8 @@ function(constants, AuthorBadge) {
         <author-badge v-if="authorType === AUTHOR_TYPE_ADMIN" class="style-scope lg-live-chat-author-chip"
           isAdmin :privilegeType="0"
         ></author-badge>
-        <author-badge v-if="privilegeType > 0" class="style-scope lg-live-chat-author-chip"
+        <!-- 如果没有粉丝团但有舰长身份，才单独显示舰长徽章 -->
+        <author-badge v-if="privilegeType > 0 && (!medalName || medalLevel <= 0)" class="style-scope lg-live-chat-author-chip"
           :isAdmin="false" :privilegeType="privilegeType"
         ></author-badge>
       </template>

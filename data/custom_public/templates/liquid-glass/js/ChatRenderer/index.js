@@ -42,7 +42,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
             :style="{ transform: \`translateY(\${Math.floor(scrollPixelsRemaining)}px)\` }"
           >
             <template v-for="message in messages">
-              <text-message :key="message.id" v-if="message.type === MESSAGE_TYPE_TEXT"
+              <text-message :key="'text-' + message.id" v-if="message.type === MESSAGE_TYPE_TEXT"
                 class="style-scope lg-live-chat-item-list-renderer"
                 :time="message.time"
                 :avatarUrl="message.avatarUrl"
@@ -53,18 +53,20 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
                 :medalLevel="message.medalLevel"
                 :medalName="message.medalName"
               ></text-message>
-              <paid-message :key="message.id" v-else-if="message.type === MESSAGE_TYPE_GIFT"
+              <paid-message :key="'gift-' + message.id" v-else-if="message.type === MESSAGE_TYPE_GIFT"
                 class="style-scope lg-live-chat-item-list-renderer"
                 :time="message.time"
                 :avatarUrl="message.avatarUrl"
                 :authorName="getShowAuthorName(message)"
                 :price="message.price"
-                :priceText="message.price <= 0 ? getGiftShowNameAndNum(message) : ''"
+                :priceText="''"
                 :content="message.price <= 0 ? '' : getGiftShowContent(message)"
                 :medalLevel="message.medalLevel"
                 :medalName="message.medalName"
+                :giftName="message.giftName"
+                :giftNum="message.num"
               ></paid-message>
-              <membership-item :key="message.id" v-else-if="message.type === MESSAGE_TYPE_MEMBER"
+              <membership-item :key="'member-' + message.id" v-else-if="message.type === MESSAGE_TYPE_MEMBER"
                 class="style-scope lg-live-chat-item-list-renderer"
                 :time="message.time"
                 :avatarUrl="message.avatarUrl"
@@ -74,7 +76,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
                 :medalLevel="message.medalLevel"
                 :medalName="message.medalName"
               ></membership-item>
-              <paid-message :key="message.id" v-else-if="message.type === MESSAGE_TYPE_SUPER_CHAT"
+              <paid-message :key="'sc-' + message.id" v-else-if="message.type === MESSAGE_TYPE_SUPER_CHAT"
                 class="style-scope lg-live-chat-item-list-renderer"
                 :time="message.time"
                 :avatarUrl="message.avatarUrl"

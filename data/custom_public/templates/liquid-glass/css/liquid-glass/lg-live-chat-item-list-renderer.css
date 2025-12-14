@@ -19,8 +19,14 @@ lg-live-chat-item-list-renderer {
 }
 
 lg-live-chat-item-list-renderer[allow-scroll] #item-scroller.lg-live-chat-item-list-renderer {
-  overflow-y: scroll;
+  overflow-y: hidden;
   padding-right: 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+lg-live-chat-item-list-renderer[allow-scroll] #item-scroller.lg-live-chat-item-list-renderer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 #item-offset.lg-live-chat-item-list-renderer {

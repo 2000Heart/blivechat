@@ -14,82 +14,28 @@ lg-live-chat-paid-message-renderer[hidden] {
   display: none !important;
 }
 
-/* LiquidGlass 组件样式 - 旧的液态玻璃效果已移除，现在使用新的 LiquidGlass 组件 */
+/* LiquidGlass çťäťść ˇĺź - ć§çćś˛ćçťçććĺˇ˛ç§ťé¤ďźç°ĺ¨ä˝żç¨ć°ç LiquidGlass çťäťś */
 lg-live-chat-paid-message-renderer .glass {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   padding-left: 10px;
 }
 
-/* 左侧渐变装饰条 */
-lg-live-chat-paid-message-renderer .paid-decoration {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  z-index: 4;
-  border-radius: 1.2rem 0 0 1.2rem;
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.8), rgba(255, 165, 0, 0.8));
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-  animation: paidGlow 2s ease-in-out infinite;
-}
+/* ĺˇŚäž§ć¸ĺčŁéĽ°ćĄ */
+/* 装饰条已移除，使用其他视觉元素区分等级 */
 
-/* 根据价格等级调整装饰条颜色 */
-lg-live-chat-paid-message-renderer[blc-price-level="1"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(30, 136, 229, 0.8), rgba(0, 100, 200, 0.8));
-  box-shadow: 0 0 8px rgba(30, 136, 229, 0.4);
-}
-
-lg-live-chat-paid-message-renderer[blc-price-level="2"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(0, 229, 255, 0.8), rgba(0, 150, 200, 0.8));
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
-}
-
-lg-live-chat-paid-message-renderer[blc-price-level="3"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(29, 233, 182, 0.8), rgba(0, 180, 150, 0.8));
-  box-shadow: 0 0 8px rgba(29, 233, 182, 0.4);
-}
-
-lg-live-chat-paid-message-renderer[blc-price-level="4"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(255, 202, 40, 0.8), rgba(255, 165, 0, 0.8));
-  box-shadow: 0 0 8px rgba(255, 202, 40, 0.4);
-}
-
-lg-live-chat-paid-message-renderer[blc-price-level="5"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(245, 124, 0, 0.8), rgba(255, 100, 0, 0.8));
-  box-shadow: 0 0 8px rgba(245, 124, 0, 0.4);
-}
-
-lg-live-chat-paid-message-renderer[blc-price-level="6"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(233, 30, 99, 0.8), rgba(200, 0, 80, 0.8));
-  box-shadow: 0 0 8px rgba(233, 30, 99, 0.4);
-}
-
-lg-live-chat-paid-message-renderer[blc-price-level="7"] .paid-decoration {
-  background: linear-gradient(180deg, rgba(230, 33, 23, 0.8), rgba(200, 0, 0, 0.8));
-  box-shadow: 0 0 10px rgba(230, 33, 23, 0.5);
-}
-
-@keyframes paidGlow {
-  0%, 100% {
-    opacity: 0.8;
-    box-shadow: 0 0 8px currentColor;
-  }
-  50% {
-    opacity: 1;
-    box-shadow: 0 0 12px currentColor;
-  }
-}
+/* ć šćŽäťˇć źç­çş§č°ć´čŁéĽ°ćĄé˘č˛ */
+/* 装饰条已移除，使用其他视觉元素区分等级 */
 
 lg-live-chat-paid-message-renderer .paid-header {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 #author-photo.lg-live-chat-paid-message-renderer {
@@ -99,15 +45,26 @@ lg-live-chat-paid-message-renderer .paid-header {
   -ms-flex: none;
   -webkit-flex: none;
   flex: none;
+  /* 为头像添加边框和阴影，增强视觉层次 */
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 #author-name.lg-live-chat-paid-message-renderer {
   color: var(--lg-paid-message-color, rgba(0,0,0,0.87));
   font-weight: 600;
   font-size: 13px;
+  /* 增强文字可读性 */
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.15),
+    0 0 3px rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.01em;
 }
 
-/* 房间勋章样式（在付费消息中） */
+/* ćżé´ĺçŤ ć ˇĺźďźĺ¨äťč´šćśćŻä¸­ďź */
 #medal.lg-live-chat-paid-message-renderer {
   display: inline-flex;
   align-items: center;
@@ -125,7 +82,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   overflow: hidden;
 }
 
-/* 25级以后添加shimmer效果 */
+/* 25çş§äťĽĺćˇťĺ shimmerćć */
 #medal.lg-live-chat-paid-message-renderer[data-level]::before {
   content: '';
   position: absolute;
@@ -154,8 +111,8 @@ lg-live-chat-paid-message-renderer .paid-header {
   text-align: center;
 }
 
-/* 根据勋章等级调整颜色 - 每5级一个颜色，40级以后颜色不变 */
-/* 1-5级：浅蓝色 */
+/* ć šćŽĺçŤ ç­çş§č°ć´é˘č˛ - ćŻ5çş§ä¸ä¸Şé˘č˛ďź40çş§äťĽĺé˘č˛ä¸ĺ */
+/* 1-5çş§ďźćľčč˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="1"],
 #medal.lg-live-chat-paid-message-renderer[data-level="2"],
 #medal.lg-live-chat-paid-message-renderer[data-level="3"],
@@ -184,7 +141,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(100, 149, 237, 0.15);
 }
 
-/* 6-10级：深蓝色 */
+/* 6-10çş§ďźćˇąčč˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="6"],
 #medal.lg-live-chat-paid-message-renderer[data-level="7"],
 #medal.lg-live-chat-paid-message-renderer[data-level="8"],
@@ -214,7 +171,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(0, 0, 139, 0.2);
 }
 
-/* 11-15级：粉色 */
+/* 11-15çş§ďźç˛č˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="11"],
 #medal.lg-live-chat-paid-message-renderer[data-level="12"],
 #medal.lg-live-chat-paid-message-renderer[data-level="13"],
@@ -244,7 +201,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(255, 20, 147, 0.2);
 }
 
-/* 16-20级：青色 */
+/* 16-20çş§ďźéč˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="16"],
 #medal.lg-live-chat-paid-message-renderer[data-level="17"],
 #medal.lg-live-chat-paid-message-renderer[data-level="18"],
@@ -274,7 +231,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(0, 191, 255, 0.2);
 }
 
-/* 21-25级：紫色 */
+/* 21-25çş§ďźç´Ťč˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="21"],
 #medal.lg-live-chat-paid-message-renderer[data-level="22"],
 #medal.lg-live-chat-paid-message-renderer[data-level="23"],
@@ -304,7 +261,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(138, 43, 226, 0.2);
 }
 
-/* 26-30级：红色 */
+/* 26-30çş§ďźçş˘č˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="26"],
 #medal.lg-live-chat-paid-message-renderer[data-level="27"],
 #medal.lg-live-chat-paid-message-renderer[data-level="28"],
@@ -334,7 +291,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(220, 20, 60, 0.2);
 }
 
-/* 31-35级：橙色 */
+/* 31-35çş§ďźćŠč˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="31"],
 #medal.lg-live-chat-paid-message-renderer[data-level="32"],
 #medal.lg-live-chat-paid-message-renderer[data-level="33"],
@@ -364,7 +321,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(255, 69, 0, 0.2);
 }
 
-/* 36-40级：金色 */
+/* 36-40çş§ďźéč˛ */
 #medal.lg-live-chat-paid-message-renderer[data-level="36"],
 #medal.lg-live-chat-paid-message-renderer[data-level="37"],
 #medal.lg-live-chat-paid-message-renderer[data-level="38"],
@@ -394,7 +351,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(255, 140, 0, 0.2);
 }
 
-/* 41-120级：使用40级的颜色（金色） */
+/* 41-120çş§ďźä˝żç¨40çş§çé˘č˛ďźéč˛ďź */
 #medal.lg-live-chat-paid-message-renderer[data-level]:not([data-level="1"]):not([data-level="2"]):not([data-level="3"]):not([data-level="4"]):not([data-level="5"]):not([data-level="6"]):not([data-level="7"]):not([data-level="8"]):not([data-level="9"]):not([data-level="10"]):not([data-level="11"]):not([data-level="12"]):not([data-level="13"]):not([data-level="14"]):not([data-level="15"]):not([data-level="16"]):not([data-level="17"]):not([data-level="18"]):not([data-level="19"]):not([data-level="20"]):not([data-level="21"]):not([data-level="22"]):not([data-level="23"]):not([data-level="24"]):not([data-level="25"]):not([data-level="26"]):not([data-level="27"]):not([data-level="28"]):not([data-level="29"]):not([data-level="30"]):not([data-level="31"]):not([data-level="32"]):not([data-level="33"]):not([data-level="34"]):not([data-level="35"]):not([data-level="36"]):not([data-level="37"]):not([data-level="38"]):not([data-level="39"]):not([data-level="40"]) {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 140, 0, 0.25));
   border-color: rgba(255, 215, 0, 0.4);
@@ -408,7 +365,7 @@ lg-live-chat-paid-message-renderer .paid-header {
   background: rgba(255, 140, 0, 0.2);
 }
 
-/* 25级以后显示shimmer效果 */
+/* 25çş§äťĽĺćžç¤şshimmerćć */
 #medal.lg-live-chat-paid-message-renderer[data-level="25"]::before,
 #medal.lg-live-chat-paid-message-renderer[data-level="26"]::before,
 #medal.lg-live-chat-paid-message-renderer[data-level="27"]::before,
@@ -517,6 +474,329 @@ lg-live-chat-paid-message-renderer .paid-header {
   }
 }
 
+/* 礼物信息样式 - 合并名称、数量和价格到一个组件 */
+#gift-info.lg-live-chat-paid-message-renderer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 200, 0, 0.25));
+  border: 1.5px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(255, 215, 0, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(255, 215, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 100块以上显示shimmer效果 */
+#gift-info.lg-live-chat-paid-message-renderer[data-price-high="true"]::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: giftShimmer 2s infinite;
+  opacity: 1;
+}
+
+#gift-info.lg-live-chat-paid-message-renderer:not([data-price-high="true"])::before {
+  display: none;
+}
+
+#gift-name.lg-live-chat-paid-message-renderer {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 200, 0, 1);
+  text-shadow: 
+    0 0 4px rgba(255, 215, 0, 0.7),
+    0 0 8px rgba(255, 215, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.02em;
+}
+
+#gift-num.lg-live-chat-paid-message-renderer {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 215, 0, 1);
+  text-shadow: 
+    0 0 3px rgba(255, 215, 0, 0.6),
+    0 1px 1px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+}
+
+/* 礼物价格样式 - 合并到礼物信息组件中 */
+#gift-info.lg-live-chat-paid-message-renderer #gift-price {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: rgba(255, 140, 0, 1);
+  text-shadow: 
+    0 0 3px rgba(255, 165, 0, 0.6),
+    0 0 6px rgba(255, 165, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: visible;
+  margin: 0;
+  margin-left: 6px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 215, 0, 0.5);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+#gift-info.lg-live-chat-paid-message-renderer #gift-price::before {
+  display: none;
+}
+
+/* 根据价格等级调整礼物信息颜色 */
+/* level 0: ¥0 (淡蓝) */
+lg-live-chat-paid-message-renderer[blc-price-level="0"] #gift-info {
+  background: linear-gradient(135deg, rgba(153, 236, 255, 0.25), rgba(135, 206, 250, 0.25));
+  border-color: rgba(153, 236, 255, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(153, 236, 255, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(153, 236, 255, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="0"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="0"] #gift-num {
+  color: rgba(0, 150, 200, 1);
+  text-shadow: 
+    0 0 4px rgba(153, 236, 255, 0.7),
+    0 0 8px rgba(153, 236, 255, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="0"] #gift-price {
+  color: rgba(0, 100, 150, 1);
+  border-left-color: rgba(153, 236, 255, 0.5);
+  text-shadow: 
+    0 0 3px rgba(153, 236, 255, 0.6),
+    0 0 6px rgba(153, 236, 255, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 1: ¥0.01 (蓝) */
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #gift-info {
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.25), rgba(0, 100, 200, 0.25));
+  border-color: rgba(30, 136, 229, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(30, 136, 229, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(30, 136, 229, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #gift-num {
+  color: rgba(30, 136, 229, 1);
+  text-shadow: 
+    0 0 4px rgba(30, 136, 229, 0.7),
+    0 0 8px rgba(30, 136, 229, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="1"] #gift-price {
+  color: rgba(0, 100, 200, 1);
+  border-left-color: rgba(30, 136, 229, 0.5);
+  text-shadow: 
+    0 0 3px rgba(30, 136, 229, 0.6),
+    0 0 6px rgba(30, 136, 229, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 2: ¥14 (浅蓝) */
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #gift-info {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.25), rgba(0, 150, 200, 0.25));
+  border-color: rgba(0, 229, 255, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(0, 229, 255, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(0, 229, 255, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #gift-num {
+  color: rgba(0, 229, 255, 1);
+  text-shadow: 
+    0 0 4px rgba(0, 229, 255, 0.7),
+    0 0 8px rgba(0, 229, 255, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="2"] #gift-price {
+  color: rgba(0, 150, 200, 1);
+  border-left-color: rgba(0, 229, 255, 0.5);
+  text-shadow: 
+    0 0 3px rgba(0, 229, 255, 0.6),
+    0 0 6px rgba(0, 229, 255, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 3: ¥35 (绿) */
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #gift-info {
+  background: linear-gradient(135deg, rgba(29, 233, 182, 0.25), rgba(0, 180, 150, 0.25));
+  border-color: rgba(29, 233, 182, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(29, 233, 182, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(29, 233, 182, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #gift-num {
+  color: rgba(29, 233, 182, 1);
+  text-shadow: 
+    0 0 4px rgba(29, 233, 182, 0.7),
+    0 0 8px rgba(29, 233, 182, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="3"] #gift-price {
+  color: rgba(0, 180, 150, 1);
+  border-left-color: rgba(29, 233, 182, 0.5);
+  text-shadow: 
+    0 0 3px rgba(29, 233, 182, 0.6),
+    0 0 6px rgba(29, 233, 182, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 4: ¥70 (黄) */
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #gift-info {
+  background: linear-gradient(135deg, rgba(255, 202, 40, 0.25), rgba(255, 165, 0, 0.25));
+  border-color: rgba(255, 202, 40, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(255, 202, 40, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(255, 202, 40, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #gift-num {
+  color: rgba(255, 202, 40, 1);
+  text-shadow: 
+    0 0 4px rgba(255, 202, 40, 0.7),
+    0 0 8px rgba(255, 202, 40, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="4"] #gift-price {
+  color: rgba(255, 165, 0, 1);
+  border-left-color: rgba(255, 202, 40, 0.5);
+  text-shadow: 
+    0 0 3px rgba(255, 202, 40, 0.6),
+    0 0 6px rgba(255, 202, 40, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 5: ¥140 (橙) - 100块以上，显示shimmer */
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #gift-info {
+  background: linear-gradient(135deg, rgba(245, 124, 0, 0.25), rgba(255, 100, 0, 0.25));
+  border-color: rgba(245, 124, 0, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(245, 124, 0, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(245, 124, 0, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #gift-num {
+  color: rgba(245, 124, 0, 1);
+  text-shadow: 
+    0 0 4px rgba(245, 124, 0, 0.7),
+    0 0 8px rgba(245, 124, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="5"] #gift-price {
+  color: rgba(255, 100, 0, 1);
+  border-left-color: rgba(245, 124, 0, 0.5);
+  text-shadow: 
+    0 0 3px rgba(245, 124, 0, 0.6),
+    0 0 6px rgba(245, 124, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 6: ¥350 (品红) - 100块以上，显示shimmer */
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #gift-info {
+  background: linear-gradient(135deg, rgba(233, 30, 99, 0.25), rgba(200, 0, 80, 0.25));
+  border-color: rgba(233, 30, 99, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(233, 30, 99, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(233, 30, 99, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #gift-num {
+  color: rgba(233, 30, 99, 1);
+  text-shadow: 
+    0 0 4px rgba(233, 30, 99, 0.7),
+    0 0 8px rgba(233, 30, 99, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="6"] #gift-price {
+  color: rgba(200, 0, 80, 1);
+  border-left-color: rgba(233, 30, 99, 0.5);
+  text-shadow: 
+    0 0 3px rgba(233, 30, 99, 0.6),
+    0 0 6px rgba(233, 30, 99, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* level 7: ¥700 (红) - 100块以上，显示shimmer */
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #gift-info {
+  background: linear-gradient(135deg, rgba(230, 33, 23, 0.25), rgba(200, 0, 0, 0.25));
+  border-color: rgba(230, 33, 23, 0.5);
+  box-shadow: 
+    0 2px 6px rgba(230, 33, 23, 0.3), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px rgba(230, 33, 23, 0.2);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #gift-name,
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #gift-num {
+  color: rgba(230, 33, 23, 1);
+  text-shadow: 
+    0 0 4px rgba(230, 33, 23, 0.7),
+    0 0 8px rgba(230, 33, 23, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+lg-live-chat-paid-message-renderer[blc-price-level="7"] #gift-price {
+  color: rgba(200, 0, 0, 1);
+  border-left-color: rgba(230, 33, 23, 0.5);
+  text-shadow: 
+    0 0 3px rgba(230, 33, 23, 0.6),
+    0 0 6px rgba(230, 33, 23, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes giftShimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
 #purchase-amount.lg-live-chat-paid-message-renderer {
   font-weight: 700;
   font-size: 13px;
@@ -558,20 +838,30 @@ lg-live-chat-paid-message-renderer .paid-header {
   -ms-flex: none;
   -webkit-flex: none;
   flex: none;
+  opacity: 0.7;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 #message.lg-live-chat-paid-message-renderer {
   color: var(--lg-paid-message-color, rgba(0,0,0,0.87));
-  line-height: 16px;
+  line-height: 1.5;
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
   display: block;
   width: 100%;
   padding-left: 0;
+  /* 增强文字可读性 */
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 4px rgba(255, 255, 255, 0.1);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  margin-top: 2px;
 }
 
-/* 根据价格等级调整颜色 */
+/* ć šćŽäťˇć źç­çş§č°ć´é˘č˛ */
 lg-live-chat-paid-message-renderer[blc-price-level="1"] #author-name,
 lg-live-chat-paid-message-renderer[blc-price-level="1"] #message {
   color: rgba(30, 136, 229, 0.9);

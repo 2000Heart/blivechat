@@ -2,9 +2,10 @@
 
 lg-live-chat-author-chip {
   display: inline-flex;
-  -ms-flex-align: baseline;
-  -webkit-align-items: baseline;
-  align-items: baseline;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  gap: 6px;
 }
 
 lg-live-chat-author-chip[hidden] {
@@ -14,8 +15,14 @@ lg-live-chat-author-chip[hidden] {
 #author-name.lg-live-chat-author-chip {
   box-sizing: border-box;
   border-radius: 2px;
-  color: var(--lg-live-chat-secondary-text-color);
+  color: #ffffff;
   font-weight: 600;
+  font-size: 13px;
+  /* ĺ˘ĺźşç¨ćˇĺĺŻčŻťć§ */
+  text-shadow: 
+    0 0 1px rgba(0, 0, 0, 0.2),
+    0 1px 1px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.01em;
 }
 
 lg-live-chat-author-chip[is-highlighted] #author-name.lg-live-chat-author-chip {
@@ -25,7 +32,7 @@ lg-live-chat-author-chip[is-highlighted] #author-name.lg-live-chat-author-chip {
 }
 
 #author-name.lg-live-chat-author-chip[type='moderator'] {
-  color: #5e84f1;
+  color: #ffffff;
 }
 
 lg-live-chat-author-chip[is-highlighted] #author-name.lg-live-chat-author-chip[type='owner'], #author-name.lg-live-chat-author-chip[type='owner'] {
@@ -34,7 +41,7 @@ lg-live-chat-author-chip[is-highlighted] #author-name.lg-live-chat-author-chip[t
 }
 
 #author-name.lg-live-chat-author-chip[type='member'] {
-  color: #107516;
+  color: #ffffff;
 }
 
 #author-name.lg-live-chat-author-chip.member {
@@ -50,8 +57,20 @@ lg-live-chat-author-chip[is-highlighted] #chat-badges.lg-live-chat-author-chip:n
 }
 
 lg-live-chat-author-badge-renderer.lg-live-chat-author-chip {
-  margin: 0 0 0 2px;
-  vertical-align: sub;
+  margin: 0;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* éčćżçŽĄçćłćć ĺż */
+lg-live-chat-author-badge-renderer.lg-live-chat-author-chip[type='moderator'] {
+  display: none !important;
+}
+
+/* 当有粉丝团时，隐藏单独的舰长徽章（舰长徽章已整合到粉丝团组件内） */
+lg-live-chat-author-chip:has(#medal) #chat-badges lg-live-chat-author-badge-renderer.lg-live-chat-author-chip[type='member'] {
+  display: none !important;
 }
 
 lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip lg-live-chat-author-badge-renderer.lg-live-chat-author-chip {
@@ -59,15 +78,14 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
 }
 
 #chip-badges.lg-live-chat-author-chip lg-live-chat-author-badge-renderer.lg-live-chat-author-chip:last-of-type {
-  margin-right: -2px;
+  margin-right: 0;
 }
 
-/* 房间勋章样式 */
+/* ćżé´ĺçŤ ć ˇĺź */
 #medal.lg-live-chat-author-chip {
   display: inline-flex;
   align-items: center;
-  margin-left: 4px;
-  margin-right: 2px;
+  margin: 0;
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 11px;
@@ -78,6 +96,52 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  gap: 4px;
+}
+
+/* 当有舰长徽章时，调整左边圆角和padding */
+#medal.lg-live-chat-author-chip:has(.medal-guard-badge) {
+  padding-left: 1px;
+  border-radius: 12px 4px 4px 12px;
+}
+
+/* 粉丝团组件内的舰长徽章样式 */
+#medal.lg-live-chat-author-chip .medal-guard-badge {
+  margin: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 200, 200, 0.3);
+  background: rgba(200, 200, 200, 0.1);
+  box-sizing: border-box;
+}
+
+#medal.lg-live-chat-author-chip .medal-guard-badge lg-live-chat-author-badge-renderer {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#medal.lg-live-chat-author-chip .medal-guard-badge #image.lg-live-chat-author-badge-renderer {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#medal.lg-live-chat-author-chip .medal-guard-badge img.lg-live-chat-author-badge-renderer,
+#medal.lg-live-chat-author-chip .medal-guard-badge lg-icon.lg-live-chat-author-badge-renderer {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 #medal.lg-live-chat-author-chip .medal-name {
@@ -95,7 +159,7 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   text-align: center;
 }
 
-/* 25级以后添加shimmer效果 */
+/* 25çş§äťĽĺćˇťĺ shimmerćć */
 #medal.lg-live-chat-author-chip[data-level]::before {
   content: '';
   position: absolute;
@@ -109,8 +173,8 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   pointer-events: none;
 }
 
-/* 颜色定义：每5级一个颜色段 */
-/* 1-5级：浅蓝色 */
+/* é˘č˛ĺŽäšďźćŻ5çş§ä¸ä¸Şé˘č˛ćŽľ */
+/* 1-5çş§ďźćľčč˛ */
 #medal.lg-live-chat-author-chip[data-level="1"],
 #medal.lg-live-chat-author-chip[data-level="2"],
 #medal.lg-live-chat-author-chip[data-level="3"],
@@ -145,9 +209,9 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
 #medal.lg-live-chat-author-chip[data-level="8"],
 #medal.lg-live-chat-author-chip[data-level="9"],
 #medal.lg-live-chat-author-chip[data-level="10"] {
-  background: linear-gradient(135deg, rgba(25, 25, 112, 0.25), rgba(0, 0, 139, 0.25));
-  border-color: rgba(25, 25, 112, 0.4);
-  box-shadow: 0 1px 3px rgba(25, 25, 112, 0.2);
+  background: linear-gradient(135deg, rgba(70, 130, 180, 0.4), rgba(65, 105, 225, 0.4));
+  border-color: rgba(70, 130, 180, 0.5);
+  box-shadow: 0 1px 3px rgba(70, 130, 180, 0.3);
 }
 #medal.lg-live-chat-author-chip[data-level="6"] .medal-name,
 #medal.lg-live-chat-author-chip[data-level="6"] .medal-level,
@@ -159,17 +223,18 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
 #medal.lg-live-chat-author-chip[data-level="9"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="10"] .medal-name,
 #medal.lg-live-chat-author-chip[data-level="10"] .medal-level {
-  color: rgba(0, 0, 139, 0.95);
+  color: rgba(173, 216, 230, 1);
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 #medal.lg-live-chat-author-chip[data-level="6"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="7"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="8"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="9"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="10"] .medal-level {
-  background: rgba(0, 0, 139, 0.2);
+  background: rgba(100, 149, 237, 0.3);
 }
 
-/* 11-15级：粉色 */
+/* 11-15çş§ďźç˛č˛ */
 #medal.lg-live-chat-author-chip[data-level="11"],
 #medal.lg-live-chat-author-chip[data-level="12"],
 #medal.lg-live-chat-author-chip[data-level="13"],
@@ -199,7 +264,7 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   background: rgba(255, 20, 147, 0.2);
 }
 
-/* 16-20级：青色 */
+/* 16-20çş§ďźéč˛ */
 #medal.lg-live-chat-author-chip[data-level="16"],
 #medal.lg-live-chat-author-chip[data-level="17"],
 #medal.lg-live-chat-author-chip[data-level="18"],
@@ -235,9 +300,9 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
 #medal.lg-live-chat-author-chip[data-level="23"],
 #medal.lg-live-chat-author-chip[data-level="24"],
 #medal.lg-live-chat-author-chip[data-level="25"] {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.25), rgba(148, 0, 211, 0.25));
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 1px 3px rgba(138, 43, 226, 0.2);
+  background: linear-gradient(135deg, rgba(186, 85, 211, 0.4), rgba(147, 112, 219, 0.4));
+  border-color: rgba(186, 85, 211, 0.5);
+  box-shadow: 0 1px 3px rgba(186, 85, 211, 0.3);
 }
 #medal.lg-live-chat-author-chip[data-level="21"] .medal-name,
 #medal.lg-live-chat-author-chip[data-level="21"] .medal-level,
@@ -249,17 +314,18 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
 #medal.lg-live-chat-author-chip[data-level="24"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="25"] .medal-name,
 #medal.lg-live-chat-author-chip[data-level="25"] .medal-level {
-  color: rgba(138, 43, 226, 0.95);
+  color: rgba(221, 160, 221, 1);
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 #medal.lg-live-chat-author-chip[data-level="21"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="22"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="23"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="24"] .medal-level,
 #medal.lg-live-chat-author-chip[data-level="25"] .medal-level {
-  background: rgba(138, 43, 226, 0.2);
+  background: rgba(186, 85, 211, 0.3);
 }
 
-/* 26-30级：红色 */
+/* 26-30çş§ďźçş˘č˛ */
 #medal.lg-live-chat-author-chip[data-level="26"],
 #medal.lg-live-chat-author-chip[data-level="27"],
 #medal.lg-live-chat-author-chip[data-level="28"],
@@ -289,7 +355,7 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   background: rgba(220, 20, 60, 0.2);
 }
 
-/* 31-35级：橙色 */
+/* 31-35çş§ďźćŠč˛ */
 #medal.lg-live-chat-author-chip[data-level="31"],
 #medal.lg-live-chat-author-chip[data-level="32"],
 #medal.lg-live-chat-author-chip[data-level="33"],
@@ -319,7 +385,7 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   background: rgba(255, 69, 0, 0.2);
 }
 
-/* 36-40级：金色 */
+/* 36-40çş§ďźéč˛ */
 #medal.lg-live-chat-author-chip[data-level="36"],
 #medal.lg-live-chat-author-chip[data-level="37"],
 #medal.lg-live-chat-author-chip[data-level="38"],
@@ -349,7 +415,7 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   background: rgba(255, 140, 0, 0.2);
 }
 
-/* 41-120级：使用40级的颜色（金色） */
+/* 41-120çş§ďźä˝żç¨40çş§çé˘č˛ďźéč˛ďź */
 #medal.lg-live-chat-author-chip[data-level="41"],
 #medal.lg-live-chat-author-chip[data-level="42"],
 #medal.lg-live-chat-author-chip[data-level="43"],
@@ -679,7 +745,7 @@ lg-live-chat-author-chip[is-highlighted] #chip-badges.lg-live-chat-author-chip l
   background: rgba(255, 140, 0, 0.2);
 }
 
-/* 25级以后显示shimmer效果 */
+/* 25çş§äťĽĺćžç¤şshimmerćć */
 #medal.lg-live-chat-author-chip[data-level="25"]::before,
 #medal.lg-live-chat-author-chip[data-level="26"]::before,
 #medal.lg-live-chat-author-chip[data-level="27"]::before,

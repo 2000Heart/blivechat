@@ -11,7 +11,7 @@ function(constants) {
   exports.default = {
     template: `
   <lg-live-chat-author-badge-renderer :type="authorTypeText">
-    <el-tooltip :content="readableAuthorTypeText" placement="top">
+    <span :title="readableAuthorTypeText">
       <div id="image" class="style-scope lg-live-chat-author-badge-renderer">
         <lg-icon v-if="isAdmin" class="style-scope lg-live-chat-author-badge-renderer">
           <svg viewBox="0 0 16 16" class="style-scope lg-icon" preserveAspectRatio="xMidYMid meet" focusable="false"
@@ -28,7 +28,7 @@ function(constants) {
           class="style-scope lg-live-chat-author-badge-renderer" :alt="readableAuthorTypeText"
         >
       </div>
-    </el-tooltip>
+    </span>
   </lg-live-chat-author-badge-renderer>
     `,
     name: 'AuthorBadge',

@@ -5,17 +5,17 @@ lg-live-chat-renderer, lg-live-chat-item-list-renderer #item-scroller {
 }
 
 lg-live-chat-renderer ::-webkit-scrollbar {
-  content: '';
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 lg-live-chat-renderer ::-webkit-scrollbar-thumb {
-  background-color: hsla(0, 0%, 53.3%, .2);
-  border: 2px solid #fcfcfc;
-  min-height: 30px;
+  display: none;
 }
 
 lg-live-chat-renderer ::-webkit-scrollbar-track {
-  background-color: #fcfcfc;
+  display: none;
 }
 
 lg-live-chat-renderer {

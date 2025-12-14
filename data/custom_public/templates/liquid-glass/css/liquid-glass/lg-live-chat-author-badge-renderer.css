@@ -26,14 +26,14 @@ lg-live-chat-author-badge-renderer[type='verified'] {
 
 img.lg-live-chat-author-badge-renderer, lg-icon.lg-live-chat-author-badge-renderer {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 #image.lg-live-chat-author-badge-renderer {
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 }

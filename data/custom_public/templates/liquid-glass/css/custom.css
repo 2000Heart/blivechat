@@ -8,9 +8,96 @@
 
 /* 确保内容在 LiquidGlass 组件中正确显示 */
 .glass {
-  width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
+/* 修复 LiquidGlass 装饰层溢出问题 */
+lg-live-chat-text-message-renderer,
+lg-live-chat-paid-message-renderer,
+lg-live-chat-membership-item-renderer {
+  overflow: visible;
+  position: relative;
+  contain: layout style;
+}
+
+/* 确保 LiquidGlass 组件不会导致内容溢出 */
+lg-live-chat-item-list-renderer {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+lg-live-chat-item-list-renderer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+lg-live-chat-item-list-renderer #items {
+  overflow: visible;
+}
+
+/* 确保 LiquidGlass 组件在消息容器中正确布局 */
+lg-live-chat-text-message-renderer > *,
+lg-live-chat-paid-message-renderer > *,
+lg-live-chat-membership-item-renderer > * {
+  position: relative;
+  width: auto;
+  box-sizing: border-box;
+}
+
+/* 确保头像组件不会导致换行 */
+lg-live-chat-text-message-renderer img-shadow#author-photo {
+  display: inline-block !important;
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+}
+
+/* 添加弹幕之间的间距 */
+lg-live-chat-text-message-renderer,
+lg-live-chat-paid-message-renderer,
+lg-live-chat-membership-item-renderer {
+  margin-bottom: 10px;
+  display: block;
+}
+
+lg-live-chat-text-message-renderer:last-child,
+lg-live-chat-paid-message-renderer:last-child,
+lg-live-chat-membership-item-renderer:last-child {
+  margin-bottom: 0;
+}
+
+/* 确保 glass 容器宽度自适应内容 */
+lg-live-chat-text-message-renderer .glass,
+lg-live-chat-paid-message-renderer .glass,
+lg-live-chat-membership-item-renderer .glass {
+  width: auto !important;
+  min-width: fit-content;
+  position: relative;
+  /* 优化内容区域的视觉层次 */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* 确保 glass__warp 完全覆盖整个 glass 容器 */
 .glass__warp {
   pointer-events: none;
+  /* 强制关闭 backdrop-filter（OBS 透明弹幕页里通常不会对直播画面生效） */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  /* 多层渐变：高光 + 体积感（让位移/色散有“材质”可扭曲） */
+  background:
+    radial-gradient(120% 140% at 20% 10%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.10) 40%, rgba(255, 255, 255, 0.05) 100%),
+    radial-gradient(120% 120% at 80% 90%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 55%, rgba(255, 255, 255, 0.00) 100%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0.12) 100%);
+
+  /* 细边与内高光：更像 Apple 的玻璃边缘 */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.20),
+    0 1px 1px rgba(0, 0, 0, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18);
 }

@@ -3,11 +3,15 @@
 /* LiquidGlass 组件样式 - 旧的液态玻璃效果已移除，现在使用新的 LiquidGlass 组件 */
 lg-live-chat-text-message-renderer .glass {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   font-size: 13px;
   color: var(--lg-live-chat-primary-text-color);
-  width: 100%;
-  min-height: 40px;
+  width: auto;
+  min-height: 44px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-direction: column;
 }
 
 lg-live-chat-text-message-renderer {
@@ -24,45 +28,100 @@ lg-live-chat-text-message-renderer[hidden] {
   display: none !important;
 }
 
+/* 第一行：用户信息容器 */
+lg-live-chat-text-message-renderer #author-info.lg-live-chat-text-message-renderer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+/* 确保用户信息行内所有元素垂直居中 */
+lg-live-chat-text-message-renderer #author-info.lg-live-chat-text-message-renderer > * {
+  display: flex;
+  align-items: center;
+}
+
 lg-live-chat-text-message-renderer #author-photo.lg-live-chat-text-message-renderer {
-  display: block;
-  margin-right: 16px;
-  overflow: hidden;
-  border-radius: 50%;
+  /* 保持 inline-block，确保在 flex 容器中正确显示 */
+  display: inline-block;
+  overflow: visible;
   -ms-flex: none;
   -webkit-flex: none;
   flex: none;
+  /* 确保头像容器有固定尺寸，不会被拉伸 */
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  position: relative;
+  vertical-align: middle;
+  align-self: center;
+}
+
+/* 为头像内部的图片添加边框和阴影 */
+lg-live-chat-text-message-renderer #author-photo.lg-live-chat-text-message-renderer img.lg-img-shadow {
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
 }
 
 lg-live-chat-text-message-renderer #content.lg-live-chat-text-message-renderer {
-  -ms-align-self: center;
-  -webkit-align-self: center;
-  align-self: center;
+  -ms-align-self: flex-start;
+  -webkit-align-self: flex-start;
+  align-self: flex-start;
   min-width: 0;
   display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-  width: auto;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  width: 100%;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex-shrink: 1;
 }
 
 lg-live-chat-text-message-renderer #timestamp.lg-live-chat-text-message-renderer {
   display: var(--lg-live-chat-item-timestamp-display, inline);
-  margin: var(--lg-live-chat-item-timestamp-margin, 0 8px 0 0);
+  margin: 0;
   color: var(--lg-live-chat-tertiary-text-color);
   font-size: 11px;
+  opacity: 0.7;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
-lg-live-chat-text-message-renderer lg-live-chat-author-chip.lg-live-chat-text-message-renderer {
-  margin-right: 8px;
+lg-live-chat-text-message-renderer #author-info lg-live-chat-author-chip.lg-live-chat-text-message-renderer {
+  margin: 0;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 lg-live-chat-text-message-renderer #message.lg-live-chat-text-message-renderer {
-  color: var(--lg-live-chat-primary-text-color);
-  line-height: 16px;
-  overflow: hidden;
+  color: #ffffff;
+  line-height: 1.5;
+  overflow: visible;
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
+  white-space: normal;
+  /* 增强文字可读性：添加文字阴影和描边效果 */
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 4px rgba(255, 255, 255, 0.1);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  width: 100%;
+  display: inline-block;
 }
 
 lg-live-chat-text-message-renderer #message.lg-live-chat-text-message-renderer .emoji.lg-live-chat-text-message-renderer {

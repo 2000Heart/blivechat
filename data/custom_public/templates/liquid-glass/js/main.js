@@ -59,5 +59,8 @@ function(Vue, blcsdk, constants, ChatRenderer) {
     }
   })
   
+  // Treat lg-* as custom elements to avoid Vue resolving warnings
+  app.config.compilerOptions.isCustomElement = (tag) => tag.startsWith('lg-')
+
   app.mount('#app')
 }))

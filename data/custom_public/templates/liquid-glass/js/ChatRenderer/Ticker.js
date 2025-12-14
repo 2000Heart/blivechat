@@ -24,21 +24,21 @@ function(constants, ImgShadow, LiquidGlass) {
     >
       <lg-live-chat-ticker-paid-message-item-renderer v-for="message in showMessages" :key="message.raw.id"
         tabindex="0" class="style-scope lg-live-chat-ticker-renderer" style="overflow: hidden;"
+        :data-price-level="message.priceLevel"
       >
         <LiquidGlass
           :displacementScale="55"
           :blurAmount="0.06"
           :saturation="170"
           :aberrationIntensity="1.8"
-          :cornerRadius="10"
-          :padding="'10px 16px'"
+          :cornerRadius="8"
+          :padding="'6px 12px'"
           :mode="'standard'"
-          style="position: relative; width: 100%;"
+          :overLight="message.priceLevel >= 5"
+          :elasticity="0"
+          style="position: relative; width: auto; display: inline-flex; white-space: nowrap;"
         >
-          <div class="ticker-decoration" :style="{
-            background: message.decorationGradient
-          }"></div>
-          <img-shadow id="author-photo" height="24" width="24" class="style-scope lg-live-chat-ticker-paid-message-item-renderer"
+          <img-shadow id="author-photo" height="20" width="20" class="style-scope lg-live-chat-ticker-paid-message-item-renderer"
             :imgUrl="message.raw.avatarUrl"
           ></img-shadow>
           <span id="text" dir="ltr" class="style-scope lg-live-chat-ticker-paid-message-item-renderer" :style="{
@@ -73,11 +73,14 @@ function(constants, ImgShadow, LiquidGlass) {
           if (!this.needToShow(message)) {
             continue
           }
+          let priceConfig = message.type === constants.MESSAGE_TYPE_MEMBER 
+            ? null 
+            : constants.getPriceConfig(message.price)
           res.push({
             raw: message,
             color: this.getColor(message),
             text: this.getText(message),
-            decorationGradient: this.getDecorationGradient(message)
+            priceLevel: priceConfig ? priceConfig.priceLevel : 0
           })
         }
         return res

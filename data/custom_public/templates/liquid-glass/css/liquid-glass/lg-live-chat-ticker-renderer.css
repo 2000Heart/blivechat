@@ -1,7 +1,7 @@
 @layer lg {
 
 lg-live-chat-ticker-renderer {
-  display: block;
+  display: none !important;
   background-color: transparent;
 }
 
@@ -10,10 +10,10 @@ lg-live-chat-ticker-renderer[hidden] {
 }
 
 #items.lg-live-chat-ticker-renderer {
-  height: 32px;
+  height: 28px;
   overflow: visible;
   white-space: nowrap;
-  padding: 0 24px 8px 24px;
+  padding: 0 20px 6px 20px;
 }
 
 #items.lg-live-chat-ticker-renderer>* {
@@ -24,37 +24,25 @@ lg-live-chat-ticker-paid-message-item-renderer {
   display: inline-block;
   vertical-align: top;
   position: relative;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-/* LiquidGlass 组件样式 - 旧的液态玻璃效果已移除，现在使用新的 LiquidGlass 组件 */
+lg-live-chat-ticker-paid-message-item-renderer:hover {
+  transform: translateY(-1px);
+}
+
+/* LiquidGlass 组件样式 - 横向紧凑布局，单行显示 */
 lg-live-chat-ticker-paid-message-item-renderer .glass {
   display: flex;
   align-items: center;
   height: 100%;
   gap: 8px;
-  padding-left: 6px;
-}
-
-/* 左侧渐变装饰条 */
-lg-live-chat-ticker-paid-message-item-renderer .ticker-decoration {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  z-index: 4;
-  border-radius: 1rem 0 0 1rem;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
-  animation: tickerGlow 2s ease-in-out infinite;
-}
-
-@keyframes tickerGlow {
-  0%, 100% {
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 1;
-  }
+  position: relative;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 #author-photo.lg-live-chat-ticker-paid-message-item-renderer {
@@ -64,12 +52,36 @@ lg-live-chat-ticker-paid-message-item-renderer .ticker-decoration {
   -ms-flex: none;
   -webkit-flex: none;
   flex: none;
+  /* 紧凑的头像样式 */
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+#author-photo.lg-live-chat-ticker-paid-message-item-renderer:hover {
+  transform: scale(1.08);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 #text.lg-live-chat-ticker-paid-message-item-renderer {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  /* 紧凑的文字样式，确保单行显示 */
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.25),
+    0 1px 1px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.01em;
+  position: relative;
+  z-index: 1;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 lg-live-chat-ticker-paid-message-item-renderer.sliding-down {
@@ -82,22 +94,45 @@ lg-live-chat-ticker-paid-message-item-renderer.collapsing {
 
 @keyframes slideDown {
   from {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
   to {
-    transform: translateY(100%);
+    transform: translateY(100%) scale(0.95);
     opacity: 0;
   }
 }
 
 @keyframes collapse {
   from {
-    height: 24px;
+    height: 28px;
+    opacity: 1;
   }
   to {
     height: 0;
+    opacity: 0;
   }
+}
+
+/* 根据价格等级优化文字颜色和效果 */
+lg-live-chat-ticker-paid-message-item-renderer[data-price-level="5"] #text,
+lg-live-chat-ticker-paid-message-item-renderer[data-price-level="6"] #text,
+lg-live-chat-ticker-paid-message-item-renderer[data-price-level="7"] #text {
+  font-weight: 700;
+  text-shadow: 
+    0 0 3px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 6px currentColor;
+}
+
+lg-live-chat-ticker-paid-message-item-renderer[data-price-level="5"] #author-photo,
+lg-live-chat-ticker-paid-message-item-renderer[data-price-level="6"] #author-photo,
+lg-live-chat-ticker-paid-message-item-renderer[data-price-level="7"] #author-photo {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 8px currentColor;
 }
 
 }
