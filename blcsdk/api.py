@@ -27,6 +27,10 @@ __all__ = (
     'get_plugin_id',
     'log',
     'send_text',
+    'send_gift',
+    'send_member',
+    'send_super_chat',
+    'delete_super_chat',
     'get_rooms',
 )
 
@@ -250,6 +254,7 @@ async def send_text(
     author_type: int = models.AuthorType.NORMAL.value,
     guard_level: int = models.GuardLevel.NONE.value,
     medal_level: int = 0,
+    medal_name: str = '',
     translation: str = '',
     room_key: Optional[models.RoomKey] = None,
 ):
@@ -265,6 +270,7 @@ async def send_text(
     :param author_type: 用户类型，见AuthorType
     :param guard_level: 舰队等级，见GuardLevel
     :param medal_level: 勋章等级
+    :param medal_name: 勋章名称
     :param translation: 内容翻译
     :param room_key: 发送到哪个房间，默认发送到所有房间
     """
@@ -276,7 +282,128 @@ async def send_text(
         'authorType': author_type,
         'guardLevel': guard_level,
         'medalLevel': medal_level,
+        'medalName': medal_name,
         'translation': translation,
+        'roomKey': room_key.to_dict() if room_key is not None else None,
+    })
+
+
+async def send_gift(
+    gift_name: str,
+    num: int = 1,
+    author_name: str = '',
+    *,
+    gift_id: int = 0,
+    gift_icon_url: str = '',
+    total_coin: int = 0,
+    total_free_coin: int = 0,
+    uid: str = '',
+    avatar_url: str = '',
+    guard_level: int = models.GuardLevel.NONE.value,
+    medal_level: int = 0,
+    medal_name: str = '',
+    msg_id: str = '',
+    timestamp: Optional[int] = None,
+    room_key: Optional[models.RoomKey] = None,
+):
+    """
+    发送礼物消息（显示为礼物，不等同于文字弹幕）
+
+    当前插件也会收到这条消息，注意避免死循环
+    """
+    await _blc_ws_send_cmd_data(models.Command.ADD_GIFT_REQ, {
+        'giftName': gift_name,
+        'num': num,
+        'authorName': author_name,
+        'giftId': gift_id,
+        'giftIconUrl': gift_icon_url,
+        'totalCoin': total_coin,
+        'totalFreeCoin': total_free_coin,
+        'uid': uid,
+        'avatarUrl': avatar_url,
+        'guardLevel': guard_level,
+        'medalLevel': medal_level,
+        'medalName': medal_name,
+        'id': msg_id,
+        'timestamp': timestamp,
+        'roomKey': room_key.to_dict() if room_key is not None else None,
+    })
+
+
+async def send_member(
+    author_name: str = '',
+    *,
+    privilege_type: int = models.GuardLevel.NONE.value,
+    num: int = 1,
+    unit: str = '月',
+    total_coin: int = 0,
+    uid: str = '',
+    avatar_url: str = '',
+    medal_level: int = 0,
+    medal_name: str = '',
+    msg_id: str = '',
+    timestamp: Optional[int] = None,
+    room_key: Optional[models.RoomKey] = None,
+):
+    """
+    发送上舰（大航海）类消息
+    """
+    await _blc_ws_send_cmd_data(models.Command.ADD_MEMBER_REQ, {
+        'authorName': author_name,
+        'privilegeType': privilege_type,
+        'num': num,
+        'unit': unit,
+        'totalCoin': total_coin,
+        'uid': uid,
+        'avatarUrl': avatar_url,
+        'medalLevel': medal_level,
+        'medalName': medal_name,
+        'id': msg_id,
+        'timestamp': timestamp,
+        'roomKey': room_key.to_dict() if room_key is not None else None,
+    })
+
+
+async def send_super_chat(
+    content: str,
+    price: int,
+    author_name: str = '',
+    *,
+    translation: str = '',
+    uid: str = '',
+    avatar_url: str = '',
+    guard_level: int = models.GuardLevel.NONE.value,
+    medal_level: int = 0,
+    medal_name: str = '',
+    msg_id: str = '',
+    timestamp: Optional[int] = None,
+    room_key: Optional[models.RoomKey] = None,
+):
+    """
+    发送醒目留言消息
+    """
+    await _blc_ws_send_cmd_data(models.Command.ADD_SUPER_CHAT_REQ, {
+        'content': content,
+        'price': price,
+        'authorName': author_name,
+        'translation': translation,
+        'uid': uid,
+        'avatarUrl': avatar_url,
+        'guardLevel': guard_level,
+        'medalLevel': medal_level,
+        'medalName': medal_name,
+        'id': msg_id,
+        'timestamp': timestamp,
+        'roomKey': room_key.to_dict() if room_key is not None else None,
+    })
+
+
+async def delete_super_chat(ids: Sequence[str], *, room_key: Optional[models.RoomKey] = None):
+    """
+    按消息 ID 删除醒目留言（与前端收到的 ADD_SUPER_CHAT 的 id 一致）
+    """
+    await _blc_ws_send_cmd_data(models.Command.DEL_SUPER_CHAT_REQ, {
+        'ids': list(ids),
         'roomKey': room_key.to_dict() if room_key is not None else None,
     })
 

@@ -1,0 +1,3 @@
+# 仅在 Windows 上打主程序 exe 时需要（与运行依赖分开安装即可）
+-r requirements.txt
+pyinstaller>=6.3.0

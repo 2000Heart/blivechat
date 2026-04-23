@@ -69,6 +69,10 @@ class Command(enum.IntEnum):
     # 从插件发送到blivechat的请求
     LOG_REQ = 30
     ADD_TEXT_REQ = 31
+    ADD_GIFT_REQ = 32
+    ADD_MEMBER_REQ = 33
+    ADD_SUPER_CHAT_REQ = 34
+    DEL_SUPER_CHAT_REQ = 35
 
     # 房间内消息
     ADD_TEXT = 50

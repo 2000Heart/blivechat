@@ -3,11 +3,20 @@ import configparser
 import logging
 import os
 import re
+import sys
 from typing import *
 
 logger = logging.getLogger(__name__)
 
-BASE_PATH = os.path.dirname(os.path.realpath(__file__))
+
+def _base_path() -> str:
+    # PyInstaller 等冻结环境：资源与可执行文件同目录（与官方发行版布局一致）
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(os.path.realpath(sys.executable))
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+BASE_PATH = _base_path()
 WEB_ROOT = os.path.join(BASE_PATH, 'frontend', 'dist')
 DATA_PATH = os.path.join(BASE_PATH, 'data')
 

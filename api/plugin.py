@@ -2,6 +2,8 @@
 import asyncio
 import json
 import logging
+import time
+import uuid
 from typing import *
 
 import tornado.web
@@ -119,6 +121,14 @@ def make_message_body(cmd, data, extra: Optional[dict] = None):
     return json.dumps(body).encode('utf-8')
 
 
+def _iter_target_rooms_for_plugin(room_key_dict) -> List[services.chat.ClientRoom]:
+    if room_key_dict is not None:
+        room_key = services.chat.RoomKey.from_dict(room_key_dict)
+        room = services.chat.client_room_manager.get_room(room_key)
+        return [room] if room is not None else []
+    return list(services.chat.client_room_manager.iter_rooms())
+
+
 class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler):
     HEARTBEAT_INTERVAL = 30
     RECEIVE_TIMEOUT = HEARTBEAT_INTERVAL + 5
@@ -177,6 +187,14 @@ class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler)
                 logger.log(int(data['level']), '[%s] %s', self.plugin.id, data['msg'])
             elif cmd == models.Command.ADD_TEXT_REQ:
                 self._on_add_text_req(data)
+            elif cmd == models.Command.ADD_GIFT_REQ:
+                self._on_add_gift_req(data)
+            elif cmd == models.Command.ADD_MEMBER_REQ:
+                self._on_add_member_req(data)
+            elif cmd == models.Command.ADD_SUPER_CHAT_REQ:
+                self._on_add_super_chat_req(data)
+            elif cmd == models.Command.DEL_SUPER_CHAT_REQ:
+                self._on_del_super_chat_req(data)
             else:
                 logger.warning('plugin=%s unknown cmd=%d, body=%s', self.plugin.id, cmd, body)
 
@@ -184,16 +202,7 @@ class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler)
             logger.exception('plugin=%s on_message error, message=%s', self.plugin.id, message)
 
     def _on_add_text_req(self, data: dict):
-        room_key_dict = data['roomKey']
-        if room_key_dict is not None:
-            room_key = services.chat.RoomKey.from_dict(room_key_dict)
-            room = services.chat.client_room_manager.get_room(room_key)
-            if room is not None:
-                rooms = [room]
-            else:
-                rooms = []
-        else:
-            rooms = list(services.chat.client_room_manager.iter_rooms())
+        rooms = _iter_target_rooms_for_plugin(data['roomKey'])
         if not rooms:
             return
 
@@ -223,6 +232,159 @@ class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler)
             extra = services.chat.make_plugin_msg_extra_from_client_room(room)
             extra['isFromPlugin'] = True
             services.plugin.broadcast_cmd_data(models.Command.ADD_TEXT, data_to_send, extra)
+
+    def _on_add_gift_req(self, data: dict):
+        rooms = _iter_target_rooms_for_plugin(data['roomKey'])
+        if not rooms:
+            return
+
+        author_name = str(data.get('authorName', ''))
+        if author_name == '':
+            author_name = self.plugin.id
+        uid = str(data.get('uid', ''))
+        avatar_url = str(data.get('avatarUrl', ''))
+        if avatar_url == '':
+            avatar_url = services.avatar.get_default_avatar_url(username=author_name)
+
+        msg_id = str(data.get('id', ''))
+        if msg_id == '':
+            msg_id = uuid.uuid4().hex
+        ts = data.get('timestamp', None)
+        if ts is None:
+            ts = int(time.time())
+        else:
+            ts = int(ts)
+
+        data_to_send = {
+            'id': msg_id,
+            'avatarUrl': avatar_url,
+            'timestamp': ts,
+            'authorName': author_name,
+            'totalCoin': int(data.get('totalCoin', 0)),
+            'totalFreeCoin': int(data.get('totalFreeCoin', 0)),
+            'giftName': str(data.get('giftName', '')),
+            'num': int(data.get('num', 1)),
+            'giftId': int(data.get('giftId', 0)),
+            'giftIconUrl': str(data.get('giftIconUrl', '')),
+            'uid': uid if uid != '' else author_name,
+            'privilegeType': int(data.get('privilegeType', data.get('guardLevel', 0))),
+            'medalLevel': int(data.get('medalLevel', 0)),
+            'medalName': str(data.get('medalName', '')),
+        }
+
+        body_for_room = api.chat.make_message_body(api.chat.Command.ADD_GIFT, data_to_send)
+        for room in rooms:
+            room.send_body_no_raise(body_for_room)
+
+            extra = services.chat.make_plugin_msg_extra_from_client_room(room)
+            extra['isFromPlugin'] = True
+            services.plugin.broadcast_cmd_data(models.Command.ADD_GIFT, data_to_send, extra)
+
+    def _on_add_member_req(self, data: dict):
+        rooms = _iter_target_rooms_for_plugin(data['roomKey'])
+        if not rooms:
+            return
+
+        author_name = str(data.get('authorName', ''))
+        if author_name == '':
+            author_name = self.plugin.id
+        uid = str(data.get('uid', ''))
+        avatar_url = str(data.get('avatarUrl', ''))
+        if avatar_url == '':
+            avatar_url = services.avatar.get_default_avatar_url(username=author_name)
+
+        msg_id = str(data.get('id', ''))
+        if msg_id == '':
+            msg_id = uuid.uuid4().hex
+        ts = data.get('timestamp', None)
+        if ts is None:
+            ts = int(time.time())
+        else:
+            ts = int(ts)
+
+        data_to_send = {
+            'id': msg_id,
+            'avatarUrl': avatar_url,
+            'timestamp': ts,
+            'authorName': author_name,
+            'privilegeType': int(data.get('privilegeType', data.get('guardLevel', 0))),
+            'num': int(data.get('num', 1)),
+            'unit': str(data.get('unit', '月')),
+            'total_coin': int(data.get('totalCoin', data.get('total_coin', 0))),
+            'uid': uid if uid != '' else author_name,
+            'medalLevel': int(data.get('medalLevel', 0)),
+            'medalName': str(data.get('medalName', '')),
+        }
+
+        body_for_room = api.chat.make_message_body(api.chat.Command.ADD_MEMBER, data_to_send)
+        for room in rooms:
+            room.send_body_no_raise(body_for_room)
+
+            extra = services.chat.make_plugin_msg_extra_from_client_room(room)
+            extra['isFromPlugin'] = True
+            services.plugin.broadcast_cmd_data(models.Command.ADD_MEMBER, data_to_send, extra)
+
+    def _on_add_super_chat_req(self, data: dict):
+        rooms = _iter_target_rooms_for_plugin(data['roomKey'])
+        if not rooms:
+            return
+
+        author_name = str(data.get('authorName', ''))
+        if author_name == '':
+            author_name = self.plugin.id
+        uid = str(data.get('uid', ''))
+        avatar_url = str(data.get('avatarUrl', ''))
+        if avatar_url == '':
+            avatar_url = services.avatar.get_default_avatar_url(username=author_name)
+
+        msg_id = str(data.get('id', ''))
+        if msg_id == '':
+            msg_id = uuid.uuid4().hex
+        ts = data.get('timestamp', None)
+        if ts is None:
+            ts = int(time.time())
+        else:
+            ts = int(ts)
+
+        data_to_send = {
+            'id': msg_id,
+            'avatarUrl': avatar_url,
+            'timestamp': ts,
+            'authorName': author_name,
+            'price': int(data.get('price', 0)),
+            'content': str(data.get('content', '')),
+            'translation': str(data.get('translation', '')),
+            'uid': uid if uid != '' else author_name,
+            'privilegeType': int(data.get('privilegeType', data.get('guardLevel', 0))),
+            'medalLevel': int(data.get('medalLevel', 0)),
+            'medalName': str(data.get('medalName', '')),
+        }
+
+        body_for_room = api.chat.make_message_body(api.chat.Command.ADD_SUPER_CHAT, data_to_send)
+        for room in rooms:
+            room.send_body_no_raise(body_for_room)
+
+            extra = services.chat.make_plugin_msg_extra_from_client_room(room)
+            extra['isFromPlugin'] = True
+            services.plugin.broadcast_cmd_data(models.Command.ADD_SUPER_CHAT, data_to_send, extra)
+
+    def _on_del_super_chat_req(self, data: dict):
+        rooms = _iter_target_rooms_for_plugin(data['roomKey'])
+        if not rooms:
+            return
+
+        raw_ids = data.get('ids', [])
+        if not isinstance(raw_ids, list) or len(raw_ids) == 0:
+            return
+
+        data_to_send = {'ids': [str(i) for i in raw_ids]}
+        body_for_room = api.chat.make_message_body(api.chat.Command.DEL_SUPER_CHAT, data_to_send)
+        for room in rooms:
+            room.send_body_no_raise(body_for_room)
+
+            extra = services.chat.make_plugin_msg_extra_from_client_room(room)
+            extra['isFromPlugin'] = True
+            services.plugin.broadcast_cmd_data(models.Command.DEL_SUPER_CHAT, data_to_send, extra)
 
     def send_cmd_data(self, cmd, data, extra: Optional[dict] = None):
         self.send_body_no_raise(make_message_body(cmd, data, extra))
