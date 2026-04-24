@@ -223,6 +223,9 @@ class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler)
             privilege_type=int(data['guardLevel']),
             medal_level=int(data['medalLevel']),
             translation=str(data['translation']),
+            content_type=int(data.get('contentType', api.chat.ContentType.TEXT)),
+            content_type_params=data.get('contentTypeParams', []),
+            identity_ext=data.get('identityExt', {}),
         )
 
         body_for_room = api.chat.make_message_body(api.chat.Command.ADD_TEXT, data_to_send)
@@ -270,6 +273,7 @@ class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler)
             'privilegeType': int(data.get('privilegeType', data.get('guardLevel', 0))),
             'medalLevel': int(data.get('medalLevel', 0)),
             'medalName': str(data.get('medalName', '')),
+            'identityExt': data.get('identityExt', {}),
         }
 
         body_for_room = api.chat.make_message_body(api.chat.Command.ADD_GIFT, data_to_send)

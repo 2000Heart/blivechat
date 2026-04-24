@@ -256,6 +256,9 @@ async def send_text(
     medal_level: int = 0,
     medal_name: str = '',
     translation: str = '',
+    content_type: int = 0,
+    content_type_params: Optional[list] = None,
+    identity_ext: Optional[dict] = None,
     room_key: Optional[models.RoomKey] = None,
 ):
     """
@@ -272,6 +275,9 @@ async def send_text(
     :param medal_level: 勋章等级
     :param medal_name: 勋章名称
     :param translation: 内容翻译
+    :param content_type: 内容类型，0=TEXT，1=EMOTICON
+    :param content_type_params: 跟内容类型相关的参数（EMOTICON时为[url]）
+    :param identity_ext: 平台扩展身份信息，会透传到前端渲染层
     :param room_key: 发送到哪个房间，默认发送到所有房间
     """
     await _blc_ws_send_cmd_data(models.Command.ADD_TEXT_REQ, {
@@ -284,6 +290,9 @@ async def send_text(
         'medalLevel': medal_level,
         'medalName': medal_name,
         'translation': translation,
+        'contentType': int(content_type),
+        'contentTypeParams': content_type_params if isinstance(content_type_params, list) else [],
+        'identityExt': identity_ext if identity_ext is not None else {},
         'roomKey': room_key.to_dict() if room_key is not None else None,
     })
 
@@ -304,6 +313,7 @@ async def send_gift(
     medal_name: str = '',
     msg_id: str = '',
     timestamp: Optional[int] = None,
+    identity_ext: Optional[dict] = None,
     room_key: Optional[models.RoomKey] = None,
 ):
     """
@@ -326,6 +336,7 @@ async def send_gift(
         'medalName': medal_name,
         'id': msg_id,
         'timestamp': timestamp,
+        'identityExt': identity_ext if identity_ext is not None else {},
         'roomKey': room_key.to_dict() if room_key is not None else None,
     })
 

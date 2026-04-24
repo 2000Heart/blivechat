@@ -38,6 +38,14 @@ class Injector:
             if self._dropped % 50 == 1:
                 logger.warning('Inject queue full, dropped %d messages so far', self._dropped)
 
+    def get_metrics(self) -> Dict[str, int]:
+        return {
+            'sent': self._sent,
+            'dropped': self._dropped,
+            'queue_size': self._queue.qsize(),
+            'queue_max': self._queue.maxsize,
+        }
+
     async def _worker(self, wid: int) -> None:
         while True:
             item = await self._queue.get()
@@ -46,11 +54,15 @@ class Injector:
             try:
                 kind = item.get('kind', 'text')
                 ml = item.get('medal_level', item.get('medalLevel', 0))
-                    mn = item.get('medal_name', item.get('medalName', ''))
-                    try:
-                        medal_level = max(0, int(ml))
-                    except (TypeError, ValueError):
-                        medal_level = 0
+                mn = item.get('medal_name', item.get('medalName', ''))
+                try:
+                    medal_level = max(0, int(ml))
+                except (TypeError, ValueError):
+                    medal_level = 0
+                try:
+                    guard_level = max(0, int(item.get('guard_level', 0)))
+                except (TypeError, ValueError):
+                    guard_level = 0
                 if kind == 'gift':
                     await blcsdk.send_gift(
                         item['gift_name'],
@@ -62,8 +74,10 @@ class Injector:
                         total_free_coin=int(item.get('total_free_coin', 0)),
                         uid=item.get('uid', ''),
                         avatar_url=item.get('avatar_url', ''),
+                        guard_level=guard_level,
                         medal_level=medal_level,
                         medal_name=str(mn or ''),
+                        identity_ext=item.get('identity_ext', {}),
                     )
                 else:
                     await blcsdk.send_text(
@@ -71,8 +85,12 @@ class Injector:
                         author_name=item.get('author_name', ''),
                         uid=item.get('uid', ''),
                         avatar_url=item.get('avatar_url', ''),
+                        guard_level=guard_level,
                         medal_level=medal_level,
                         medal_name=str(mn or ''),
+                        content_type=int(item.get('content_type', 0)),
+                        content_type_params=item.get('content_type_params', []),
+                        identity_ext=item.get('identity_ext', {}),
                     )
                 self._sent += 1
             except Exception:

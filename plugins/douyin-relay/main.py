@@ -12,8 +12,11 @@ import blcsdk
 from cachetools import TTLCache
 
 import config
+from douyin_client import DouyinClient, StubDirectMessageSource
+from douyin_protocol import DouyinProtocol
 import listener
 import mapper
+import admin_ui
 from injector import Injector
 from relay_server import DouyinRelayServer
 
@@ -23,6 +26,8 @@ shut_down_event: Optional[asyncio.Event] = None
 _dedup: Optional[TTLCache] = None
 _injector: Optional[Injector] = None
 _relay: Optional[DouyinRelayServer] = None
+_direct_client: Optional[DouyinClient] = None
+_protocol: Optional[DouyinProtocol] = None
 
 
 async def main():
@@ -45,23 +50,41 @@ async def init():
 
     listener.init()
 
-    global _dedup, _injector, _relay
+    global _dedup, _injector, _relay, _direct_client, _protocol
     cfg = config.get_config()
     _dedup = TTLCache(maxsize=cfg.dedup_max_size, ttl=cfg.dedup_ttl_seconds)
     _injector = Injector(cfg.inject_queue_max, cfg.inject_concurrency)
     await _injector.start()
+    _protocol = DouyinProtocol()
+    admin_ui.set_status_provider(get_runtime_status)
 
-    _relay = DouyinRelayServer(
-        cfg.listen_host,
-        cfg.listen_port,
-        cfg.ws_path,
-        on_text=_on_ws_text,
-    )
-    await _relay.start()
-    await blcsdk.log(
-        f'抖音中继已启动，请在 dycast 填写 ws://{cfg.listen_host}:{cfg.listen_port}{cfg.ws_path}',
-        logging.INFO,
-    )
+    if cfg.mode == 'relay':
+        _relay = DouyinRelayServer(
+            cfg.listen_host,
+            cfg.listen_port,
+            cfg.ws_path,
+            on_text=_on_ws_text,
+        )
+        await _relay.start()
+        await blcsdk.log(
+            f'抖音中继已启动，请在 dycast 填写 ws://{cfg.listen_host}:{cfg.listen_port}{cfg.ws_path}',
+            logging.INFO,
+        )
+    else:
+        source = StubDirectMessageSource(_protocol, cfg.douyin_room_id)
+        _direct_client = DouyinClient(
+            _protocol,
+            source,
+            _on_protocol_payload,
+            max_retries=cfg.direct_max_retries,
+            backoff_base_seconds=cfg.direct_backoff_base_seconds,
+            backoff_max_seconds=cfg.direct_backoff_max_seconds,
+        )
+        if cfg.auto_start:
+            await _direct_client.start()
+            await blcsdk.log('抖音 direct 模式已启动（stub 消息源）', logging.INFO)
+        else:
+            await blcsdk.log('抖音 direct 模式未自动启动（auto_start=false）', logging.WARNING)
 
 
 def _dedup_key(msg: dict) -> str:
@@ -74,7 +97,12 @@ def _dedup_key(msg: dict) -> str:
 
 
 async def _on_ws_text(raw: str) -> None:
-    kind, payload = mapper.parse_incoming_json(raw)
+    assert _protocol is not None
+    kind, payload = _protocol.parse_raw_payload(raw)
+    await _on_protocol_payload(kind, payload)
+
+
+async def _on_protocol_payload(kind: str, payload: Any) -> None:
     if kind == 'unknown' or payload is None:
         return
     if kind == 'live_info' and isinstance(payload, dict):
@@ -107,6 +135,28 @@ async def _on_ws_text(raw: str) -> None:
             continue
         _dedup[key] = True
         await _injector.enqueue(mapped)
+
+
+def get_runtime_status() -> Dict[str, Any]:
+    cfg = config.get_config()
+    injector_metrics: Dict[str, Any] = {}
+    if _injector is not None:
+        injector_metrics = _injector.get_metrics()
+    direct_snapshot: Dict[str, Any] = {}
+    if _direct_client is not None:
+        direct_snapshot = _direct_client.get_runtime_snapshot()
+    state = direct_snapshot.get('state', 'stopped') if cfg.mode == 'direct' else 'n/a'
+    reconnect_count = int(direct_snapshot.get('reconnect_count', 0)) if cfg.mode == 'direct' else 0
+    last_error = str(direct_snapshot.get('last_error') or '')
+    return {
+        'current_mode': cfg.mode,
+        'state': state,
+        'sent': int(injector_metrics.get('sent', 0)),
+        'dropped': int(injector_metrics.get('dropped', 0)),
+        'queue_size': int(injector_metrics.get('queue_size', 0)),
+        'reconnect_count': reconnect_count,
+        'last_error': last_error,
+    }
 
 
 def init_signal_handlers():
@@ -143,20 +193,25 @@ def init_logging():
 
 async def run():
     logger.info('douyin-relay running, waiting for shutdown...')
+    logger.info('runtime status: %s', json.dumps(get_runtime_status(), ensure_ascii=False, sort_keys=True))
     assert shut_down_event is not None
     await shut_down_event.wait()
     logger.info('Start to shut down')
 
 
 async def shut_down():
-    global _relay, _injector
+    global _relay, _injector, _direct_client
     listener.shut_down()
     if _relay is not None:
         await _relay.stop()
         _relay = None
+    if _direct_client is not None:
+        await _direct_client.stop()
+        _direct_client = None
     if _injector is not None:
         await _injector.stop()
         _injector = None
+    logger.info('runtime status(final): %s', json.dumps(get_runtime_status(), ensure_ascii=False, sort_keys=True))
     await blcsdk.shut_down()
 
 

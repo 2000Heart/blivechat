@@ -183,6 +183,7 @@ export default class ChatClientRelay {
         emoticon: emoticon,
         uid: data[16],
         medalName: data[17],
+        identityExt: data[18] || {},
       })
       this.msgHandler.onAddText(data)
       break

@@ -74,6 +74,7 @@ def make_text_message_data(
     content_type_params: list = None,
     uid: str = '',
     medal_name: str = '',
+    identity_ext: dict = None,
 ):
     # 为了节省带宽用list而不是dict
     return [
@@ -113,6 +114,8 @@ def make_text_message_data(
         uid,
         # 17: medalName
         medal_name,
+        # 18: identityExt
+        identity_ext if isinstance(identity_ext, dict) else {},
     ]
 
 

@@ -21,6 +21,7 @@ export class AddTextMsg {
     // 给模板用的字段
     uid = '',
     medalName = '',
+    identityExt = {},
   } = {}) {
     this.avatarUrl = avatarUrl
     this.timestamp = timestamp
@@ -39,6 +40,10 @@ export class AddTextMsg {
     // 给模板用的字段
     this.uid = uid
     this.medalName = medalName
+    this.identityExt = identityExt || {}
+    this.platform = this.identityExt.platform || ''
+    this.platformMeta = this.identityExt.platform_meta || this.identityExt.platformMeta || {}
+    this.fanIdentity = this.identityExt.fan_identity || this.identityExt.fanIdentity || {}
   }
 }
 
@@ -59,6 +64,7 @@ export class AddGiftMsg {
     privilegeType = 0,
     medalLevel = 0,
     medalName = '',
+    identityExt = {},
   } = {}) {
     this.id = id
     this.avatarUrl = avatarUrl
@@ -75,6 +81,10 @@ export class AddGiftMsg {
     this.privilegeType = privilegeType
     this.medalLevel = medalLevel
     this.medalName = medalName
+    this.identityExt = identityExt || {}
+    this.platform = this.identityExt.platform || ''
+    this.platformMeta = this.identityExt.platform_meta || this.identityExt.platformMeta || {}
+    this.fanIdentity = this.identityExt.fan_identity || this.identityExt.fanIdentity || {}
   }
 }
 

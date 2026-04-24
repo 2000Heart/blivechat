@@ -73,9 +73,12 @@ class AppConfig:
     """插件配置（见 data/config.example.ini）"""
 
     def __init__(self):
+        self.mode = 'relay'
         self.listen_host = '127.0.0.1'
         self.listen_port = 18765
         self.ws_path = '/'
+        self.douyin_room_id = ''
+        self.auto_start = True
         self.content_prefix = '[抖音]'
         self.include_gift = True
         self.native_gift = True
@@ -86,6 +89,9 @@ class AppConfig:
         self.dedup_max_size = 8000
         self.inject_queue_max = 500
         self.inject_concurrency = 8
+        self.direct_max_retries = 5
+        self.direct_backoff_base_seconds = 1.0
+        self.direct_backoff_max_seconds = 20.0
 
     def load(self, path: str) -> bool:
         try:
@@ -95,9 +101,12 @@ class AppConfig:
             if sec is None:
                 logger.warning('No [relay] section in config, using defaults')
                 return True
+            self.mode = sec.get('mode', self.mode).strip().lower() or self.mode
             self.listen_host = sec.get('listen_host', self.listen_host)
             self.listen_port = sec.getint('listen_port', self.listen_port)
             self.ws_path = sec.get('ws_path', self.ws_path)
+            self.douyin_room_id = sec.get('douyin_room_id', self.douyin_room_id)
+            self.auto_start = sec.getboolean('auto_start', self.auto_start)
             self.content_prefix = sec.get('content_prefix', self.content_prefix)
             self.include_gift = sec.getboolean('include_gift', self.include_gift)
             self.native_gift = sec.getboolean('native_gift', self.native_gift)
@@ -108,6 +117,16 @@ class AppConfig:
             self.dedup_max_size = sec.getint('dedup_max_size', self.dedup_max_size)
             self.inject_queue_max = sec.getint('inject_queue_max', self.inject_queue_max)
             self.inject_concurrency = sec.getint('inject_concurrency', self.inject_concurrency)
+            self.direct_max_retries = sec.getint('direct_max_retries', self.direct_max_retries)
+            self.direct_backoff_base_seconds = sec.getfloat(
+                'direct_backoff_base_seconds', self.direct_backoff_base_seconds
+            )
+            self.direct_backoff_max_seconds = sec.getfloat(
+                'direct_backoff_max_seconds', self.direct_backoff_max_seconds
+            )
+            if self.mode not in ('relay', 'direct'):
+                logger.warning('Unknown mode=%s, fallback to relay', self.mode)
+                self.mode = 'relay'
         except Exception:
             logger.exception('Failed to load config:')
             return False

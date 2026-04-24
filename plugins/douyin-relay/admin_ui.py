@@ -6,11 +6,28 @@ import logging
 import os
 import subprocess
 import sys
-from typing import Optional
+import json
+from typing import Any, Callable, Dict, Optional
 
 import config
 
 logger = logging.getLogger('douyin-relay.' + __name__)
+_status_provider: Optional[Callable[[], Dict[str, Any]]] = None
+
+
+def set_status_provider(provider: Callable[[], Dict[str, Any]]) -> None:
+    global _status_provider
+    _status_provider = provider
+
+
+def _collect_status() -> Dict[str, Any]:
+    if _status_provider is None:
+        return {}
+    try:
+        return _status_provider() or {}
+    except Exception:
+        logger.exception('Failed to collect runtime status')
+        return {'error': 'status provider failed'}
 
 
 def _config_file_path() -> Optional[str]:
@@ -36,7 +53,7 @@ def open_plugin_admin_ui() -> None:
         import tkinter.font as tkfont
         from tkinter import messagebox, ttk
     except ImportError:
-        logger.warning('tkinter 不可用，无法打开管理界面')
+        logger.warning('tkinter 不可用，状态: %s', json.dumps(_collect_status(), ensure_ascii=False))
         return
 
     cfg = config.get_config()
@@ -78,6 +95,18 @@ def open_plugin_admin_ui() -> None:
         f'若 dycast 在另一台电脑，请将地址中的主机名改为本机局域网 IP。'
     )
     ttk.Label(frm, text=hint, wraplength=480, justify=tk.LEFT).pack(anchor=tk.W, **pad)
+
+    ttk.Label(frm, text='运行状态（最小可观测）').pack(anchor=tk.W, padx=12, pady=(4, 0))
+    status_var = tk.StringVar(value='{}')
+    status_entry = ttk.Entry(frm, textvariable=status_var, font=(mono['family'], mono['size']))
+    status_entry.pack(fill=tk.X, padx=12, pady=(4, 8))
+
+    def render_status() -> None:
+        status = _collect_status()
+        status_var.set(json.dumps(status, ensure_ascii=False, sort_keys=True))
+        root.after(1000, render_status)
+
+    render_status()
 
     btn_row = ttk.Frame(frm)
     btn_row.pack(fill=tk.X, **pad)
