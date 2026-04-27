@@ -29,6 +29,7 @@ _config: Optional['AppConfig'] = None
 
 
 def init(cmd_args):
+    os.makedirs(DATA_PATH, exist_ok=True)
     if reload(cmd_args):
         return
     logger.warning('Using default config')
@@ -128,6 +129,7 @@ class AppConfig:
         self.host = app_section.get('host', self.host)
         self.port = app_section.getint('port', self.port)
         self.database_url = app_section.get('database_url', self.database_url)
+        self.database_url = _normalize_database_url(self.database_url)
         self.tornado_xheaders = app_section.getboolean('tornado_xheaders', self.tornado_xheaders)
         self.loader_url = app_section.get('loader_url', self.loader_url)
         if self.loader_url == '{local_loader}':
@@ -260,3 +262,23 @@ def _str_to_list(value, item_type: Type = str, container_type: Type = list):
     if item_type is not str:
         items = map(item_type, items)
     return container_type(items)
+
+
+def _normalize_database_url(url: str) -> str:
+    """
+    兼容打包场景：
+    sqlite 相对路径（如 sqlite:///data/database.db）在 SQLAlchemy 中会按当前工作目录解析，
+    而不是程序目录。这里统一转为基于 BASE_PATH 的绝对路径。
+    """
+    u = (url or '').strip()
+    if not u.startswith('sqlite:///'):
+        return u
+    # sqlite:////abs/path.db（绝对路径）保持原样
+    if u.startswith('sqlite:////'):
+        return u
+
+    rel = u[len('sqlite:///'):].lstrip('/\\')
+    abs_path = os.path.abspath(os.path.join(BASE_PATH, rel))
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    # SQLAlchemy sqlite 绝对路径约定：sqlite:////absolute/path
+    return 'sqlite:///' + abs_path

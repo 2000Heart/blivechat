@@ -43,7 +43,10 @@ def init():
 
 def shut_down():
     for plugin in _plugins.values():
-        plugin.stop()
+        try:
+            plugin.stop()
+        except Exception:
+            logger.exception('plugin=%s shut_down failed', plugin.id)
 
 
 def _discover_plugin_ids():
@@ -155,6 +158,7 @@ class Plugin:
         self._last_switch_time = datetime.datetime.fromtimestamp(0)
         self._token = ''
         self._client: Optional['api.plugin.PluginWsHandler'] = None
+        self._subprocess: Optional[subprocess.Popen] = None
 
     @property
     def id(self):
@@ -204,27 +208,31 @@ class Plugin:
     def start(self):
         if self.is_started:
             return
+        self._terminate_subprocess()
         self._refresh_last_switch_time()
 
         token = ''.join(random.choice(string.hexdigits) for _ in range(32))
-        self._set_token(token)
-
         cfg = config.get_config()
         env = {
             **os.environ,
             'BLC_PORT': str(cfg.port),
-            'BLC_TOKEN': self._token,
+            'BLC_TOKEN': token,
         }
+        popen_kw: Dict[str, Any] = {
+            'args': self._config.run_cmd,
+            'shell': True,
+            'cwd': self.base_path,
+            'env': env,
+        }
+        if os.name != 'nt':
+            popen_kw['start_new_session'] = True
         try:
-            subprocess.Popen(
-                self._config.run_cmd,
-                shell=True,
-                cwd=self.base_path,
-                env=env,
-            )
+            self._subprocess = subprocess.Popen(**popen_kw)
         except OSError as e:
             logger.exception('plugin=%s failed to start', self._id)
+            self._subprocess = None
             raise SwitchPluginError(str(e))
+        self._set_token(token)
 
     def _refresh_last_switch_time(self):
         cur_time = datetime.datetime.now()
@@ -233,11 +241,33 @@ class Plugin:
         self._last_switch_time = cur_time
 
     def stop(self):
+        self._terminate_subprocess()
         if not self.is_started:
             return
-        self._refresh_last_switch_time()
+        try:
+            self._refresh_last_switch_time()
+        except SwitchTooFrequently:
+            logger.debug('plugin=%s stop: switch throttle ignored', self._id)
 
         self._set_token('')
+
+    def _terminate_subprocess(self):
+        proc = self._subprocess
+        self._subprocess = None
+        if proc is None:
+            return
+        if proc.poll() is not None:
+            return
+        try:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10.0)
+            except subprocess.TimeoutExpired:
+                logger.warning('plugin=%s subprocess did not exit, killing', self._id)
+                proc.kill()
+                proc.wait(timeout=5.0)
+        except Exception:
+            logger.exception('plugin=%s failed to terminate subprocess pid=%s', self._id, getattr(proc, 'pid', None))
 
     def _set_token(self, token):
         if self._token == token:

@@ -18,6 +18,16 @@
         <div id="header-content" class="style-scope yt-live-chat-paid-message-renderer">
           <div id="header-content-primary-column" class="style-scope yt-live-chat-paid-message-renderer">
             <div id="author-name" class="style-scope yt-live-chat-paid-message-renderer">{{ authorName }}</div>
+            <identity-badges
+              class="style-scope yt-live-chat-paid-message-renderer"
+              :platform="platform"
+              :platformMeta="platformMeta"
+              :fanIdentity="fanIdentity"
+              :privilegeType="privilegeType"
+              :medalName="medalName"
+              :medalLevel="medalLevel"
+              :messageExt="messageExt"
+            ></identity-badges>
             <div id="purchase-amount" class="style-scope yt-live-chat-paid-message-renderer">{{ showPriceText }}</div>
           </div>
           <span id="timestamp" class="style-scope yt-live-chat-paid-message-renderer">{{ timeText }}</span>
@@ -32,13 +42,15 @@
 
 <script>
 import ImgShadow from './ImgShadow'
+import IdentityBadges from './IdentityBadges'
 import * as constants from './constants'
 import * as utils from '@/utils'
 
 export default {
   name: 'PaidMessage',
   components: {
-    ImgShadow
+    ImgShadow,
+    IdentityBadges
   },
   props: {
     avatarUrl: String,
@@ -46,7 +58,14 @@ export default {
     price: Number, // 价格，人民币
     priceText: String,
     time: Date,
-    content: String
+    content: String,
+    platform: String,
+    platformMeta: Object,
+    fanIdentity: Object,
+    privilegeType: Number,
+    medalName: String,
+    medalLevel: Number,
+    messageExt: Object
   },
   computed: {
     priceConfig() {

@@ -10,7 +10,11 @@
 from __future__ import annotations
 
 import logging
+import hashlib
+import time
 from typing import Any, Dict, List, Optional
+
+from contract import UnifiedEvent
 
 logger = logging.getLogger('douyin-relay.' + __name__)
 
@@ -48,6 +52,46 @@ def _user_avatar(u: Optional[Dict[str, Any]]) -> str:
     return str(u.get('avatar') or '').strip()
 
 
+def _medal_from_nested_fans_club(fc: Any) -> tuple[int, str]:
+    """user 上仍带 fansClub 嵌套（未走 dycast 扁平化）时的兜底。"""
+    if not isinstance(fc, dict):
+        return 0, ''
+    candidates: List[Dict[str, Any]] = []
+    data = fc.get('data')
+    if isinstance(data, dict):
+        candidates.append(data)
+    pd = fc.get('preferData') or fc.get('prefer_data')
+    if isinstance(pd, dict):
+        for v in pd.values():
+            if isinstance(v, dict):
+                candidates.append(v)
+    if not candidates:
+        return 0, ''
+    best = candidates[0]
+    best_lv = int(best.get('level', 0) or 0)
+    for c in candidates[1:]:
+        try:
+            lv = int(c.get('level', 0) or 0)
+        except (TypeError, ValueError):
+            lv = 0
+        if lv > best_lv:
+            best_lv = lv
+            best = c
+        elif lv == best_lv:
+            bn = str(best.get('clubName', best.get('club_name', '')) or '').strip()
+            cn = str(c.get('clubName', c.get('club_name', '')) or '').strip()
+            if not bn and cn:
+                best = c
+    try:
+        level = int(best.get('level', 0) or 0)
+    except (TypeError, ValueError):
+        level = 0
+    name = str(
+        best.get('clubName', best.get('club_name', '')) or ''
+    ).strip()
+    return max(0, level), name
+
+
 def _medal_from_user(u: Optional[Dict[str, Any]]) -> tuple[int, str]:
     """粉丝团 → blivechat 勋章位：medal_level / medal_name（兼容 camelCase）。"""
     if not u:
@@ -58,7 +102,17 @@ def _medal_from_user(u: Optional[Dict[str, Any]]) -> tuple[int, str]:
     except (TypeError, ValueError):
         level = 0
     name = u.get('medal_name', u.get('medalName', ''))
-    return max(0, level), str(name or '').strip()
+    level = max(0, level)
+    name = str(name or '').strip()
+    if level <= 0 and not name:
+        nl, nn = _medal_from_nested_fans_club(
+            u.get('fans_club') or u.get('fansClub')
+        )
+        if nl > 0 or nn:
+            level = max(level, nl)
+            if not name:
+                name = nn
+    return level, name
 
 
 def _gift_count(raw: Any) -> int:
@@ -81,6 +135,17 @@ def _gift_id_numeric(raw: Any) -> int:
     return abs(hash(s)) % (2 ** 31) or 1
 
 
+def _first_non_negative_int(*raw_values: Any) -> int:
+    for raw in raw_values:
+        try:
+            v = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if v >= 0:
+            return v
+    return 0
+
+
 def _flatten_rtf(rtf: Optional[List[Dict[str, Any]]]) -> str:
     if not rtf:
         return ''
@@ -94,6 +159,294 @@ def _flatten_rtf(rtf: Optional[List[Dict[str, Any]]]) -> str:
         elif url:
             parts.append('[表情]')
     return ''.join(parts).strip()
+
+
+def _as_optional_non_empty_str(raw: Any) -> Optional[str]:
+    text = str(raw or '').strip()
+    return text or None
+
+
+def _as_optional_non_negative_int(raw: Any) -> Optional[int]:
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if v < 0:
+        return None
+    return v
+
+
+def _base_douyin_platform_meta(msg: Dict[str, Any], user: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    return {
+        'platform': 'douyin',
+        'room_id': str(msg.get('roomId') or '').strip(),
+        'room_num': str(msg.get('roomNum') or '').strip(),
+        'membership_type': _as_optional_non_empty_str(
+            msg.get('membership_type', msg.get('membershipType'))
+        ),
+        'membership_name': _as_optional_non_empty_str(
+            msg.get('membership_name', msg.get('membershipName'))
+        ),
+        'fans_badge_level': _as_optional_non_negative_int(
+            user.get('medal_level', user.get('medalLevel')) if isinstance(user, dict) else None
+        ),
+        'fans_badge_name': _as_optional_non_empty_str(
+            user.get('medal_name', user.get('medalName')) if isinstance(user, dict) else None
+        ),
+    }
+
+
+def _base_actor(user: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    return {
+        'id': _user_id(user),
+        'name': _user_name(user) or '抖音用户',
+        'avatar_url': _user_avatar(user),
+    }
+
+
+def _to_unified_chat_event(msg: Dict[str, Any]) -> Optional[UnifiedEvent]:
+    user = msg.get('user') if isinstance(msg.get('user'), dict) else None
+    content = msg.get('content')
+    if content is None or str(content).strip() == '':
+        content = _flatten_rtf(msg.get('rtfContent'))
+    text = str(content or '').strip()
+    if not text:
+        return None
+
+    raw_ts = msg.get('timestamp', msg.get('ts'))
+    try:
+        ts = int(raw_ts)
+    except (TypeError, ValueError):
+        ts = int(time.time() * 1000)
+
+    event_id = str(msg.get('id') or '').strip()
+    if not event_id:
+        fallback_basis = '\x1f'.join([
+            _user_id(user),
+            str(ts),
+            str(msg.get('roomId') or '').strip(),
+            str(msg.get('roomNum') or '').strip(),
+            text,
+        ])
+        event_id = f'{CHAT}:{hashlib.sha1(fallback_basis.encode("utf-8")).hexdigest()[:16]}'
+
+    return {
+        'event_id': event_id,
+        'platform': 'douyin',
+        'event_type': 'chat.message',
+        'ts': ts,
+        'actor': _base_actor(user),
+        'content': {
+            'text': text,
+        },
+        'monetization': None,
+        'fan_identity': None,
+        'platform_meta': _base_douyin_platform_meta(msg, user),
+    }
+
+
+def _to_unified_text_event(msg: Dict[str, Any], *, event_type: str, default_text: str) -> Optional[UnifiedEvent]:
+    user = msg.get('user') if isinstance(msg.get('user'), dict) else None
+    text = str(msg.get('content') or default_text).strip()
+    if not text:
+        return None
+    raw_ts = msg.get('timestamp', msg.get('ts'))
+    try:
+        ts = int(raw_ts)
+    except (TypeError, ValueError):
+        ts = int(time.time() * 1000)
+    event_id = str(msg.get('id') or '').strip()
+    if not event_id:
+        fallback_basis = '\x1f'.join([
+            event_type,
+            _user_id(user),
+            str(ts),
+            str(msg.get('roomId') or '').strip(),
+            str(msg.get('roomNum') or '').strip(),
+            text,
+        ])
+        event_id = f'{event_type}:{hashlib.sha1(fallback_basis.encode("utf-8")).hexdigest()[:16]}'
+    return {
+        'event_id': event_id,
+        'platform': 'douyin',
+        'event_type': event_type,
+        'ts': ts,
+        'actor': _base_actor(user),
+        'content': {'text': text},
+        'monetization': None,
+        'fan_identity': None,
+        'platform_meta': _base_douyin_platform_meta(msg, user),
+    }
+
+
+def _to_unified_gift_event(msg: Dict[str, Any]) -> UnifiedEvent:
+    user = msg.get('user') if isinstance(msg.get('user'), dict) else None
+    gift = msg.get('gift') if isinstance(msg.get('gift'), dict) else {}
+    gname = str(gift.get('name') or '礼物').strip()
+    count = _gift_count(gift.get('count', '1'))
+    # 不同来源字段命名不一致，尽量兜底提取礼物价值。
+    # blivechat 前端：price = totalCoin/1000，即 totalCoin 为「元×1000」（毫元）。
+    # dycast 把单礼物抖币价放在 gift.price（等同 GiftStruct.diamondCount），不在 diamondCount 根字段。
+    total_coin = _first_non_negative_int(
+        msg.get('totalCoin'),
+        msg.get('total_coin'),
+        msg.get('giftTotalCoin'),
+        msg.get('gift_total_coin'),
+        gift.get('totalCoin'),
+        gift.get('total_coin'),
+    )
+    if total_coin <= 0:
+        unit_diamond = _first_non_negative_int(
+            gift.get('price'),
+            msg.get('price'),
+            gift.get('diamondCount'),
+            gift.get('diamond_count'),
+            msg.get('diamondCount'),
+            msg.get('diamond_count'),
+        )
+        if unit_diamond > 0 and count > 0:
+            # 抖币常见口径 ≈0.1 元/枚 → 1 抖币对应毫元 100；行总价 = 单价抖币×数量
+            total_coin = unit_diamond * count * 100
+    total_free_coin = _first_non_negative_int(
+        msg.get('totalFreeCoin'),
+        msg.get('total_free_coin'),
+        msg.get('giftTotalFreeCoin'),
+        msg.get('gift_total_free_coin'),
+        gift.get('totalFreeCoin'),
+        gift.get('total_free_coin'),
+    )
+    raw_ts = msg.get('timestamp', msg.get('ts'))
+    try:
+        ts = int(raw_ts)
+    except (TypeError, ValueError):
+        ts = int(time.time() * 1000)
+    event_id = str(msg.get('id') or '').strip()
+    if not event_id:
+        fallback_basis = '\x1f'.join([
+            GIFT,
+            _user_id(user),
+            str(ts),
+            str(msg.get('roomId') or '').strip(),
+            str(msg.get('roomNum') or '').strip(),
+            str(gift.get('id') or '').strip(),
+            gname,
+            str(count),
+        ])
+        event_id = f'{GIFT}:{hashlib.sha1(fallback_basis.encode("utf-8")).hexdigest()[:16]}'
+
+    meta = _base_douyin_platform_meta(msg, user)
+    return {
+        'event_id': event_id,
+        'platform': 'douyin',
+        'event_type': 'gift.send',
+        'ts': ts,
+        'actor': _base_actor(user),
+        'content': {'text': f'赠送了 {gname} x{count}'},
+        'monetization': {
+            'gift_name': gname,
+            'gift_count': count,
+            'gift_id': str(gift.get('id') or '').strip(),
+            'gift_icon_url': str(gift.get('icon') or '').strip(),
+            'total_coin': total_coin,
+            'total_free_coin': total_free_coin,
+        },
+        'fan_identity': None,
+        'platform_meta': meta,
+    }
+
+
+def _unified_event_to_inject_item(
+    event: UnifiedEvent,
+    *,
+    content_prefix: str,
+    native_gift: bool,
+) -> Optional[Dict[str, Any]]:
+    event_type = str(event.get('event_type') or '').strip()
+    if event_type not in {
+        'chat.message',
+        'like.action',
+        'member.join',
+        'social.follow',
+        'gift.send',
+    }:
+        return None
+
+    p = (content_prefix or '').strip()
+    actor = event.get('actor', {})
+    meta = event.get('platform_meta') if isinstance(event.get('platform_meta'), dict) else {}
+    monetization = event.get('monetization') if isinstance(event.get('monetization'), dict) else {}
+    fan_identity = event.get('fan_identity') if isinstance(event.get('fan_identity'), dict) else {}
+    medal_level = _as_optional_non_negative_int(meta.get('fans_badge_level'))
+    medal_name = str(meta.get('fans_badge_name') or '')
+    membership_type = str(meta.get('membership_type') or '').strip().lower()
+    membership_name = str(meta.get('membership_name') or '').strip()
+    # blcsdk当前无平台扩展字段，这里通过稳定前缀传递来源平台，前端据此分流样式。
+    raw_uid = str(actor.get('id') or '')
+    uid = f'douyin:{raw_uid}' if raw_uid else 'douyin:'
+    # 复用 guard_level 作为抖音会员强度提示：0=无，1=会员，2=星守护
+    guard_level = 0
+    if membership_name or membership_type:
+        guard_level = 2 if ('star' in membership_type or 'guard' in membership_type or 'xing' in membership_type) else 1
+    identity_ext = {
+        'platform': 'douyin',
+        'platform_meta': {
+            'platform': 'douyin',
+            'room_id': str(meta.get('room_id') or ''),
+            'room_num': str(meta.get('room_num') or ''),
+            'membership_type': membership_type or None,
+            'membership_name': membership_name or None,
+            'fans_badge_level': medal_level,
+            'fans_badge_name': medal_name or None,
+        },
+        'fan_identity': {
+            'level': medal_level or 0,
+            'badge_name': medal_name or '',
+            **fan_identity,
+        },
+    }
+
+    if event_type == 'gift.send' and native_gift:
+        gift_name = str(monetization.get('gift_name') or meta.get('gift_name') or '礼物').strip()
+        gift_count = _gift_count(monetization.get('gift_count', meta.get('gift_count', 1)))
+        gift_id_raw = monetization.get('gift_id', meta.get('gift_id'))
+        gift_icon_url = str(monetization.get('gift_icon_url') or meta.get('gift_icon_url') or '').strip()
+        return {
+            'kind': 'gift',
+            'gift_name': gift_name,
+            'num': gift_count,
+            'author_name': str(actor.get('name') or '抖音用户'),
+            'uid': uid,
+            'avatar_url': str(actor.get('avatar_url') or ''),
+            'gift_id': _gift_id_numeric(gift_id_raw),
+            'gift_icon_url': gift_icon_url,
+            'total_coin': _first_non_negative_int(monetization.get('total_coin'), meta.get('total_coin')),
+            'total_free_coin': _first_non_negative_int(
+                monetization.get('total_free_coin'),
+                meta.get('total_free_coin'),
+            ),
+            'guard_level': guard_level,
+            'medal_level': medal_level or 0,
+            'medal_name': medal_name,
+            'identity_ext': identity_ext,
+        }
+
+    content = event.get('content') or {}
+    text = str(content.get('text') or '').strip()
+    if not text:
+        return None
+    if p and not text.startswith(p):
+        text = f'{p} {text}'.strip()
+    return {
+        'kind': 'text',
+        'content': text,
+        'author_name': str(actor.get('name') or '抖音用户'),
+        'uid': uid,
+        'avatar_url': str(actor.get('avatar_url') or ''),
+        'guard_level': guard_level,
+        'medal_level': medal_level or 0,
+        'medal_name': medal_name,
+        'identity_ext': identity_ext,
+    }
 
 
 def map_dy_payload(
@@ -113,7 +466,6 @@ def map_dy_payload(
     kind=gift：上述 + medal_level、medal_name（粉丝团，来自 user）
     """
     method = msg.get('method')
-    msg_id = msg.get('id')
     user = msg.get('user') if isinstance(msg.get('user'), dict) else None
     author_name = _user_name(user) or '抖音用户'
     uid = _user_id(user)
@@ -128,23 +480,23 @@ def map_dy_payload(
         return f'{p} {text}'.strip()
 
     if method == CHAT:
-        content = msg.get('content')
-        if content is None or str(content).strip() == '':
-            content = _flatten_rtf(msg.get('rtfContent'))
-        if not content:
+        event = _to_unified_chat_event(msg)
+        if event is None:
             return None
-        return {
-            'kind': 'text',
-            'content': prefixed(str(content)),
-            'author_name': author_name,
-            'uid': uid,
-            'avatar_url': avatar_url,
-        }
+        return _unified_event_to_inject_item(
+            event,
+            content_prefix=content_prefix,
+            native_gift=native_gift,
+        )
 
     if method == EMOJI_CHAT:
         url = msg.get('content')
+        content_type = 0
+        content_type_params: List[Any] = []
         if url and str(url).startswith('http'):
-            text = '[会员表情]'
+            text = '[表情]'
+            content_type = 1
+            content_type_params = [str(url).strip()]
         else:
             text = str(url or '[表情]').strip() or '[表情]'
         return {
@@ -153,66 +505,75 @@ def map_dy_payload(
             'author_name': author_name,
             'uid': uid,
             'avatar_url': avatar_url,
+            'content_type': content_type,
+            'content_type_params': content_type_params,
+            'identity_ext': {
+                'platform': 'douyin',
+                'platform_meta': {
+                    'platform': 'douyin',
+                    'room_id': str(msg.get('roomId') or '').strip(),
+                    'room_num': str(msg.get('roomNum') or '').strip(),
+                },
+                'fan_identity': {
+                    'level': _as_optional_non_negative_int(
+                        user.get('medal_level', user.get('medalLevel')) if isinstance(user, dict) else None
+                    ) or 0,
+                    'badge_name': _as_optional_non_empty_str(
+                        user.get('medal_name', user.get('medalName')) if isinstance(user, dict) else None
+                    ) or '',
+                },
+            },
         }
 
     if method == GIFT and include_gift:
-        gift = msg.get('gift') if isinstance(msg.get('gift'), dict) else {}
-        gname = str(gift.get('name') or '礼物').strip()
-        count = _gift_count(gift.get('count', '1'))
-        if native_gift:
-            ml, mn = _medal_from_user(user)
-            return {
-                'kind': 'gift',
-                'gift_name': gname,
-                'num': count,
-                'author_name': author_name,
-                'uid': uid,
-                'avatar_url': avatar_url,
-                'gift_id': _gift_id_numeric(gift.get('id')),
-                'gift_icon_url': str(gift.get('icon') or '').strip(),
-                'total_coin': 0,
-                'total_free_coin': 0,
-                'medal_level': ml,
-                'medal_name': mn,
-            }
-        text = f'赠送了 {gname} x{count}'
-        return {
-            'kind': 'text',
-            'content': prefixed(text),
-            'author_name': author_name,
-            'uid': uid,
-            'avatar_url': avatar_url,
-        }
+        event = _to_unified_gift_event(msg)
+        return _unified_event_to_inject_item(
+            event,
+            content_prefix=content_prefix,
+            native_gift=native_gift,
+        )
 
     if method == LIKE and include_like:
-        text = msg.get('content') or '为主播点赞'
-        return {
-            'kind': 'text',
-            'content': prefixed(str(text)),
-            'author_name': author_name,
-            'uid': uid,
-            'avatar_url': avatar_url,
-        }
+        event = _to_unified_text_event(
+            msg,
+            event_type='like.action',
+            default_text='为主播点赞',
+        )
+        if event is None:
+            return None
+        return _unified_event_to_inject_item(
+            event,
+            content_prefix=content_prefix,
+            native_gift=native_gift,
+        )
 
     if method == MEMBER and include_member:
-        text = msg.get('content') or '进入直播间'
-        return {
-            'kind': 'text',
-            'content': prefixed(str(text)),
-            'author_name': author_name,
-            'uid': uid,
-            'avatar_url': avatar_url,
-        }
+        event = _to_unified_text_event(
+            msg,
+            event_type='member.join',
+            default_text='进入直播间',
+        )
+        if event is None:
+            return None
+        return _unified_event_to_inject_item(
+            event,
+            content_prefix=content_prefix,
+            native_gift=native_gift,
+        )
 
     if method == SOCIAL and include_social:
-        text = msg.get('content') or '关注了主播'
-        return {
-            'kind': 'text',
-            'content': prefixed(str(text)),
-            'author_name': author_name,
-            'uid': uid,
-            'avatar_url': avatar_url,
-        }
+        event = _to_unified_text_event(
+            msg,
+            event_type='social.follow',
+            default_text='关注了主播',
+        )
+        if event is None:
+            return None
+        return _unified_event_to_inject_item(
+            event,
+            content_prefix=content_prefix,
+            native_gift=native_gift,
+        )
 
     return None
 

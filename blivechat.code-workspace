@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../dycast"
+		},
+		{
+			"path": "../blivedm"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Downloads/blivechat-exe"
+		}
+	],
+	"settings": {}
+}

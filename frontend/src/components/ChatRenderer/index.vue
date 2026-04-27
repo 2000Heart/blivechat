@@ -19,6 +19,12 @@
                 :privilegeType="message.privilegeType"
                 :contentParts="getShowContentParts(message)"
                 :repeated="message.repeated"
+                :platform="getMessagePlatform(message)"
+                :platformMeta="getMessagePlatformMeta(message)"
+                :fanIdentity="getMessageFanIdentity(message)"
+                :medalName="message.medalName"
+                :medalLevel="message.medalLevel"
+                :messageExt="normalizeMessageIdentity(message).identityExt"
               ></text-message>
               <paid-message :key="message.id" v-else-if="message.type === MESSAGE_TYPE_GIFT"
                 class="style-scope yt-live-chat-item-list-renderer"
@@ -28,6 +34,13 @@
                 :price="message.price"
                 :priceText="message.price <= 0 ? getGiftShowNameAndNum(message) : ''"
                 :content="message.price <= 0 ? '' : getGiftShowContent(message)"
+                :platform="getMessagePlatform(message)"
+                :platformMeta="getMessagePlatformMeta(message)"
+                :fanIdentity="getMessageFanIdentity(message)"
+                :privilegeType="message.privilegeType"
+                :medalName="message.medalName"
+                :medalLevel="message.medalLevel"
+                :messageExt="normalizeMessageIdentity(message).identityExt"
               ></paid-message>
               <membership-item :key="message.id" v-else-if="message.type === MESSAGE_TYPE_MEMBER"
                 class="style-scope yt-live-chat-item-list-renderer"
@@ -44,6 +57,13 @@
                 :authorName="getShowAuthorName(message)"
                 :price="message.price"
                 :content="getShowContent(message)"
+                :platform="getMessagePlatform(message)"
+                :platformMeta="getMessagePlatformMeta(message)"
+                :fanIdentity="getMessageFanIdentity(message)"
+                :privilegeType="message.privilegeType"
+                :medalName="message.medalName"
+                :medalLevel="message.medalLevel"
+                :messageExt="normalizeMessageIdentity(message).identityExt"
               ></paid-message>
             </template>
           </div>
@@ -148,6 +168,79 @@ export default {
     this.clearMessages()
   },
   methods: {
+    pickFirstObject(...values) {
+      for (const value of values) {
+        if (value && typeof value === 'object') {
+          return value
+        }
+      }
+      return {}
+    },
+    getMessageIdentityExt(message) {
+      let msg = message || {}
+      return this.pickFirstObject(
+        msg.identityExt,
+        msg.identity_ext,
+        msg.extra,
+        msg.ext,
+        msg.extraData,
+        msg.extra_data,
+        msg.pluginExtra,
+        msg.plugin_extra,
+        msg.meta
+      )
+    },
+    normalizeMessageIdentity(message) {
+      let msg = message || {}
+      const ext = this.getMessageIdentityExt(msg)
+      const platform
+        = msg.platform
+        || ext.platform
+        || ext.unifiedPlatform
+        || ext.platform_name
+        || (String(msg.uid || '').startsWith('douyin:') ? 'douyin' : '')
+        || (String(msg.content || '').startsWith('[抖音]') ? 'douyin' : '')
+        || ''
+      
+
+      const platformMeta = this.pickFirstObject(
+        msg.platformMeta,
+        msg.platform_meta,
+        ext.platform_meta,
+        ext.platformMeta,
+        ext.unified_platform_meta,
+        ext.unifiedPlatformMeta,
+        ext.extra && ext.extra.platform_meta,
+        ext.extra && ext.extra.platformMeta
+      )
+
+      const fanIdentity = this.pickFirstObject(
+        msg.fanIdentity,
+        msg.fan_identity,
+        ext.fan_identity,
+        ext.fanIdentity,
+        ext.unified_fan_identity,
+        ext.unifiedFanIdentity,
+        ext.extra && ext.extra.fan_identity,
+        ext.extra && ext.extra.fanIdentity
+      )
+
+      return {
+        platform: String(platform).toLowerCase(),
+        platformMeta,
+        fanIdentity,
+        identityExt: ext
+      }
+    },
+    getMessagePlatform(message) {
+      return this.normalizeMessageIdentity(message).platform
+    },
+    getMessagePlatformMeta(message) {
+      return this.normalizeMessageIdentity(message).platformMeta
+    },
+    getMessageFanIdentity(message) {
+      return this.normalizeMessageIdentity(message).fanIdentity
+    },
     getGiftShowContent(message) {
       return constants.getGiftShowContent(message, this.showGiftName)
     },

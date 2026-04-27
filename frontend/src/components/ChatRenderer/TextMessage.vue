@@ -8,6 +8,16 @@
       <author-chip class="style-scope yt-live-chat-text-message-renderer"
         :isInMemberMessage="false" :authorName="authorName" :authorType="authorType" :privilegeType="privilegeType"
       ></author-chip>
+      <identity-badges
+        class="style-scope yt-live-chat-text-message-renderer"
+        :platform="platform"
+        :platformMeta="platformMeta"
+        :fanIdentity="fanIdentity"
+        :privilegeType="privilegeType"
+        :medalName="medalName"
+        :medalLevel="medalLevel"
+        :messageExt="messageExt"
+      ></identity-badges>
       <span id="message" class="style-scope yt-live-chat-text-message-renderer">
         <template v-for="(content, index) in contentParts">
           <span :key="index" v-if="content.type === CONTENT_PART_TYPE_TEXT">{{ content.text }}</span>
@@ -30,6 +40,7 @@
 <script>
 import ImgShadow from './ImgShadow'
 import AuthorChip from './AuthorChip'
+import IdentityBadges from './IdentityBadges'
 import * as constants from './constants'
 import * as utils from '@/utils'
 
@@ -41,7 +52,8 @@ export default {
   name: 'TextMessage',
   components: {
     ImgShadow,
-    AuthorChip
+    AuthorChip,
+    IdentityBadges
   },
   props: {
     avatarUrl: String,
@@ -50,7 +62,13 @@ export default {
     authorType: Number,
     contentParts: Array,
     privilegeType: Number,
-    repeated: Number
+    repeated: Number,
+    platform: String,
+    platformMeta: Object,
+    fanIdentity: Object,
+    medalName: String,
+    medalLevel: Number,
+    messageExt: Object
   },
   data() {
     return {

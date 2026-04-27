@@ -225,6 +225,8 @@ class AddTextMsg:
     """用户Open ID或ID"""
     medal_name: str = ''
     """勋章名"""
+    identity_ext: dict = dataclasses.field(default_factory=dict)
+    """平台扩展身份信息"""
 
     @classmethod
     def from_command(cls, data: list):
@@ -251,6 +253,7 @@ class AddTextMsg:
             content_type_params=content_type_params,
             uid=data[16],
             medal_name=data[17],
+            identity_ext=data[18] if len(data) > 18 and isinstance(data[18], dict) else {},
         )
 
 
@@ -286,6 +289,8 @@ class AddGiftMsg:
     """勋章等级，如果没戴当前房间勋章则为0"""
     medal_name: str = ''
     """勋章名"""
+    identity_ext: dict = dataclasses.field(default_factory=dict)
+    """平台扩展身份信息"""
 
     @classmethod
     def from_command(cls, data: dict):
@@ -304,6 +309,7 @@ class AddGiftMsg:
             privilege_type=data['privilegeType'],
             medal_level=data['medalLevel'],
             medal_name=data['medalName'],
+            identity_ext=data.get('identityExt', {}),
         )
 
 

@@ -33,6 +33,8 @@ class DouyinRelayServer:
         self._runner: Optional[web.AppRunner] = None
         self._site: Optional[web.TCPSite] = None
         self._app: Optional[web.Application] = None
+        self._active_ws: Optional[web.WebSocketResponse] = None
+        self._ws_lock = asyncio.Lock()
 
     async def start(self) -> None:
         self._app = web.Application()
@@ -49,6 +51,10 @@ class DouyinRelayServer:
         )
 
     async def stop(self) -> None:
+        async with self._ws_lock:
+            if self._active_ws is not None:
+                await self._active_ws.close()
+                self._active_ws = None
         if self._site is not None:
             await self._site.stop()
             self._site = None
@@ -62,6 +68,11 @@ class DouyinRelayServer:
         ws = web.WebSocketResponse(max_msg_size=8 * 1024 * 1024)
         await ws.prepare(request)
         peer = request.remote
+        async with self._ws_lock:
+            if self._active_ws is not None and self._active_ws is not ws:
+                logger.warning('Replacing previous dycast forwarder connection')
+                await self._active_ws.close()
+            self._active_ws = ws
         logger.info('dycast forwarder connected from %s', peer)
         try:
             async for msg in ws:
@@ -76,5 +87,8 @@ class DouyinRelayServer:
         except Exception:
             logger.exception('WebSocket handler error:')
         finally:
+            async with self._ws_lock:
+                if self._active_ws is ws:
+                    self._active_ws = None
             logger.info('dycast forwarder disconnected from %s', peer)
         return ws
