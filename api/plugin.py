@@ -121,7 +121,7 @@ def make_message_body(cmd, data, extra: Optional[dict] = None):
     return json.dumps(body).encode('utf-8')
 
 
-def _iter_target_rooms_for_plugin(room_key_dict) -> List[services.chat.ClientRoom]:
+def _iter_target_rooms_for_plugin(room_key_dict) -> List['services.chat.ClientRoom']:
     if room_key_dict is not None:
         room_key = services.chat.RoomKey.from_dict(room_key_dict)
         room = services.chat.client_room_manager.get_room(room_key)

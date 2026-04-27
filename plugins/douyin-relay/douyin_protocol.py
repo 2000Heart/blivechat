@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger('douyin-relay.' + __name__)
 
-CHAT_METHOD = 'WebcastChatMessage'
-
 
 class DouyinProtocol:
-    """M1 最小协议层：统一解析 relay/direct 输入到同一消息语义。"""
+    """协议层：统一解析 dycast relay 输入到消息语义。"""
 
     def parse_raw_payload(self, raw: str) -> Tuple[str, Any]:
         """
@@ -37,23 +34,6 @@ class DouyinProtocol:
             return 'messages', data
 
         return 'unknown', data
-
-    def build_stub_chat_raw(self, *, seq: int, room_id: str) -> str:
-        now_ms = int(time.time() * 1000)
-        payload: Dict[str, Any] = {
-            'id': f'direct-stub-{seq}',
-            'method': CHAT_METHOD,
-            'timestamp': now_ms,
-            'roomId': room_id or '',
-            'roomNum': room_id or '',
-            'content': f'direct stub message #{seq}',
-            'user': {
-                'id': f'direct_user_{seq % 3}',
-                'name': f'DirectStub{seq % 3}',
-                'avatar': '',
-            },
-        }
-        return json.dumps([payload], ensure_ascii=False)
 
     @staticmethod
     def _is_live_info_object(data: Dict[str, Any]) -> bool:

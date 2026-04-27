@@ -64,21 +64,44 @@ class Injector:
                 except (TypeError, ValueError):
                     guard_level = 0
                 if kind == 'gift':
+                    gift_name = str(item.get('gift_name', '礼物'))
+                    gift_num = int(item.get('num', 1))
+                    total_coin = int(item.get('total_coin', 0))
+                    logger.info(
+                        'gift dual-send start worker=%d gift=%s num=%d total_coin=%d uid=%s',
+                        wid,
+                        gift_name,
+                        gift_num,
+                        total_coin,
+                        str(item.get('uid', '')),
+                    )
                     await blcsdk.send_gift(
-                        item['gift_name'],
-                        num=int(item.get('num', 1)),
+                        gift_name,
+                        num=gift_num,
                         author_name=item.get('author_name', ''),
                         gift_id=int(item.get('gift_id', 0)),
                         gift_icon_url=item.get('gift_icon_url', ''),
-                        total_coin=int(item.get('total_coin', 0)),
+                        total_coin=total_coin,
                         total_free_coin=int(item.get('total_free_coin', 0)),
                         uid=item.get('uid', ''),
                         avatar_url=item.get('avatar_url', ''),
                         guard_level=guard_level,
                         medal_level=medal_level,
-                        medal_name=str(mn or ''),
+                        medal_name=str((mn or '粉丝团') if medal_level > 0 else ''),
                         identity_ext=item.get('identity_ext', {}),
                     )
+                    # # 调试双线发送：礼物同时以文本弹幕注入，便于定位是礼物渲染还是链路问题
+                    # await blcsdk.send_text(
+                    #     content=f"[礼物文本] {gift_name} x{gift_num}",
+                    #     author_name=item.get('author_name', ''),
+                    #     uid=item.get('uid', ''),
+                    #     avatar_url=item.get('avatar_url', ''),
+                    #     guard_level=guard_level,
+                    #     medal_level=medal_level,
+                    #     medal_name=str(mn or ''),
+                    #     identity_ext=item.get('identity_ext', {}),
+                    # )
+                    logger.info('gift dual-send done worker=%d gift=%s num=%d', wid, gift_name, gift_num)
                 else:
                     await blcsdk.send_text(
                         content=item['content'],
@@ -87,7 +110,7 @@ class Injector:
                         avatar_url=item.get('avatar_url', ''),
                         guard_level=guard_level,
                         medal_level=medal_level,
-                        medal_name=str(mn or ''),
+                        medal_name=str((mn or '粉丝团') if medal_level > 0 else ''),
                         content_type=int(item.get('content_type', 0)),
                         content_type_params=item.get('content_type_params', []),
                         identity_ext=item.get('identity_ext', {}),

@@ -12,6 +12,14 @@
    pip install -r blcsdk/requirements.txt
    ```
 
+3. 若分发包需要**内置 sidecar**（无需用户安装 dycast 源码）：
+   - 在 `plugins/douyin-relay/dycast/` 下先安装前端依赖（至少要有 `node_modules`）；
+   - 可选：将便携 Node 放到 `plugins/douyin-relay/dycast/.node/`，支持：
+     - Windows：`.node/win-x64/node.exe`（或 `.node/win-arm64/node.exe`）
+     - macOS：`.node/darwin-arm64/bin/node`（或 `.node/darwin-x64/bin/node`）
+     - 兼容旧结构：`.node/node.exe`、`.node/bin/node`
+   - spec 已包含整个 `dycast/` 目录，打包时会一并收进发布产物。
+
 3. **Windows 可执行文件**：建议在 Windows 上打包；在 macOS/Linux 上 PyInstaller 只能生成当前系统的可执行文件（见下文）。
 
 ## 打包命令
@@ -52,6 +60,16 @@ chmod +x build.sh   # 仅首次
 - 压缩包：`dist/douyin-relay.zip`（由 spec 末尾的 `zipfile` 步骤生成，便于分发）。
 
 将 **整个目录** 或 **解压后的 zip 内容** 放到 `data/plugins/douyin-relay/`，勿只复制单个 exe（缺少 `_internal/` 会导致无法启动）。
+
+### sidecar 内置运行说明
+
+- 默认配置已改为：
+  - `sidecar_node_exe = node`
+  - `sidecar_node_cmd = {node} ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port {port}`
+- 运行时会优先探测：
+  - Windows：`dycast/.node/node.exe`、`dycast/node/node.exe`
+  - Unix：`dycast/.node/bin/node`、`dycast/node/bin/node`
+- 若未找到内置 Node，则回退系统 `node`。
 
 ## 分发用 plugin.json
 

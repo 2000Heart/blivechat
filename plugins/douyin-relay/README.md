@@ -1,6 +1,6 @@
 # 抖音弹幕中继（douyin-relay）
 
-将 [dycast](https://github.com/skmcj/dycast) 通过 WebSocket 转发的弹幕注入到 blivechat，与 B 站弹幕同屏显示（前端模板如 `liquid-glass` 无需修改）。
+将内置在插件目录下的 [dycast](https://github.com/skmcj/dycast) 通过 WebSocket 转发的弹幕注入到 blivechat，与 B 站弹幕同屏显示（前端模板如 `liquid-glass` 无需修改）。
 
 ## 安装位置
 
@@ -41,10 +41,9 @@ python -m PyInstaller -y plugins/douyin-relay/douyin-relay.spec
 
 1. 将 `data/config.example.ini` 复制为 `data/config.ini`（与示例同目录）。
 2. 按需修改 `[relay]` 配置：
-   - `mode=relay`：原有模式，监听 dycast 的 WebSocket 转发。
-   - `mode=direct`：M1 直连模式（当前为可插拔 stub 消息源）。
+   - `mode=relay`：监听 dycast 的 WebSocket 转发。
    - relay 模式下使用 `listen_host`、`listen_port`、`ws_path`。
-   - direct 模式可选 `douyin_room_id`，并用 `auto_start` 控制是否自动启动客户端。
+   - sidecar 自动连接可选 `douyin_room_id` 与 `douyin_cookie`。
 3. relay 默认监听：`ws://127.0.0.1:18765/`（路径为 `/` 时，dycast 填写 `ws://127.0.0.1:18765` 或 `ws://127.0.0.1:18765/` 均可）。
 
 ## 使用步骤
@@ -53,11 +52,8 @@ python -m PyInstaller -y plugins/douyin-relay/douyin-relay.spec
 2. relay 模式：
    - 在插件列表中点击本插件的 **管理**，在弹出窗口中复制 **WebSocket 地址**（与 `data/config.ini` 中 `[relay]` 的监听配置一致）。
    - 确认日志出现：`抖音中继已启动，请在 dycast 填写 ws://...`。
-   - dycast 连接房间后在 **WS地址** 填入该 URL 并点击 **转发**。
-3. direct 模式（M1）：
-   - 将 `mode=direct`，默认 `auto_start=true`。
-   - 插件会启动内置 direct 客户端并周期产生测试聊天消息。
-4. 打开 blivechat 房间页与 OBS 浏览器源，应能看到带 `[抖音]` 前缀的弹幕。
+   - 使用插件目录下的 `dycast/`（sidecar 默认从这里启动）连接房间后，在 **WS地址** 填入该 URL 并点击 **转发**。
+3. 打开 blivechat 房间页与 OBS 浏览器源，应能看到带 `[抖音]` 前缀的弹幕。
 
 ## 数据格式说明
 
@@ -126,17 +122,6 @@ npm run build
 
 ## 端到端验收清单
 
-### direct 模式（M1 最小验收）
-
-1. 在 `plugins/douyin-relay/data/config.ini` 设置：
-   - `[relay] mode=direct`
-   - `auto_start=true`
-   - （可选）`douyin_room_id=<目标房间ID>`
-2. 启动 blivechat 并启用「抖音弹幕中继」插件，确认插件进程已启动。
-3. 查看插件日志（`log/douyin-relay.log`）出现 direct 客户端启动相关信息。
-4. 打开房间页/OBS 浏览器源，确认出现 `[抖音]` 前缀消息（当前默认可见测试消息）。
-5. 连续观察 2-3 分钟，确认无异常退出、无明显消息阻塞。
-
 ### relay 模式（最小验收）
 
 1. 在 `plugins/douyin-relay/data/config.ini` 设置：
@@ -152,16 +137,16 @@ npm run build
 
 1. 不启用本插件时，B 站弹幕展示与历史版本一致（基线冒烟）。
 2. 启用本插件后，B 站弹幕仍持续到达、顺序正常、无明显延迟抖动。
-3. 在 direct/relay 任一模式下，B 站弹幕样式、过滤逻辑、OBS 输出不被破坏。
+3. 在 relay 模式下，B 站弹幕样式、过滤逻辑、OBS 输出不被破坏。
 4. 反复启停本插件后，B 站房间连接与消息消费无异常中断。
 5. 查看主程序与插件日志，确认无持续报错、无异常重启风暴。
 
-## 回滚预案（direct 快速切回 relay）
+## 回滚预案（sidecar 快速切回 legacy relay）
 
-目标：当 direct 模式出现异常时，快速恢复到已验证的 relay 链路。
+目标：当 sidecar 模式出现异常时，快速恢复到已验证的 legacy relay 链路。
 
 1. 修改 `plugins/douyin-relay/data/config.ini`：
-   - 将 `[relay] mode=direct` 改为 `mode=relay`。
+   - 保持 `mode=relay`，将 `relay_backend=sidecar` 改为 `relay_backend=legacy`。
    - 恢复/确认 `listen_host`、`listen_port`、`ws_path` 为可用值（建议默认 `127.0.0.1:18765`、`/`）。
 2. 在插件管理中禁用再启用「抖音弹幕中继」，确保新配置生效。
 3. 在 dycast 重新填入插件管理页展示的 WS 地址并启动转发。
@@ -170,7 +155,6 @@ npm run build
 
 ## 已知限制与风险提示
 
-- direct 模式当前以可插拔 stub 消息源为主，用于链路打通与集成验证，不等同于完整线上抓取能力。
 - relay 模式依赖 dycast 可用性；dycast 未连接房间或未开启转发时不会有抖音消息输入。
 - 前端构建存在体积与目标环境 `async/await` warning，当前不阻断构建，但建议后续专项治理兼容性与包体积。
 - 插件与主进程通过子进程通信，若运行环境权限/防火墙限制端口监听，可能导致 relay 建链失败。

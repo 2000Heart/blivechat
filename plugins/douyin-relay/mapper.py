@@ -52,6 +52,46 @@ def _user_avatar(u: Optional[Dict[str, Any]]) -> str:
     return str(u.get('avatar') or '').strip()
 
 
+def _medal_from_nested_fans_club(fc: Any) -> tuple[int, str]:
+    """user 上仍带 fansClub 嵌套（未走 dycast 扁平化）时的兜底。"""
+    if not isinstance(fc, dict):
+        return 0, ''
+    candidates: List[Dict[str, Any]] = []
+    data = fc.get('data')
+    if isinstance(data, dict):
+        candidates.append(data)
+    pd = fc.get('preferData') or fc.get('prefer_data')
+    if isinstance(pd, dict):
+        for v in pd.values():
+            if isinstance(v, dict):
+                candidates.append(v)
+    if not candidates:
+        return 0, ''
+    best = candidates[0]
+    best_lv = int(best.get('level', 0) or 0)
+    for c in candidates[1:]:
+        try:
+            lv = int(c.get('level', 0) or 0)
+        except (TypeError, ValueError):
+            lv = 0
+        if lv > best_lv:
+            best_lv = lv
+            best = c
+        elif lv == best_lv:
+            bn = str(best.get('clubName', best.get('club_name', '')) or '').strip()
+            cn = str(c.get('clubName', c.get('club_name', '')) or '').strip()
+            if not bn and cn:
+                best = c
+    try:
+        level = int(best.get('level', 0) or 0)
+    except (TypeError, ValueError):
+        level = 0
+    name = str(
+        best.get('clubName', best.get('club_name', '')) or ''
+    ).strip()
+    return max(0, level), name
+
+
 def _medal_from_user(u: Optional[Dict[str, Any]]) -> tuple[int, str]:
     """粉丝团 → blivechat 勋章位：medal_level / medal_name（兼容 camelCase）。"""
     if not u:
@@ -62,7 +102,17 @@ def _medal_from_user(u: Optional[Dict[str, Any]]) -> tuple[int, str]:
     except (TypeError, ValueError):
         level = 0
     name = u.get('medal_name', u.get('medalName', ''))
-    return max(0, level), str(name or '').strip()
+    level = max(0, level)
+    name = str(name or '').strip()
+    if level <= 0 and not name:
+        nl, nn = _medal_from_nested_fans_club(
+            u.get('fans_club') or u.get('fansClub')
+        )
+        if nl > 0 or nn:
+            level = max(level, nl)
+            if not name:
+                name = nn
+    return level, name
 
 
 def _gift_count(raw: Any) -> int:
@@ -83,6 +133,17 @@ def _gift_id_numeric(raw: Any) -> int:
     if s.isdigit():
         return int(s) % (2 ** 31) or 0
     return abs(hash(s)) % (2 ** 31) or 1
+
+
+def _first_non_negative_int(*raw_values: Any) -> int:
+    for raw in raw_values:
+        try:
+            v = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if v >= 0:
+            return v
+    return 0
 
 
 def _flatten_rtf(rtf: Optional[List[Dict[str, Any]]]) -> str:
@@ -223,6 +284,37 @@ def _to_unified_gift_event(msg: Dict[str, Any]) -> UnifiedEvent:
     gift = msg.get('gift') if isinstance(msg.get('gift'), dict) else {}
     gname = str(gift.get('name') or '礼物').strip()
     count = _gift_count(gift.get('count', '1'))
+    # 不同来源字段命名不一致，尽量兜底提取礼物价值。
+    # blivechat 前端：price = totalCoin/1000，即 totalCoin 为「元×1000」（毫元）。
+    # dycast 把单礼物抖币价放在 gift.price（等同 GiftStruct.diamondCount），不在 diamondCount 根字段。
+    total_coin = _first_non_negative_int(
+        msg.get('totalCoin'),
+        msg.get('total_coin'),
+        msg.get('giftTotalCoin'),
+        msg.get('gift_total_coin'),
+        gift.get('totalCoin'),
+        gift.get('total_coin'),
+    )
+    if total_coin <= 0:
+        unit_diamond = _first_non_negative_int(
+            gift.get('price'),
+            msg.get('price'),
+            gift.get('diamondCount'),
+            gift.get('diamond_count'),
+            msg.get('diamondCount'),
+            msg.get('diamond_count'),
+        )
+        if unit_diamond > 0 and count > 0:
+            # 抖币常见口径 ≈0.1 元/枚 → 1 抖币对应毫元 100；行总价 = 单价抖币×数量
+            total_coin = unit_diamond * count * 100
+    total_free_coin = _first_non_negative_int(
+        msg.get('totalFreeCoin'),
+        msg.get('total_free_coin'),
+        msg.get('giftTotalFreeCoin'),
+        msg.get('gift_total_free_coin'),
+        gift.get('totalFreeCoin'),
+        gift.get('total_free_coin'),
+    )
     raw_ts = msg.get('timestamp', msg.get('ts'))
     try:
         ts = int(raw_ts)
@@ -255,6 +347,8 @@ def _to_unified_gift_event(msg: Dict[str, Any]) -> UnifiedEvent:
             'gift_count': count,
             'gift_id': str(gift.get('id') or '').strip(),
             'gift_icon_url': str(gift.get('icon') or '').strip(),
+            'total_coin': total_coin,
+            'total_free_coin': total_free_coin,
         },
         'fan_identity': None,
         'platform_meta': meta,
@@ -325,8 +419,11 @@ def _unified_event_to_inject_item(
             'avatar_url': str(actor.get('avatar_url') or ''),
             'gift_id': _gift_id_numeric(gift_id_raw),
             'gift_icon_url': gift_icon_url,
-            'total_coin': 0,
-            'total_free_coin': 0,
+            'total_coin': _first_non_negative_int(monetization.get('total_coin'), meta.get('total_coin')),
+            'total_free_coin': _first_non_negative_int(
+                monetization.get('total_free_coin'),
+                meta.get('total_free_coin'),
+            ),
             'guard_level': guard_level,
             'medal_level': medal_level or 0,
             'medal_name': medal_name,

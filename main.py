@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import asyncio
+import contextlib
 import logging
 import logging.handlers
 import os
@@ -44,9 +45,10 @@ shut_down_event: Optional[asyncio.Event] = None
 
 
 async def main():
-    if not init():
-        return 1
     try:
+        if not init():
+            await _shut_down_on_init_failed()
+            return 1
         await run()
     finally:
         await shut_down()
@@ -174,18 +176,32 @@ async def run():
 
 
 async def shut_down():
-    services.plugin.shut_down()
+    with contextlib.suppress(Exception):
+        services.plugin.shut_down()
 
-    logger.info('Closing server')
-    server.stop()
-    await server.close_all_connections()
+    if server is not None:
+        logger.info('Closing server')
+        with contextlib.suppress(Exception):
+            server.stop()
+        with contextlib.suppress(Exception):
+            await server.close_all_connections()
 
     logger.info('Closing websocket connections')
-    await services.chat.shut_down()
+    with contextlib.suppress(Exception):
+        await services.chat.shut_down()
 
-    await utils.request.shut_down()
+    with contextlib.suppress(Exception):
+        await utils.request.shut_down()
 
     logger.info('App shut down')
+
+
+async def _shut_down_on_init_failed():
+    """
+    init() 失败时的兜底清理，避免端口占用等早退场景下出现 Unclosed client session。
+    """
+    with contextlib.suppress(Exception):
+        await utils.request.shut_down()
 
 
 if __name__ == '__main__':
