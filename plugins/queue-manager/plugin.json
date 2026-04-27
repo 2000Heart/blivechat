@@ -1,0 +1,8 @@
+{
+  "name": "排队管理器",
+  "version": "0.1.0",
+  "author": "blivechat",
+  "description": "关键词排队与礼物加权重排",
+  "run": "python -u main.py",
+  "enabled": false
+}

@@ -46,11 +46,11 @@ class Injector:
             try:
                 kind = item.get('kind', 'text')
                 ml = item.get('medal_level', item.get('medalLevel', 0))
-                    mn = item.get('medal_name', item.get('medalName', ''))
-                    try:
-                        medal_level = max(0, int(ml))
-                    except (TypeError, ValueError):
-                        medal_level = 0
+                mn = item.get('medal_name', item.get('medalName', ''))
+                try:
+                    medal_level = max(0, int(ml))
+                except (TypeError, ValueError):
+                    medal_level = 0
                 if kind == 'gift':
                     await blcsdk.send_gift(
                         item['gift_name'],
