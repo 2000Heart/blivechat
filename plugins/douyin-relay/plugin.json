@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "author": "blivechat",
   "description": "接收 dycast 转发的 WebSocket 弹幕，注入到 blivechat 前端，实现 B 站与抖音双端同屏。配置见 data/config.ini。",
-  "run": "douyin-relay.exe",
+  "run": "/Users/chuyi/PythonProjects/blivechat/.venv/bin/python -u main.py",
   "enabled": true
 }

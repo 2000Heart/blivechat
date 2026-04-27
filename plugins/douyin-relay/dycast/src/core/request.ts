@@ -3,13 +3,24 @@ import type { DyImInfo } from './dycast';
 import { decodeResponse } from './model';
 import { getMsToken } from './signature';
 import { makeUrlParams, parseLiveHtml } from './util';
+import { CLog } from '@/utils/logUtil';
+
+function resolveRequestUrl(input: string): string {
+  if (/^https?:\/\//i.test(input)) return input;
+  const g = globalThis as any;
+  const origin = g?.location?.origin;
+  if (typeof origin === 'string' && origin) {
+    return new URL(input, origin).toString();
+  }
+  return new URL(input, 'http://127.0.0.1:5173').toString();
+}
 
 /**
  * 请求直播间信息
  */
 export const fetchLiveInfo = async function (id: string) {
   try {
-    const html = await fetch(`/dylive/${id}`).then(res => res.text());
+    const html = await fetch(resolveRequestUrl(`/dylive/${id}`)).then(res => res.text());
     return html;
   } catch (err) {
     return Promise.reject(Error('Fetch Live Info Error'));
@@ -46,7 +57,7 @@ export const getLiveInfo = async function (id: string) {
  */
 export const fetchUser = async function () {
   try {
-    await fetch(`/dylive/webcast/user/`, {
+    await fetch(resolveRequestUrl(`/dylive/webcast/user/`), {
       method: 'HEAD',
       headers: {
         'X-Secsdk-Csrf-Request': '1',
@@ -58,13 +69,19 @@ export const fetchUser = async function () {
   }
 };
 
-const USER_AGENT =
-  navigator.userAgent ||
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-const BROWSER_VERSION =
-  navigator.appVersion ||
-  '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36';
-const BROWSER_NAME = navigator.appCodeName || 'Mozilla';
+const NAVIGATOR_FALLBACK = {
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
+  appVersion: '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
+  appCodeName: 'Mozilla'
+};
+const runtimeNavigator = ((globalThis as any)?.navigator || NAVIGATOR_FALLBACK) as {
+  userAgent?: string;
+  appVersion?: string;
+  appCodeName?: string;
+};
+const USER_AGENT = runtimeNavigator.userAgent || NAVIGATOR_FALLBACK.userAgent;
+const BROWSER_VERSION = runtimeNavigator.appVersion || NAVIGATOR_FALLBACK.appVersion;
+const BROWSER_NAME = runtimeNavigator.appCodeName || NAVIGATOR_FALLBACK.appCodeName;
 const VERSION_CODE = 180800;
 
 /**
@@ -133,7 +150,7 @@ export const fetchImInfo = async function (roomId: string, uniqueId: string) {
       live_pc: roomId,
       a_bogus: aBogus
     });
-    const url = `/dylive/webcast/im/fetch/?${makeUrlParams(params)}`;
+    const url = resolveRequestUrl(`/dylive/webcast/im/fetch/?${makeUrlParams(params)}`);
     // 不清楚接口是否有 referer 验证，需要的话，得在服务器跨域配置处设置，这里配置无效
     // const headers = {
     //   Referer: `https://live.douyin.com/${roomNum}`
@@ -168,6 +185,11 @@ export const getImInfo = async function (roomId: string, uniqueId: string): Prom
     };
   } catch (err) {
     const now = Date.now();
+    CLog.error('getImInfo fallback cursor/internalExt', {
+      roomId,
+      uniqueId,
+      error: err instanceof Error ? err.message : String(err)
+    });
     // 确保能返回 cursor、internalExt
     return {
       cursor: `r-7497180536918546638_d-1_u-1_fh-7497179772733760010_t-${now}`,
@@ -210,7 +232,7 @@ export const fetchMeInfo = async function () {
       msToken,
       a_bogus: abogus
     });
-    const url = `/dylive/webcast/user/me/?${makeUrlParams(params)}`;
+    const url = resolveRequestUrl(`/dylive/webcast/user/me/?${makeUrlParams(params)}`);
     const res = await fetch(url).then(res => res.json());
     if (res) return res;
     else return Promise.reject(`Fetch Me Info Fail`);

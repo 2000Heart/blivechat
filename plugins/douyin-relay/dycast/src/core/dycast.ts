@@ -288,6 +288,7 @@ interface DyCastOptions {
   user_unique_id: string;
   version_code?: string;
   webcast_sdk_version?: string;
+  push_server?: string;
 }
 
 interface DyCastCursor {
@@ -312,10 +313,16 @@ enum PayloadType {
   Msg = 'msg'
 }
 
+function resolveBaseOrigin(): string {
+  const g = globalThis as any;
+  const origin = typeof g?.location?.origin === 'string' ? g.location.origin : 'http://127.0.0.1:5173';
+  return origin;
+}
+
 /** API */
 // wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/  => version: 1.0.14-beta.0
 // wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/  => version: 1.0.15
-const BASE_URL = `${location.origin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`;
+const BASE_URL = `${resolveBaseOrigin().replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`;
 
 /** SDK 版本 */
 export const VERSION = '1.0.15';
@@ -433,8 +440,8 @@ export class DyCast {
     };
     // 当前重连次数
     this.reconnectCount = 0;
-    // 最大重连次数
-    this.maxReconnectCount = 3;
+    // 最大重连次数（sidecar 场景下提高容错，避免短暂抖动直接掉线）
+    this.maxReconnectCount = 20;
     // 上一次接收消息时间
     this.lastReceiveTime = Date.now();
     // 当前客户端状态
@@ -536,6 +543,22 @@ export class DyCast {
     // 连接前的初始化
     this.options = opts;
     this.url = this._getSocketUrl(opts);
+    try {
+      const wsUrl = new URL(this.url);
+      CLog.debug('DyCast connect target', {
+        roomNum: this.roomNum,
+        host: wsUrl.host,
+        pathname: wsUrl.pathname,
+        hasSignature: Boolean(opts.signature),
+        signatureLength: (opts.signature || '').length
+      });
+    } catch {
+      CLog.debug('DyCast connect target', {
+        roomNum: this.roomNum,
+        hasSignature: Boolean(opts.signature),
+        signatureLength: (opts.signature || '').length
+      });
+    }
     this.cursor = {
       cursor: '',
       firstCursor: opts.cursor,
@@ -544,7 +567,24 @@ export class DyCast {
     this.lastReceiveTime = Date.now();
     this.pingCount = 0;
     try {
-      this.ws = new WebSocket(this.url);
+      const WSAny = WebSocket as any;
+      const isNodeRuntime = typeof (globalThis as any)?.process?.versions?.node === 'string';
+      if (isNodeRuntime) {
+        const rawCookie = String((globalThis as any).__dy_cookie || '').trim();
+        this.ws = new WSAny(this.url, [], {
+          followRedirects: true,
+          perMessageDeflate: false,
+          headers: {
+            ...(rawCookie ? { Cookie: rawCookie } : {}),
+            Origin: 'https://live.douyin.com',
+            Referer: 'https://live.douyin.com/',
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
+          }
+        });
+      } else {
+        this.ws = new WSAny(this.url);
+      }
       this.ws.binaryType = 'arraybuffer';
       this.ws.addEventListener('open', (ev: Event) => {
         // 可能初次打开，也可能是重连打开
@@ -563,6 +603,11 @@ export class DyCast {
         this.handleClose(ev);
       });
       this.ws.addEventListener('error', (ev: Event) => {
+        CLog.error('DyCast WebSocket error event', {
+          roomNum: this.roomNum,
+          readyState: this.ws?.readyState,
+          reconnectCount: this.reconnectCount
+        });
         this.emitter.emit('error', Error(ev.type || 'Unknown Error'));
       });
       this.ws.addEventListener('message', (ev: MessageEvent) => {
@@ -583,6 +628,14 @@ export class DyCast {
   private handleClose(ev: CloseEvent) {
     let { code, reason } = ev;
     let msg: string = reason.toString();
+    CLog.error('DyCast WebSocket close', {
+      roomNum: this.roomNum,
+      code,
+      reason: msg || '',
+      closeEventCode: this.closeEvent.code,
+      closeEventMsg: this.closeEvent.msg,
+      reconnectCount: this.reconnectCount
+    });
     switch (code) {
       case DyCastCloseCode.NO_STATUS:
       case DyCastCloseCode.ABNORMAL:
@@ -591,6 +644,15 @@ export class DyCast {
         break;
     }
     this._afterClose();
+    // 对异常关闭进行兜底重连，避免直接停在 disconnected。
+    if (
+      (code === DyCastCloseCode.NO_STATUS ||
+        code === DyCastCloseCode.ABNORMAL ||
+        code === DyCastCloseCode.CANNOT_RECEIVE) &&
+      this.reconnectCount < this.maxReconnectCount
+    ) {
+      this.shouldReconnect = !0;
+    }
     if (this.shouldReconnect || this.reconnectCount > 0) {
       // 需要重连
       this.reconnect();
@@ -662,7 +724,8 @@ export class DyCast {
     this.wsRoomStatus = WSRoomStatus.RECONNECTING;
     this.emitter.emit('reconnecting', this.reconnectCount);
     this.isReconnecting = true;
-    this._connect(opts);
+    // 增加短暂退避，避免异常场景下瞬间打满重连次数。
+    setTimeout(() => this._connect(opts), 1000);
   }
 
   /**
@@ -1108,7 +1171,15 @@ export class DyCast {
    */
   private _getSocketUrl(opts: DyCastOptions) {
     const fullOpt = Object.assign({}, defaultOpts, opts);
-    return `${BASE_URL}?${this._mergeOptions(fullOpt)}`;
+    let baseUrl = BASE_URL;
+    const pushServer = String(fullOpt.push_server || '').trim();
+    if (pushServer) {
+      const host = pushServer.replace(/^wss?:\/\//i, '').replace(/\/+$/, '');
+      if (host) {
+        baseUrl = `wss://${host}/webcast/im/push/v2/`;
+      }
+    }
+    return `${baseUrl}?${this._mergeOptions(fullOpt)}`;
   }
 
   /**
@@ -1149,11 +1220,19 @@ export class DyCast {
   private getWssParam(): DyCastOptions {
     const { roomId, uniqueId } = this.info;
     const sign = getSignature(roomId, uniqueId);
+    if (!sign) {
+      CLog.error('DyCast signature is empty', {
+        roomNum: this.roomNum,
+        roomId,
+        uniqueId
+      });
+    }
     return {
       room_id: roomId,
       user_unique_id: uniqueId,
       cursor: this.imInfo.cursor || '',
       internal_ext: this.imInfo.internalExt || '',
+      push_server: this.imInfo.pushServer || '',
       signature: sign
     };
   }

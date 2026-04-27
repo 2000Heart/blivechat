@@ -272,6 +272,9 @@ def get_runtime_status() -> Dict[str, Any]:
             sidecar_state = _sidecar.bridge_client().status()
         except Exception as e:
             sidecar_state = {'ok': False, 'error': str(e)}
+    sidecar_engine = {}
+    if isinstance(sidecar_state, dict):
+        sidecar_engine = sidecar_state.get('engine', {}) if isinstance(sidecar_state.get('engine', {}), dict) else {}
     return {
         'current_mode': cfg.mode,
         'relay_backend': cfg.relay_backend,
@@ -279,6 +282,9 @@ def get_runtime_status() -> Dict[str, Any]:
         'sent': int(injector_metrics.get('sent', 0)),
         'dropped': int(injector_metrics.get('dropped', 0)),
         'queue_size': int(injector_metrics.get('queue_size', 0)),
+        'sidecar_engine_state': str(sidecar_engine.get('state', '')),
+        'sidecar_last_message_at': int(sidecar_engine.get('lastMessageAt', 0) or 0),
+        'sidecar_relay_connected': bool(sidecar_engine.get('relayConnected', False)),
         'sidecar_runtime': sidecar_snapshot,
         'sidecar_status': sidecar_state,
     }

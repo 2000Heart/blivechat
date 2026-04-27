@@ -1,4 +1,5 @@
 import { VERSION } from './dycast';
+import { getAbogus } from './abogus';
 
 const stringToBytes = function (t) {
     t = decodeURIComponent(encodeURIComponent(t));
@@ -343,12 +344,36 @@ export const getSignature = function (roomId, uniqueId) {
   const e = getSTUB(
     `live_id=1,aid=6383,version_code=180800,webcast_sdk_version=${sdkVersion},room_id=${roomId},sub_room_id=,sub_channel_id=,did_rule=3,user_unique_id=${uniqueId},device_platform=web,device_type=,ac=,identity=audience`
   );
+  const frontierSignFromBridge =
+    globalThis && typeof globalThis.__dy_frontierSign === 'function' ? globalThis.__dy_frontierSign : null;
+  if (frontierSignFromBridge) {
+    const res = frontierSignFromBridge({ 'X-MS-STUB': e });
+    return (res && res['X-Bogus']) || '';
+  }
   // 也可以自己去文件内把 frontierSign 代码提取出来
   // 之前提取过，但这里就不放出来了，感兴趣自己尝试
-  const res = window.byted_acrawler.frontierSign({
+  const frontierSign =
+    globalThis &&
+    globalThis.byted_acrawler &&
+    typeof globalThis.byted_acrawler.frontierSign === 'function'
+      ? globalThis.byted_acrawler.frontierSign
+      : null;
+  if (!frontierSign) {
+    const ua =
+      (globalThis &&
+        globalThis.navigator &&
+        (globalThis.navigator.userAgent || globalThis.navigator.appVersion)) ||
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36';
+    try {
+      return getAbogus(`X-MS-STUB=${e}`, ua) || '';
+    } catch {
+      return '';
+    }
+  }
+  const res = frontierSign({
     'X-MS-STUB': e
   });
-  return res['X-Bogus'] || '';
+  return (res && res['X-Bogus']) || '';
 };
 
 /**

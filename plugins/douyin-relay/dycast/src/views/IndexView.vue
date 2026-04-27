@@ -78,8 +78,6 @@ import SidTool from '@/components/SidTool/SidTool.vue';
 import FeedDialog from '@/components/FeedDialog.vue';
 import {
   CastMethod,
-  DyCast,
-  DyCastCloseCode,
   RoomStatus,
   type ConnectStatus,
   type DyLiveInfo,
@@ -90,7 +88,6 @@ import { verifyRoomNum, verifyWsUrl } from '@/utils/verifyUtil';
 import { onMounted, onUnmounted, ref, useTemplateRef } from 'vue';
 import { CLog } from '@/utils/logUtil';
 import { getId } from '@/utils/idUtil';
-import { RelayCast } from '@/core/relay';
 import SkMessage from '@/components/Message';
 import { formatDate } from '@/utils/commonUtil';
 import FileSaver from '@/utils/fileUtil';
@@ -134,11 +131,8 @@ const allCasts: DyMessage[] = [];
 // 记录弹幕
 const castSet = new Set<string>();
 // 弹幕客户端
-let castWs: DyCast | undefined;
-// 转发客户端
-let relayWs: RelayCast | undefined;
+let previewSource: EventSource | undefined;
 let sidecarPollTimer: number | undefined;
-let lastSidecarCommandVersion = -1;
 
 /**
  * 验证房间号
@@ -264,9 +258,6 @@ const handleMessages = function (msgs: DyMessage[]) {
   allCasts.push(...newCasts);
   if (castRef.value) castRef.value.appendCasts(mainCasts);
   if (otherRef.value) otherRef.value.appendCasts(otherCasts);
-  if (relayWs && relayWs.isConnected()) {
-    relayWs.send(JSON.stringify(msgs));
-  }
 };
 
 /**
@@ -314,78 +305,76 @@ async function fetchSidecarStatus(): Promise<any> {
   return await res.json();
 }
 
-async function reportSidecarRuntime(extra: Record<string, unknown> = {}): Promise<void> {
-  try {
-    await fetch('/__api/dycast/control/report', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        connectStatus: connectStatus.value,
-        relayStatus: relayStatus.value,
-        roomNum: roomNum.value,
-        relayUrl: relayUrl.value,
-        ...extra
-      })
-    });
-  } catch {
-    // sidecar report best effort
-  }
-}
-
-async function applySidecarCommand(status: any): Promise<void> {
-  const commandVersion = Number(status?.commandVersion ?? -1);
-  if (commandVersion < 0 || commandVersion === lastSidecarCommandVersion) return;
-  lastSidecarCommandVersion = commandVersion;
-  const action = String(status?.action || 'none');
-  if (action === 'disconnect') {
-    stopRelayCast();
-    disconnectLive();
-    await reportSidecarRuntime({ appliedAction: action });
-    return;
-  }
-  if (action === 'connect') {
-    const nextRoom = String(status?.roomNum || '').trim();
-    const nextRelayUrl = String(status?.relayUrl || '').trim();
-    if (!nextRoom || !nextRelayUrl) return;
-    roomNum.value = nextRoom;
-    relayUrl.value = nextRelayUrl;
-    if (connectStatus.value === 1) {
-      disconnectLive();
-    }
-    if (relayStatus.value === 1) {
-      stopRelayCast();
-    }
-    upstreamHeadersPaste.value = String(status?.rawHeaders || '');
-    await connectLive();
-    // give WS a short moment to establish
-    setTimeout(() => {
-      if (
-        connectStatus.value === 1 &&
-        relayStatus.value !== 1 &&
-        !relayConnecting.value
-      ) relayCast();
-    }, 400);
-    await reportSidecarRuntime({ appliedAction: action });
-  }
+function syncStateFromEngine(status: any): void {
+  const engine = status?.engine || {};
+  roomNum.value = String(status?.roomNum || roomNum.value || '');
+  relayUrl.value = String(status?.relayUrl || relayUrl.value || '');
+  upstreamHeadersPaste.value = String(status?.rawHeaders || upstreamHeadersPaste.value || '');
+  const state = String(engine?.state || '');
+  if (state === 'connected') connectStatus.value = 1;
+  else if (state === 'connecting' || state === 'reconnecting') connectStatus.value = 1;
+  else if (state === 'error') connectStatus.value = 2;
+  else if (state === 'disconnected') connectStatus.value = 3;
+  else connectStatus.value = 0;
+  relayStatus.value = engine?.relayConnected ? 1 : 0;
 }
 
 async function pollSidecarControl(): Promise<void> {
   try {
     const status = await fetchSidecarStatus();
-    await applySidecarCommand(status);
-    // sidecar 自动连接时，房间连接可能晚于命令到达；这里做一次兜底拉起转发
-    if (
-      String(status?.action || 'none') === 'connect' &&
-      connectStatus.value === 1 &&
-      relayStatus.value !== 1 &&
-      !relayConnecting.value &&
-      String(relayUrl.value || '').trim() !== ''
-    ) {
-      relayCast();
-    }
+    syncStateFromEngine(status);
   } catch {
     // ignore polling errors
   }
+}
+
+async function fetchPreviewSnapshot(): Promise<void> {
+  try {
+    const res = await fetch('/__api/dycast/preview/snapshot', { method: 'GET' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const events = Array.isArray(data?.events) ? data.events : [];
+    for (const event of events) {
+      applyPreviewEvent(event);
+    }
+  } catch {
+    // ignore snapshot errors
+  }
+}
+
+function applyPreviewEvent(event: any): void {
+  const type = String(event?.type || '');
+  if (type === 'messages' && Array.isArray(event?.payload)) {
+    handleMessages(event.payload as DyMessage[]);
+    return;
+  }
+  if (type === 'live_info' && event?.payload) {
+    setRoomInfo(event.payload as DyLiveInfo);
+    return;
+  }
+  if (type === 'state_change') {
+    const payload = event?.payload || {};
+    if (String(payload?.state || '') === 'disconnected') {
+      setRoomInputStatus(false);
+      setRelayInputStatus(false);
+    }
+  }
+}
+
+function startPreviewSubscription(): void {
+  if (previewSource) previewSource.close();
+  previewSource = new EventSource('/__api/dycast/preview/sse');
+  previewSource.addEventListener('dycast', (ev: MessageEvent) => {
+    try {
+      const parsed = JSON.parse(ev.data || '{}');
+      applyPreviewEvent(parsed);
+    } catch {
+      // ignore malformed event
+    }
+  });
+  previewSource.onerror = () => {
+    // let EventSource auto-reconnect
+  };
 }
 
 /**
@@ -400,134 +389,66 @@ const connectLive = async function () {
       SkMessage.error('保存请求头失败：请使用 pnpm run dev 启动开发服务后再连接');
       return;
     }
-    // 清空上一次连接的消息
     clearMessageList();
-    CLog.debug('正在连接:', roomNum.value);
+    CLog.debug('sidecar 正在连接:', roomNum.value);
     SkMessage.info(`正在连接：${roomNum.value}`);
-    const cast = new DyCast(roomNum.value);
-    cast.on('open', (ev, info) => {
-      CLog.info('DyCast 房间连接成功');
-      SkMessage.success(`房间连接成功[${roomNum.value}]`);
-      setRoomInputStatus(true);
-      connectStatus.value = 1;
-      setRoomInfo(info);
-      addConsoleMessage('直播间已连接');
+    const ret = await fetch('/__api/dycast/control/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roomNum: roomNum.value,
+        relayUrl: relayUrl.value,
+        rawHeaders: upstreamHeadersPaste.value,
+        autoReconnect: true
+      })
     });
-    cast.on('error', err => {
-      CLog.error('DyCast 连接出错 =>', err);
-      SkMessage.error(`连接出错: ${err}`);
-      connectStatus.value = 2;
-      setRoomInputStatus(false);
-    });
-    cast.on('close', (code, reason) => {
-      CLog.info(`DyCast 房间已关闭[${code}] => ${reason}`);
-      connectStatus.value = 3;
-      setRoomInputStatus(false);
-      switch (code) {
-        case DyCastCloseCode.NORMAL:
-          SkMessage.success('断开成功');
-          break;
-        case DyCastCloseCode.LIVE_END:
-          SkMessage.info('主播已下播');
-          break;
-        case DyCastCloseCode.CANNOT_RECEIVE:
-          SkMessage.error('无法正常接收信息，已关闭');
-          break;
-        default:
-          SkMessage.info('房间已关闭');
-      }
-      if (code === DyCastCloseCode.LIVE_END) {
-        addConsoleMessage(reason || '主播尚未开播或已下播');
-      } else {
-        if (statusPanelRef.value) addConsoleMessage(`连接已关闭，共持续: ${statusPanelRef.value.getDuration()}`);
-        else addConsoleMessage('连接已关闭');
-      }
-    });
-    cast.on('message', msgs => {
-      handleMessages(msgs);
-    });
-    cast.on('reconnecting', (count, code, reason) => {
-      switch (code) {
-        case DyCastCloseCode.CANNOT_RECEIVE:
-          // 无法正常接收信息
-          SkMessage.warning('无法正常接收弹幕，准备重连中');
-          break;
-        default:
-          CLog.warn('DyCast 重连中 =>', count);
-          SkMessage.warning(`正在重连中: ${count}`);
-      }
-    });
-    cast.on('reconnect', ev => {
-      CLog.info('DyCast 重连成功');
-      SkMessage.success('房间重连完成');
-    });
-    cast.connect();
-    castWs = cast;
+    if (!ret.ok) {
+      throw new Error(`sidecar control connect HTTP ${ret.status}`);
+    }
+    setRoomInputStatus(true);
+    setRelayInputStatus(true);
+    connectStatus.value = 1;
+    relayStatus.value = 1;
+    addConsoleMessage('连接命令已下发到 sidecar');
   } catch (err) {
     CLog.error('房间连接过程出错:', err);
     SkMessage.error('房间连接过程出错');
     setRoomInputStatus(false);
-    castWs = void 0;
   }
 };
 /** 断开连接 */
-const disconnectLive = function () {
-  if (castWs) castWs.close(1000, '断开连接');
+const disconnectLive = async function () {
+  try {
+    await fetch('/__api/dycast/control/disconnect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    connectStatus.value = 3;
+    relayStatus.value = 0;
+    setRoomInputStatus(false);
+    setRelayInputStatus(false);
+    addConsoleMessage('已向 sidecar 下发断开命令');
+  } catch (err) {
+    CLog.error('下发断开命令失败:', err);
+    SkMessage.error('断开命令下发失败');
+  }
 };
 
 /** 连接转发房间 */
 const relayCast = function () {
-  if (relayConnecting.value || relayStatus.value === 1) {
+  if (relayConnecting.value || relayStatus.value === 1 || connectStatus.value === 1) {
     return;
   }
-  try {
-    relayConnecting.value = true;
-    CLog.info('正在连接转发中 =>', relayUrl.value);
-    SkMessage.info(`转发连接中: ${relayUrl.value}`);
-    const cast = new RelayCast(relayUrl.value);
-    cast.on('open', () => {
-      CLog.info(`DyCast 转发连接成功`);
-      SkMessage.success(`已开始转发`);
-      setRelayInputStatus(true);
-      relayStatus.value = 1;
-      relayConnecting.value = false;
-      addConsoleMessage('转发客户端已连接');
-      if (castWs) {
-        // 发送直播间信息给转发地址
-        cast.send(JSON.stringify(castWs.getLiveInfo()));
-      }
-    });
-    cast.on('close', (code, msg) => {
-      CLog.info(`(${code})dycast 转发已关闭: ${msg || '未知原因'}`);
-      if (code === 1000) SkMessage.info(`已停止转发`);
-      else SkMessage.warning(`转发已停止: ${msg || '未知原因'}`);
-      setRelayInputStatus(false);
-      relayStatus.value = 0;
-      relayConnecting.value = false;
-      addConsoleMessage('转发已关闭');
-    });
-    cast.on('error', ev => {
-      CLog.warn(`dycast 转发出错: ${ev.message}`);
-      SkMessage.error(`转发出错了: ${ev.message}`);
-      setRelayInputStatus(false);
-      relayStatus.value = 2;
-      relayConnecting.value = false;
-    });
-    cast.connect();
-    relayWs = cast;
-  } catch (err) {
-    CLog.error('弹幕转发出错:', err);
-    SkMessage.error('转发出错: ${err.message}');
-    setRelayInputStatus(false);
-    relayStatus.value = 2;
+  relayConnecting.value = true;
+  void connectLive().finally(() => {
     relayConnecting.value = false;
-    relayWs = void 0;
-  }
+  });
 };
 /** 暂停转发 */
 const stopRelayCast = function () {
   relayConnecting.value = false;
-  if (relayWs) relayWs.close(1000);
+  void disconnectLive();
 };
 
 /** 将弹幕保存到本地文件 */
@@ -573,13 +494,18 @@ const openFeedDialog = function () {
 };
 
 onMounted(() => {
-  reportSidecarRuntime({ lifecycle: 'mounted' });
+  void fetchPreviewSnapshot();
+  startPreviewSubscription();
   sidecarPollTimer = window.setInterval(() => {
     void pollSidecarControl();
   }, 1000);
 });
 
 onUnmounted(() => {
+  if (previewSource) {
+    previewSource.close();
+    previewSource = void 0;
+  }
   if (sidecarPollTimer) {
     clearInterval(sidecarPollTimer);
     sidecarPollTimer = void 0;

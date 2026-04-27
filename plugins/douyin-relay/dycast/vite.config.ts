@@ -4,7 +4,8 @@ import { defineConfig, type Plugin } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import {
   applyPastedCookieToProxyReq,
-  douyinUpstreamCookieApiMiddleware
+  douyinUpstreamCookieApiMiddleware,
+  setSidecarSsrModuleLoader
 } from './vite.douyin-proxy-cookie';
 
 // import vueDevTools from 'vite-plugin-vue-devtools';
@@ -13,6 +14,7 @@ function douyinUpstreamCookiePlugin(): Plugin {
   return {
     name: 'douyin-upstream-cookie',
     configureServer(server) {
+      setSidecarSsrModuleLoader((id: string) => server.ssrLoadModule(id));
       server.middlewares.use(douyinUpstreamCookieApiMiddleware);
     }
   };
@@ -82,16 +84,13 @@ export default defineConfig({
         rewrite: path => path.replace(/^\/socket/, ''),
         configure: proxy => {
           proxy.on('proxyReqWs', (proxyReq, req) => {
-            const ua = req.headers['user-agent'] || '';
-            const isMobile = /mobile|android|iphone|ipad/i.test(ua);
-            // 这里可以不设置也
-            if (isMobile) {
-              // 设置请求头 User-Agent 标识
-              proxyReq.setHeader(
-                'User-Agent',
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
-              );
-            }
+            // sidecar Node WS 没有浏览器 UA，强制补齐更接近浏览器握手。
+            proxyReq.setHeader(
+              'User-Agent',
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0'
+            );
+            proxyReq.setHeader('Referer', 'https://live.douyin.com/');
+            proxyReq.setHeader('Origin', 'https://live.douyin.com');
             applyPastedCookieToProxyReq(proxyReq);
           });
         }

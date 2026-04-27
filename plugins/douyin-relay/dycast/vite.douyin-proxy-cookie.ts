@@ -4,9 +4,11 @@
  */
 import type { ClientRequest } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { SidecarEngine, setSidecarModuleLoader } from './src/sidecar/engine';
 
 let pastedCookie = '';
 type ControlAction = 'none' | 'connect' | 'disconnect';
+type PreviewClient = { id: string; res: ServerResponse };
 
 interface SidecarControlState {
   commandVersion: number;
@@ -29,6 +31,29 @@ const controlState: SidecarControlState = {
   status: {},
   updatedAt: Date.now()
 };
+
+const sidecarEngine = new SidecarEngine(400);
+const previewClients = new Map<string, PreviewClient>();
+const sidecarOrigin = 'http://127.0.0.1:5173';
+
+export function setSidecarSsrModuleLoader(loader: ((id: string) => Promise<any>) | null): void {
+  setSidecarModuleLoader(loader);
+}
+
+function writeSse(res: ServerResponse, event: string, data: unknown): void {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+function broadcastPreview(event: string, data: unknown): void {
+  for (const client of previewClients.values()) {
+    writeSse(client.res, event, data);
+  }
+}
+
+sidecarEngine.on('event', payload => {
+  broadcastPreview('dycast', payload);
+});
 
 /** 从整段 Request Headers 或纯 Cookie 字符串解析出 Cookie 值 */
 export function parseCookieFromPaste(raw: string): string {
@@ -111,9 +136,11 @@ function readJsonBody(req: IncomingMessage, done: (obj: any) => void, failed: ()
 }
 
 function handleControlStatus(res: ServerResponse): void {
+  const engine = sidecarEngine.getSnapshot();
   jsonResponse(res, 200, {
     ok: true,
     ...controlState,
+    engine,
     cookieLength: getPastedCookie().length
   });
 }
@@ -137,7 +164,30 @@ function handleControlConnect(req: IncomingMessage, res: ServerResponse): void {
       controlState.rawHeaders = rawHeaders;
       controlState.autoReconnect = obj.autoReconnect !== false;
       controlState.updatedAt = Date.now();
-      handleControlStatus(res);
+      sidecarEngine
+        .connect(
+          {
+            roomNum,
+            relayUrl,
+            rawHeaders,
+            autoReconnect: controlState.autoReconnect
+          },
+          sidecarOrigin
+        )
+        .then(() => {
+          handleControlStatus(res);
+        })
+        .catch(err => {
+          const detail =
+            err instanceof Error
+              ? { message: err.message, stack: err.stack || '' }
+              : { message: String(err || 'connect failed'), stack: '' };
+          jsonResponse(res, 500, {
+            ok: false,
+            error: detail.message,
+            detail
+          });
+        });
     },
     () => jsonResponse(res, 400, { ok: false, error: 'invalid_json' })
   );
@@ -150,6 +200,7 @@ function handleControlDisconnect(req: IncomingMessage, res: ServerResponse): voi
       controlState.commandVersion += 1;
       controlState.action = 'disconnect';
       controlState.updatedAt = Date.now();
+      sidecarEngine.disconnect('disconnect by control');
       handleControlStatus(res);
     },
     () => jsonResponse(res, 400, { ok: false, error: 'invalid_json' })
@@ -166,6 +217,32 @@ function handleControlReport(req: IncomingMessage, res: ServerResponse): void {
     },
     () => jsonResponse(res, 400, { ok: false, error: 'invalid_json' })
   );
+}
+
+function handlePreviewSnapshot(res: ServerResponse): void {
+  jsonResponse(res, 200, {
+    ok: true,
+    engine: sidecarEngine.getSnapshot(),
+    events: sidecarEngine.getPreviewBuffer()
+  });
+}
+
+function handlePreviewSse(req: IncomingMessage, res: ServerResponse): void {
+  const clientId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  previewClients.set(clientId, { id: clientId, res });
+  writeSse(res, 'ready', {
+    ok: true,
+    id: clientId,
+    engine: sidecarEngine.getSnapshot()
+  });
+  req.on('close', () => {
+    previewClients.delete(clientId);
+  });
 }
 
 /** Connect 中间件：POST /__api/dycast/upstream-headers */
@@ -189,6 +266,14 @@ export function douyinUpstreamCookieApiMiddleware(
   }
   if (url.startsWith('/__api/dycast/control/report') && req.method === 'POST') {
     handleControlReport(req, res);
+    return;
+  }
+  if (url.startsWith('/__api/dycast/preview/snapshot') && req.method === 'GET') {
+    handlePreviewSnapshot(res);
+    return;
+  }
+  if (url.startsWith('/__api/dycast/preview/sse') && req.method === 'GET') {
+    handlePreviewSse(req, res);
     return;
   }
   if (!url.startsWith('/__api/dycast/upstream-headers')) {
