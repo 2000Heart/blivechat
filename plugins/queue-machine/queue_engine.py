@@ -22,6 +22,7 @@ class QueueConfig:
     item_opacity: float = 0.5
     item_radius: int = 10
     banner_text: str = ""
+    banner_font_size: int = 15
 
 
 @dataclasses.dataclass
@@ -68,6 +69,7 @@ class QueueEngine:
             item_opacity=float(cfg.get("item_opacity", 0.5)),
             item_radius=max(0, int(cfg.get("item_radius", 10))),
             banner_text=str(cfg.get("banner_text", ""))[:200],
+            banner_font_size=max(12, min(64, int(cfg.get("banner_font_size", 15)))),
         )
         manual_calling_uid = data.get("manual_calling_uid")
         self._manual_calling_uid = str(manual_calling_uid) if manual_calling_uid else None

@@ -16,6 +16,7 @@
   const itemRadiusInput = document.getElementById("itemRadius");
   const saveThemeBtn = document.getElementById("saveTheme");
   const bannerTextInput = document.getElementById("bannerText");
+  const bannerFontSizeInput = document.getElementById("bannerFontSize");
   const saveBannerBtn = document.getElementById("saveBanner");
   let snapshot = null;
 
@@ -50,6 +51,7 @@
     if (Object.prototype.hasOwnProperty.call(cfg, "item_opacity")) itemOpacityInput.value = cfg.item_opacity;
     if (Object.prototype.hasOwnProperty.call(cfg, "item_radius")) itemRadiusInput.value = cfg.item_radius;
     if (Object.prototype.hasOwnProperty.call(cfg, "banner_text")) bannerTextInput.value = cfg.banner_text || "";
+    if (Object.prototype.hasOwnProperty.call(cfg, "banner_font_size")) bannerFontSizeInput.value = cfg.banner_font_size;
     statusEl.textContent = `当前人数: ${users.length}，当前叫号: ${s.callingUserId || "无"}`;
     bodyEl.innerHTML = "";
     users.forEach((u) => {
@@ -110,7 +112,10 @@
     });
   });
   saveBannerBtn.addEventListener("click", () => {
-    action("set_banner", { text: bannerTextInput.value || "" });
+    action("set_banner", {
+      text: bannerTextInput.value || "",
+      fontSize: Number(bannerFontSizeInput.value || 15),
+    });
   });
   clearQueueBtn.addEventListener("click", () => {
     if (confirm("确认清空整个队列吗？")) action("clear_queue", {});

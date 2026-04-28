@@ -25,6 +25,7 @@ class AppConfig:
     item_opacity: float = 0.5
     item_radius: int = 10
     banner_text: str = ""
+    banner_font_size: int = 15
 
 
 _cfg = AppConfig()
@@ -59,6 +60,7 @@ def reload() -> None:
         item_opacity=float(sec.get("item_opacity", 0.5)),
         item_radius=max(0, int(sec.get("item_radius", 10))),
         banner_text=str(sec.get("banner_text", ""))[:200],
+        banner_font_size=max(12, min(64, int(sec.get("banner_font_size", 15)))),
     )
 
 
@@ -78,6 +80,7 @@ def save() -> None:
         "item_opacity": str(_cfg.item_opacity),
         "item_radius": str(_cfg.item_radius),
         "banner_text": _cfg.banner_text,
+        "banner_font_size": str(_cfg.banner_font_size),
     }
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         parser.write(f)

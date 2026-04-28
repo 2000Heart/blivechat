@@ -4,6 +4,7 @@
   const bannerInner = document.getElementById("bannerInner");
   let lastCallingId = null;
   let lastBannerText = null;
+  let lastBannerFontSize = null;
   let autoScrollTimer = null;
   let autoScrollPauseUntil = 0;
 
@@ -19,7 +20,7 @@
   function render(snapshot) {
     const cfg = snapshot.config || {};
     applyTheme(cfg);
-    updateBanner(cfg.banner_text, false);
+    updateBanner(cfg.banner_text, cfg.banner_font_size, false);
     const users = snapshot.users || [];
     const calling = snapshot.callingUserId || null;
     queueList.innerHTML = "";
@@ -58,10 +59,12 @@
     ensureAutoScroll();
   }
 
-  function updateBanner(raw, force) {
+  function updateBanner(raw, fontSize, force) {
     const text = String(raw || "").trim();
-    if (!force && text === lastBannerText && bannerInner.dataset.mode) return;
+    const fontSizeNum = clampInt(Number(fontSize ?? 15), 12, 64);
+    if (!force && text === lastBannerText && fontSizeNum === lastBannerFontSize && bannerInner.dataset.mode) return;
     lastBannerText = text;
+    lastBannerFontSize = fontSizeNum;
     bannerInner.classList.remove("is-static", "is-scroll");
     bannerInner.style.animationDuration = "";
     bannerInner.style.removeProperty("--banner-shift");
@@ -107,10 +110,12 @@
     const itemOpacity = clamp01(Number(cfg.item_opacity ?? 0.5));
     const boardRadius = clampInt(Number(cfg.board_radius ?? 0), 0, 80);
     const itemRadius = clampInt(Number(cfg.item_radius ?? 10), 0, 80);
+    const bannerFontSize = clampInt(Number(cfg.banner_font_size ?? 15), 12, 64);
     root.style.setProperty("--board-bg", toRgba(boardColor, boardOpacity));
     root.style.setProperty("--item-bg", toRgba(itemColor, itemOpacity));
     root.style.setProperty("--board-radius", `${boardRadius}px`);
     root.style.setProperty("--item-radius", `${itemRadius}px`);
+    root.style.setProperty("--banner-font-size", `${bannerFontSize}px`);
   }
 
   function clamp01(n) {
@@ -183,7 +188,7 @@
   }
 
   window.addEventListener("resize", () => {
-    updateBanner(lastBannerText || "", true);
+    updateBanner(lastBannerText || "", lastBannerFontSize ?? 15, true);
   });
 
   loadSnapshot();

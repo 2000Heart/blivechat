@@ -76,6 +76,7 @@ async def init() -> None:
             item_opacity=cfg.item_opacity,
             item_radius=cfg.item_radius,
             banner_text=cfg.banner_text,
+            banner_font_size=cfg.banner_font_size,
         )
     )
     _engine.load_state(store.load_state())
@@ -201,9 +202,12 @@ async def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str,
         elif action == "set_banner":
             raw = str(payload.get("text", ""))
             text = " ".join(raw.split())[:200]
+            font_size = _clamp_int(payload.get("fontSize", 15), 12, 64)
             _engine.cfg.banner_text = text
+            _engine.cfg.banner_font_size = font_size
             runtime_cfg = config.get_config()
             runtime_cfg.banner_text = text
+            runtime_cfg.banner_font_size = font_size
             config.save()
         else:
             return {"ok": False, "error": f"unknown action: {action}"}
