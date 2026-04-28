@@ -46,6 +46,16 @@ python -m PyInstaller -y plugins/douyin-relay/douyin-relay.spec
    - sidecar 自动连接可选 `douyin_room_id` 与 `douyin_cookie`。
 3. relay 默认监听：`ws://127.0.0.1:18765/`（路径为 `/` 时，dycast 填写 `ws://127.0.0.1:18765` 或 `ws://127.0.0.1:18765/` 均可）。
 
+### 如何填写 `douyin_cookie`（已登录浏览器）
+
+在 blivechat 插件列表打开本插件 **管理**，在「抖音请求头或 Cookie」上方有三个快捷入口：
+
+- **打开抖音直播**：在默认浏览器打开 `https://live.douyin.com/` 便于登录。
+- **如何获取 Cookie…**：分步说明（含小书签与开发者工具 Network 复制完整 Cookie 两种方式）。
+- **复制小书签链接**：新建浏览器书签并将网址设为剪贴板内容，在 **live.douyin.com 已登录页面** 点击该书签，可把页面脚本可见的 Cookie 写入剪贴板；若礼物等接口仍缺权限，请按说明用 Network 复制带 HttpOnly 的完整 `Cookie` 请求头。
+
+Cookie 等同账号登录态，请勿泄露或提交到公开仓库。
+
 ## 使用步骤
 
 1. 启动 blivechat，在插件管理中启用 **抖音弹幕中继**（首次需在 `data/plugins/douyin-relay/plugin.json` 中把 `enabled` 改为 `true`，或通过管理界面开启）。
@@ -95,6 +105,14 @@ python -m PyInstaller -y plugins/douyin-relay/douyin-relay.spec
 
 与主项目一致，需已安装 `aiohttp`、`cachetools`（见主仓库 `requirements.txt` / `blivedm/requirements.txt`）。
 
+管理界面依赖 `PySide6`（已替换原 tkinter 管理窗口）：
+
+```bash
+pip install PySide6
+```
+
+若缺少该依赖，插件核心转发仍可运行，但插件「管理」窗口无法打开。
+
 ## 故障排查
 
 - 无法连接：检查防火墙、`listen_host` 是否应用 `0.0.0.0`（仅当 dycast 与 blivechat 不同机时需要）。
@@ -132,6 +150,23 @@ npm run build
 4. 插件日志出现 `Douyin relay WebSocket listening ...` 与 `dycast forwarder connected`。
 5. 抖音侧发送聊天消息，确认房间页/OBS 浏览器源出现 `[抖音]` 前缀弹幕。
 6. 手动断开再重连 dycast 转发，确认插件不崩溃且消息恢复。
+
+## 管理界面（PySide6）冒烟清单
+
+### macOS
+
+1. 启动 blivechat 并打开插件「管理」，确认窗口可打开且重复点击不会创建多个窗口。
+2. 点击「复制」后确认剪贴板内容为 relay 地址。
+3. 在窗口内修改房间号/Cookie 并点「保存配置」，确认状态栏出现成功提示。
+4. 点击 Sidecar 连接/断开/重启，确认按钮可触发动作且状态区 2 秒内刷新。
+5. 关闭管理窗口后确认插件进程仍在运行，消息转发不中断。
+
+### Windows
+
+1. 使用打包产物启动插件并打开「管理」，确认窗口正常渲染（无 Qt 插件缺失报错）。
+2. 点击「打开配置文件所在目录」可定位到配置文件。
+3. 执行一次 Sidecar 连接与断开，确认状态区能及时变化。
+4. 重复打开/关闭管理窗口 3 次，确认仅单实例且无崩溃。
 
 ## 回归检查清单（B 站链路不退化）
 

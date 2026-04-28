@@ -45,6 +45,13 @@ _protocol: Optional[DouyinProtocol] = None
 _sidecar: Optional[DycastRuntimeManager] = None
 
 
+def _notify_admin_status_changed() -> None:
+    try:
+        admin_ui.notify_status_changed()
+    except Exception:
+        logger.exception('notify admin status changed failed')
+
+
 def _resolve_sidecar_node_exe(cfg: config.AppConfig, dycast_path: str) -> str:
     raw = (cfg.sidecar_node_exe or '').strip() or 'node'
     if os.path.isabs(raw) and os.path.exists(raw):
@@ -117,6 +124,7 @@ async def init():
     _protocol = DouyinProtocol()
     admin_ui.set_status_provider(get_runtime_status)
     admin_ui.set_action_handler(handle_admin_action)
+    _notify_admin_status_changed()
 
     _relay = DouyinRelayServer(
         cfg.listen_host,
@@ -167,6 +175,7 @@ async def init():
                 f'sidecar 运行地址: http://{cfg.sidecar_host}:{cfg.sidecar_port}',
                 logging.INFO,
             )
+            _notify_admin_status_changed()
         except Exception as e:
             _sidecar = None
             await blcsdk.log(
@@ -257,6 +266,7 @@ async def _on_protocol_payload(kind: str, payload: Any) -> None:
             int(metrics.get('dropped', 0)),
             int(metrics.get('queue_size', 0)),
         )
+        _notify_admin_status_changed()
 
 
 def get_runtime_status() -> Dict[str, Any]:
@@ -299,13 +309,17 @@ def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     if op == 'status':
         return {'ok': True, 'data': get_runtime_status()}
     if op == 'disconnect':
-        return _sidecar.bridge_client().disconnect()
+        ret = _sidecar.bridge_client().disconnect()
+        _notify_admin_status_changed()
+        return ret
     if op == 'connect':
         cfg = config.get_config()
         room = str(payload.get('room_id') or cfg.douyin_room_id or '').strip()
         raw_headers = str(payload.get('raw_headers') or cfg.douyin_cookie or '')
         relay_ws = config.get_dycast_relay_ws_url()
-        return _sidecar.bridge_client().connect(room_num=room, relay_ws_url=relay_ws, raw_headers=raw_headers)
+        ret = _sidecar.bridge_client().connect(room_num=room, relay_ws_url=relay_ws, raw_headers=raw_headers)
+        _notify_admin_status_changed()
+        return ret
     if op == 'restart':
         # 管理窗口在独立线程时，create_task 必须在插件 asyncio 线程执行
         def _schedule() -> None:
@@ -315,6 +329,7 @@ def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             admin_ui.run_on_plugin_loop(_schedule)
         except RuntimeError as e:
             return {'ok': False, 'error': str(e)}
+        _notify_admin_status_changed()
         return {'ok': True, 'scheduled': True}
     return {'ok': False, 'error': f'unsupported op: {op}'}
 
@@ -371,6 +386,7 @@ async def shut_down():
     if _sidecar is not None:
         await _sidecar.stop()
         _sidecar = None
+    _notify_admin_status_changed()
     logger.info('runtime status(final): %s', json.dumps(get_runtime_status(), ensure_ascii=False, sort_keys=True))
     await blcsdk.shut_down()
 

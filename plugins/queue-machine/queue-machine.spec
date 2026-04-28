@@ -2,22 +2,25 @@
 import os
 import subprocess
 import sys
+import typing
 
-# exe 文件名、打包目录名（与 plugin.json 中 run 字段一致）
-NAME = 'douyin-relay'
-# 模块搜索路径：blivechat 项目根，以便找到 blcsdk
+if typing.TYPE_CHECKING:
+    from PyInstaller.building.api import COLLECT, EXE, PYZ
+    from PyInstaller.building.build_main import Analysis
+
+    SPECPATH = ''
+    DISTPATH = ''
+
+# 可执行文件名、dist 子目录名（与 plugin.json 的 run 一致；Windows 为 queue-machine.exe）
+NAME = 'queue-machine'
 PYTHONPATH = [
     os.path.join(SPECPATH, '..', '..'),
 ]
-# 随 exe 分发的数据文件
 DATAS = [
     ('plugin.json', '.'),
-    ('LICENSE', '.'),
-    ('data/config.example.ini', 'data'),
+    ('web', 'web'),
     ('log/.gitkeep', 'log'),
-    # sidecar 运行所需的 dycast 项目（含 node_modules / 可选 .node 便携 Node）
-    # Analysis.datas 仅接受 (src, dest) 二元组，这里直接打包整个目录。
-    ('dycast', 'dycast'),
+    ('data/.gitkeep', 'data'),
 ]
 
 block_cipher = None
@@ -29,14 +32,11 @@ a = Analysis(
     datas=DATAS,
     hiddenimports=[
         'aiohttp',
-        'cachetools',
+        'aiohttp.client',
         'multidict',
         'yarl',
-        'PySide6',
-        'PySide6.QtCore',
-        'PySide6.QtGui',
-        'PySide6.QtWidgets',
-        'shiboken6',
+        'frozenlist',
+        'aiosignal',
     ],
     hookspath=[],
     hooksconfig={},

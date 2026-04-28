@@ -1,0 +1,29 @@
+{
+  "config": {
+    "min_medal_level": 1,
+    "join_keyword": "排队",
+    "cancel_keyword": "取消排队",
+    "reset_queue_time_on_unpass": true,
+    "board_color": "#000000",
+    "board_opacity": 0.5,
+    "board_radius": 8,
+    "item_color": "#000000",
+    "item_opacity": 0.5,
+    "item_radius": 8,
+    "banner_text": "加入粉丝团弹幕输入「排队」 礼物插队"
+  },
+  "manual_calling_uid": null,
+  "users": [
+    {
+      "uid": "douyin:MS4wLjABAAAAVShbx_yTTtucsZi2Urav72iiJUND8ka31RkLHEAbWTeR8AsT5wmydh6CzNE_0h7r",
+      "name": "我不好吃",
+      "avatar_url": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_oINAklAzigkB1b4kBISIZAZiEA0AJY19PgIAP.jpeg?from=3067671334",
+      "medal_level": 0,
+      "queued_at": 1777352231,
+      "gift_value_coin": 0,
+      "manual_adjusted": false,
+      "passed_at": null,
+      "called_at": null
+    }
+  ]
+}
