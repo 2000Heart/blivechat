@@ -170,9 +170,12 @@ export default class ChatClientRelay {
       const raw18 = data.length > 18 ? data[18] : 0
       const legacyIdentityAt18 = raw18 && typeof raw18 === 'object' && !Array.isArray(raw18)
       const isMirror = legacyIdentityAt18 ? false : Boolean(raw18)
-      const identityExt = legacyIdentityAt18
-        ? raw18
-        : (data.length > 19 && data[19] && typeof data[19] === 'object' ? data[19] : {})
+      let identityExt = {}
+      if (legacyIdentityAt18) {
+        identityExt = raw18
+      } else if (data.length > 19 && data[19] && typeof data[19] === 'object') {
+        identityExt = data[19]
+      }
       data = new chatModels.AddTextMsg({
         avatarUrl: data[0],
         timestamp: data[1],

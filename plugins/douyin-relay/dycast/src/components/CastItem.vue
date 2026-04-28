@@ -12,6 +12,7 @@
     }">
     <span class="prefix">$</span>
     <p class="content">
+      <label v-if="fansClubLevelText" class="fans-club-level">{{ fansClubLevelText }}</label>
       <label class="nickname">[{{ user?.name ? user.name : 'unknown' }}]：</label>
       <template v-for="item in doms">
         <span v-if="item.node === 'text'" class="text">{{ item.text }}</span>
@@ -45,6 +46,13 @@ interface CastItemProps {
 }
 
 const props = withDefaults(defineProps<CastItemProps>(), {});
+
+const fansClubLevelText = computed(() => {
+  const rawLevel = Number(props.user?.medalLevel ?? 0);
+  if (!Number.isFinite(rawLevel) || rawLevel <= 0) return '';
+  const level = Math.floor(rawLevel);
+  return `粉丝团 ${level}级`;
+});
 
 /**
  * 创建普通内容
@@ -214,6 +222,17 @@ $giftText: #eba825;
     color: $nameColor;
     flex-shrink: 0;
   }
+  .fans-club-level {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 5px;
+    border-radius: 3px;
+    line-height: 1.25rem;
+    font-size: 0.8rem;
+    color: #fff;
+    background: #d66a35;
+    vertical-align: middle;
+  }
   .text,
   .atuser,
   .touser {
@@ -272,6 +291,9 @@ $giftText: #eba825;
     }
     .nickname {
       color: $nameDarkColor;
+    }
+    .fans-club-level {
+      background: #b6572b;
     }
     .text {
       color: $textDarkColor;

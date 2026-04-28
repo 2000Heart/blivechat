@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "author": "blivechat",
   "description": "弹幕排队 + 礼物动态排序 + OBS展示 + 主播管理后台",
-  "run": "queue-machine.exe",
-  "enabled": false
+  "run": "\"..\\..\\..\\.venv\\Scripts\\python.exe\" -u main.py",
+  "enabled": true
 }

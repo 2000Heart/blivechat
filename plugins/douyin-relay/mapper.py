@@ -112,6 +112,9 @@ def _medal_from_user(u: Optional[Dict[str, Any]]) -> tuple[int, str]:
             level = max(level, nl)
             if not name:
                 name = nn
+    # 抖音粉丝团多数场景没有可用名称，统一兜底成固定文案，避免前端因空名不展示。
+    if level > 0 and not name:
+        name = '粉丝团'
     return level, name
 
 
@@ -177,6 +180,7 @@ def _as_optional_non_negative_int(raw: Any) -> Optional[int]:
 
 
 def _base_douyin_platform_meta(msg: Dict[str, Any], user: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    medal_level, medal_name = _medal_from_user(user if isinstance(user, dict) else None)
     return {
         'platform': 'douyin',
         'room_id': str(msg.get('roomId') or '').strip(),
@@ -187,12 +191,8 @@ def _base_douyin_platform_meta(msg: Dict[str, Any], user: Optional[Dict[str, Any
         'membership_name': _as_optional_non_empty_str(
             msg.get('membership_name', msg.get('membershipName'))
         ),
-        'fans_badge_level': _as_optional_non_negative_int(
-            user.get('medal_level', user.get('medalLevel')) if isinstance(user, dict) else None
-        ),
-        'fans_badge_name': _as_optional_non_empty_str(
-            user.get('medal_name', user.get('medalName')) if isinstance(user, dict) else None
-        ),
+        'fans_badge_level': _as_optional_non_negative_int(medal_level),
+        'fans_badge_name': _as_optional_non_empty_str(medal_name),
     }
 
 
@@ -491,6 +491,7 @@ def map_dy_payload(
 
     if method == EMOJI_CHAT:
         url = msg.get('content')
+        medal_level, medal_name = _medal_from_user(user)
         content_type = 0
         content_type_params: List[Any] = []
         if url and str(url).startswith('http'):
@@ -515,12 +516,8 @@ def map_dy_payload(
                     'room_num': str(msg.get('roomNum') or '').strip(),
                 },
                 'fan_identity': {
-                    'level': _as_optional_non_negative_int(
-                        user.get('medal_level', user.get('medalLevel')) if isinstance(user, dict) else None
-                    ) or 0,
-                    'badge_name': _as_optional_non_empty_str(
-                        user.get('medal_name', user.get('medalName')) if isinstance(user, dict) else None
-                    ) or '',
+                    'level': _as_optional_non_negative_int(medal_level) or 0,
+                    'badge_name': _as_optional_non_empty_str(medal_name) or '',
                 },
             },
         }

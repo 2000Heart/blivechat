@@ -10,7 +10,8 @@
     "item_color": "#000000",
     "item_opacity": 0.5,
     "item_radius": 8,
-    "banner_text": "加入粉丝团弹幕输入「排队」 礼物插队"
+    "banner_text": "加入粉丝团弹幕输入「排队」 礼物插队",
+    "banner_font_size": 15
   },
   "manual_calling_uid": null,
   "users": [
@@ -20,7 +21,7 @@
       "avatar_url": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_oINAklAzigkB1b4kBISIZAZiEA0AJY19PgIAP.jpeg?from=3067671334",
       "medal_level": 0,
       "queued_at": 1777352231,
-      "gift_value_coin": 0,
+      "gift_value_coin": 400,
       "manual_adjusted": false,
       "passed_at": null,
       "called_at": null
