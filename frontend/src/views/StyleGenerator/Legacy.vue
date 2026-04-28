@@ -4,6 +4,27 @@
       <el-collapse>
         <el-collapse-item>
           <template slot="title">
+            <h3>{{ $t('stylegen.global') }}</h3>
+          </template>
+          <p>
+            <el-alert :title="$t('stylegen.scalingNotice')" type="info" show-icon :closable="false"></el-alert>
+          </p>
+          <el-row :gutter="20">
+            <el-col :xs="24" :sm="12">
+              <el-form-item :label="$t('stylegen.globalScale')">
+                <el-input v-model.number="form.globalScale" type="number" min="0" step="0.1"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item :label="$t('stylegen.fontScale')">
+                <el-input v-model.number="form.fontScale" type="number" min="0" step="0.1"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-collapse-item>
+
+        <el-collapse-item>
+          <template slot="title">
             <h3>{{ $t('stylegen.outlines') }}</h3>
           </template>
           <el-row :gutter="20">
@@ -18,9 +39,18 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item :label="$t('stylegen.outlineSize')">
-            <el-input v-model.number="form.outlineSize" type="number" min="0"></el-input>
-          </el-form-item>
+          <el-row :gutter="20">
+            <el-col :xs="24" :sm="12">
+              <el-form-item :label="$t('stylegen.outlineSize')">
+                <el-input v-model.number="form.outlineSize" type="number" min="0"></el-input>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item :label="$t('stylegen.blurryOutline')">
+                <el-switch v-model="form.blurryOutline"></el-switch>
+              </el-form-item>
+            </el-col>
+          </el-row>
         </el-collapse-item>
 
         <el-collapse-item>
@@ -64,8 +94,8 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item :label="$t('stylegen.lineHeight')">
-                <el-input v-model.number="form.userNameLineHeight" type="number" min="0"></el-input>
+              <el-form-item :label="$t('stylegen.fontWeight')">
+                <font-weight-select v-model="form.userNameWeight"></font-weight-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -130,8 +160,8 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item :label="$t('stylegen.lineHeight')">
-                <el-input v-model.number="form.messageLineHeight" type="number" min="0"></el-input>
+              <el-form-item :label="$t('stylegen.fontWeight')">
+                <font-weight-select v-model="form.messageWeight"></font-weight-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -187,8 +217,8 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item :label="$t('stylegen.lineHeight')">
-                <el-input v-model.number="form.timeLineHeight" type="number" min="0"></el-input>
+              <el-form-item :label="$t('stylegen.fontWeight')">
+                <font-weight-select v-model="form.timeWeight"></font-weight-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -259,8 +289,8 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item :label="$t('stylegen.firstLineLineHeight')">
-                <el-input v-model.number="form.firstLineLineHeight" type="number" min="0"></el-input>
+              <el-form-item :label="$t('stylegen.firstLineWeight')">
+                <font-weight-select v-model="form.firstLineWeight"></font-weight-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -285,8 +315,8 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item :label="$t('stylegen.secondLineLineHeight')">
-                <el-input v-model.number="form.secondLineLineHeight" type="number" min="0"></el-input>
+              <el-form-item :label="$t('stylegen.secondLineWeight')">
+                <font-weight-select v-model="form.secondLineWeight"></font-weight-select>
               </el-form-item>
             </el-col>
           </el-row>
@@ -311,16 +341,13 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item :label="$t('stylegen.scContentLineLineHeight')">
-                <el-input v-model.number="form.scContentLineHeight" type="number" min="0"></el-input>
+              <el-form-item :label="$t('stylegen.scContentWeight')">
+                <font-weight-select v-model="form.scContentWeight"></font-weight-select>
               </el-form-item>
             </el-col>
           </el-row>
           <el-divider></el-divider>
 
-          <el-form-item :label="$t('stylegen.showNewMemberBg')">
-            <el-switch v-model="form.showNewMemberBg"></el-switch>
-          </el-form-item>
           <el-row :gutter="20">
             <el-col :xs="24" :sm="12">
               <el-form-item :label="$t('stylegen.showScTicker')">
@@ -363,9 +390,13 @@
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item :label="$t('stylegen.animateOutWaitTime')">
-            <el-input v-model.number="form.animateOutWaitTime" type="number" min="0"></el-input>
-          </el-form-item>
+          <el-row :gutter="20">
+            <el-col :xs="24" :sm="12">
+              <el-form-item :label="$t('stylegen.animateOutWaitTime')">
+                <el-input v-model.number="form.animateOutWaitTime" type="number" min="0"></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
           <el-row :gutter="20">
             <el-col :xs="24" :sm="12">
               <el-form-item :label="$t('stylegen.slide')">
@@ -388,21 +419,26 @@
 import _ from 'lodash'
 
 import FontSelect from './FontSelect'
+import FontWeightSelect from './FontWeightSelect'
 import * as common from './common'
 import { mergeConfig } from '@/utils'
 
 export const DEFAULT_CONFIG = {
+  globalScale: 1,
+  fontScale: 1,
+
   showOutlines: true,
   outlineSize: 2,
   outlineColor: '#000000',
+  blurryOutline: false,
 
   showAvatars: true,
   avatarSize: 24,
 
   showUserNames: true,
-  userNameFont: 'Changa One',
+  userNameFont: 'Imprima,Noto Sans SC',
   userNameFontSize: 20,
-  userNameLineHeight: 0,
+  userNameWeight: 700,
   userNameColor: '#cccccc',
   ownerUserNameColor: '#ffd600',
   moderatorUserNameColor: '#5e84f1',
@@ -410,19 +446,19 @@ export const DEFAULT_CONFIG = {
   showBadges: true,
   showColon: true,
 
-  messageFont: 'Imprima',
-  messageFontSize: 18,
-  messageLineHeight: 0,
+  messageFont: 'Imprima,Noto Sans SC',
+  messageFontSize: 20,
+  messageWeight: 700,
   messageColor: '#ffffff',
   messageOnNewLine: false,
   messageReverseScroll: false,
-  emoticonSize: 18,
-  largeEmoticonSize: 36,
+  emoticonSize: 24,
+  largeEmoticonSize: 40,
 
   showTime: false,
-  timeFont: 'Imprima',
-  timeFontSize: 16,
-  timeLineHeight: 0,
+  timeFont: 'Imprima,Noto Sans SC',
+  timeFontSize: 20,
+  timeWeight: 400,
   timeColor: '#999999',
 
   bgColor: 'rgba(0, 0, 0, 0)',
@@ -432,19 +468,18 @@ export const DEFAULT_CONFIG = {
   moderatorMessageBgColor: 'rgba(94, 132, 241, 0)',
   memberMessageBgColor: 'rgba(15, 157, 88, 0)',
 
-  firstLineFont: 'Changa One',
-  firstLineFontSize: 20,
-  firstLineLineHeight: 0,
+  firstLineFont: 'Imprima,Noto Sans SC',
+  firstLineFontSize: 22,
+  firstLineWeight: 700,
   firstLineColor: '#ffffff',
-  secondLineFont: 'Imprima',
-  secondLineFontSize: 18,
-  secondLineLineHeight: 0,
+  secondLineFont: 'Imprima,Noto Sans SC',
+  secondLineFontSize: 20,
+  secondLineWeight: 700,
   secondLineColor: '#ffffff',
-  scContentFont: 'Imprima',
-  scContentFontSize: 18,
-  scContentLineHeight: 0,
+  scContentFont: 'Imprima,Noto Sans SC',
+  scContentFontSize: 20,
+  scContentWeight: 700,
   scContentColor: '#ffffff',
-  showNewMemberBg: true,
   showScTicker: false,
   showOtherThings: true,
 
@@ -460,7 +495,7 @@ export const DEFAULT_CONFIG = {
 export default {
   name: 'Legacy',
   components: {
-    FontSelect
+    FontSelect, FontWeightSelect
   },
   props: {
     value: String
@@ -472,28 +507,22 @@ export default {
   },
   computed: {
     result() {
-      return `${this.importStyle}
-
-${common.COMMON_STYLE}
-
-${this.paddingStyle}
-
-${this.outlineStyle}
-
-${this.avatarStyle}
-
-${this.userNameStyle}
-
-${this.messageStyle}
-
-${this.timeStyle}
-
-${this.backgroundStyle}
-
-${this.scAndNewMemberStyle}
-
-${this.animationStyle}
-`
+      let styles = [
+        this.importStyle,
+        this.variableStyle,
+        common.COMMON_STYLE,
+        this.paddingStyle,
+        this.outlineStyle,
+        this.avatarStyle,
+        this.timeStyle,
+        this.userNameStyle,
+        this.messageStyle,
+        this.backgroundStyle,
+        this.scAndNewMemberStyle,
+        this.animationStyle,
+      ]
+      let result = styles.filter(style => style).join('\n\n')
+      return `${result}\n`
     },
     importStyle() {
       let allFonts = []
@@ -502,112 +531,89 @@ ${this.animationStyle}
       }
       return common.getImportStyle(allFonts)
     },
+    variableStyle() {
+      return `yt-live-chat-renderer {
+  ${common.getVariableStyle(this.form)}
+
+  /* 描边 Outlines */
+  --outline-color: ${this.form.outlineColor};
+
+  /* 背景色 Background colors
+    普通、舰长、房管、主播 */
+  --text-msg-bg-color: ${this.form.messageBgColor ?? 'transparent'};
+  --text-msg-bg-color-member: ${this.form.memberMessageBgColor ?? 'transparent'};
+  --text-msg-bg-color-moderator: ${this.form.moderatorMessageBgColor ?? 'transparent'};
+  --text-msg-bg-color-owner: ${this.form.ownerMessageBgColor ?? 'transparent'};
+
+  /* 付费、上舰消息 Super Chats / Membership messages */
+  --paid-msg-line-1-color: ${this.form.firstLineColor ?? '#ffffff'};
+  --paid-msg-line-1-size: calc(${this.form.firstLineFontSize} * var(--font-base-size));
+  --paid-msg-line-1-weight: ${this.form.firstLineWeight};
+  --paid-msg-line-2-color: ${this.form.secondLineColor ?? '#ffffff'};
+  --paid-msg-line-2-size: calc(${this.form.secondLineFontSize} * var(--font-base-size));
+  --paid-msg-line-2-weight: ${this.form.secondLineWeight};
+  --paid-msg-content-color: ${this.form.scContentColor ?? '#ffffff'};
+  --paid-msg-content-size: calc(${this.form.scContentFontSize} * var(--font-base-size));
+  --paid-msg-content-weight: ${this.form.scContentWeight};
+  --membership-msg-bg-color: var(--username-color-member);
+}`
+    },
     paddingStyle() {
-      return `/* Reduce side padding */
+      return `/* 减少两侧边距 Reduce side padding */
 yt-live-chat-text-message-renderer {
-  padding-left: ${this.form.useBarsInsteadOfBg ? 20 : 4}px !important;
-  padding-right: 4px !important;
+  padding-inline: ${this.form.useBarsInsteadOfBg ? 20 : 4}px 4px;
 }`
     },
     outlineStyle() {
-      return `/* Outlines */
-yt-live-chat-renderer * {
-  ${this.showOutlinesStyle}
-  font-family: ${common.fontsStrToCss(this.form.messageFont)};
-  font-size: ${this.form.messageFontSize}px !important;
-  line-height: ${this.form.messageLineHeight || this.form.messageFontSize}px !important;
-}`
-    },
-    showOutlinesStyle() {
       if (!this.form.showOutlines || !this.form.outlineSize) {
         return ''
       }
       let shadow = []
-      for (let x = -this.form.outlineSize; x <= this.form.outlineSize; x += Math.ceil(this.form.outlineSize / 4)) {
-        for (let y = -this.form.outlineSize; y <= this.form.outlineSize; y += Math.ceil(this.form.outlineSize / 4)) {
-          shadow.push(`${x}px ${y}px ${this.form.outlineColor}`)
+      if (this.form.blurryOutline) {
+        shadow.push(`0 0 ${this.form.outlineSize}px var(--outline-color)`)
+      } else {
+        for (let x = -this.form.outlineSize; x <= this.form.outlineSize; x += Math.ceil(this.form.outlineSize / 4)) {
+          for (let y = -this.form.outlineSize; y <= this.form.outlineSize; y += Math.ceil(this.form.outlineSize / 4)) {
+            shadow.push(`${x}px ${y}px var(--outline-color)`)
+          }
         }
       }
-      return `text-shadow: ${shadow.join(', ')};`
+      return `/* 描边 Outlines */
+yt-live-chat-renderer * {
+  text-shadow: ${shadow.join(', ')};
+}`
     },
     avatarStyle() {
       return common.getAvatarStyle(this.form)
     },
     userNameStyle() {
-      return `/* Channel names */
-yt-live-chat-text-message-renderer #author-name[type="owner"],
-yt-live-chat-text-message-renderer yt-live-chat-author-badge-renderer[type="owner"] {
-  ${this.form.ownerUserNameColor ? `color: ${this.form.ownerUserNameColor} !important;` : ''}
-}
+      return `${common.getUserNameStyle(this.form)}
 
-yt-live-chat-text-message-renderer #author-name[type="moderator"],
-yt-live-chat-text-message-renderer yt-live-chat-author-badge-renderer[type="moderator"] {
-  ${this.form.moderatorUserNameColor ? `color: ${this.form.moderatorUserNameColor} !important;` : ''}
-}
-
-yt-live-chat-text-message-renderer #author-name[type="member"],
-yt-live-chat-text-message-renderer yt-live-chat-author-badge-renderer[type="member"] {
-  ${this.form.memberUserNameColor ? `color: ${this.form.memberUserNameColor} !important;` : ''}
-}
-
-yt-live-chat-text-message-renderer #author-name {
-  ${this.form.showUserNames ? '' : 'display: none !important;'}
-  ${this.form.userNameColor ? `color: ${this.form.userNameColor} !important;` : ''}
-  font-family: ${common.fontsStrToCss(this.form.userNameFont)};
-  font-size: ${this.form.userNameFontSize}px !important;
-  line-height: ${this.form.userNameLineHeight || this.form.userNameFontSize}px !important;
-}
-
-${!this.form.showColon ? '' : `/* Show colon */
+${!this.form.showColon ? '' : `/* 显示冒号 Show colon */
 yt-live-chat-text-message-renderer #author-name::after {
   content: ":";
-  margin-left: ${this.form.outlineSize}px;
-}`}
-
-/* Hide badges */
-yt-live-chat-text-message-renderer #chat-badges {
-  ${this.form.showBadges ? '' : 'display: none !important;'}
-  vertical-align: text-top !important;
-}`
+  margin-left: 2px;
+}`}`
     },
     messageStyle() {
-      return `/* Messages */
-yt-live-chat-text-message-renderer #message,
-yt-live-chat-text-message-renderer #message * {
-  ${this.form.messageColor ? `color: ${this.form.messageColor} !important;` : ''}
-  font-family: ${common.fontsStrToCss(this.form.messageFont)};
-  font-size: ${this.form.messageFontSize}px !important;
-  line-height: ${this.form.messageLineHeight || this.form.messageFontSize}px !important;
-}
+      return `${common.getMessageStyle(this.form)}
 
 ${!this.form.messageOnNewLine ? '' : `yt-live-chat-text-message-renderer #message {
-  display: block !important;
-  overflow: visible !important;
+  display: block;
+  overflow: visible;
 }`}
 
-yt-live-chat-text-message-renderer #message .emoji {
-  width: auto !important;
-  height: ${this.form.emoticonSize}px !important;
-}
-
-yt-live-chat-text-message-renderer #message .emoji.blc-large-emoji {
-  height: ${this.form.largeEmoticonSize}px !important;
-}
-
-${!this.form.messageReverseScroll ? '' : `yt-live-chat-item-list-renderer,
-yt-live-chat-item-list-renderer #items > * {
-  rotate: 180deg;
-  backface-visibility: hidden;
-}`}`
+yt-live-chat-text-message-renderer #message:has(.emoji.blc-large-emoji) {
+  vertical-align: top;
+}`
     },
     timeStyle() {
       return common.getTimeStyle(this.form)
     },
     backgroundStyle() {
-      return `/* Background colors */
+      return `/* 背景色 Background colors */
 body {
-  overflow: hidden;
-  ${this.form.bgColor ? `background-color: ${this.form.bgColor};` : ''}
+  background-color: ${this.form.bgColor ?? 'transparent'};
 }
 
 ${this.getBgStyleForAuthorType('', this.form.messageBgColor)}
@@ -616,79 +622,41 @@ ${this.getBgStyleForAuthorType('owner', this.form.ownerMessageBgColor)}
 
 ${this.getBgStyleForAuthorType('moderator', this.form.moderatorMessageBgColor)}
 
-${this.getBgStyleForAuthorType('member', this.form.memberMessageBgColor)}`
-    },
-    scAndNewMemberStyle() {
-      return `/* SuperChat/Fan Funding Messages */
-yt-live-chat-paid-message-renderer {
-  margin: 4px 0 !important;
-}
+${this.getBgStyleForAuthorType('member', this.form.memberMessageBgColor)}
 
-${this.scAndNewMemberFontStyle}
-
-yt-live-chat-membership-item-renderer #card,
-yt-live-chat-membership-item-renderer #header {
-  ${this.showNewMemberBgStyle}
-}
-
-${this.scTickerStyle}
-
-${this.form.showOtherThings ? '' : `yt-live-chat-item-list-renderer {
-  display: none !important;
+${!this.form.useBarsInsteadOfBg ? '' : `yt-live-chat-text-message-renderer::after {
+  content: "";
+  position: absolute;
+  display: block;
+  left: 8px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  box-sizing: border-box;
+  border-radius: 2px;
 }`}`
     },
-    scAndNewMemberFontStyle() {
-      return `yt-live-chat-paid-message-renderer #author-name,
-yt-live-chat-paid-message-renderer #author-name *,
-yt-live-chat-membership-item-renderer #header-content-inner-column,
-yt-live-chat-membership-item-renderer #header-content-inner-column * {
-  ${this.form.firstLineColor ? `color: ${this.form.firstLineColor} !important;` : ''}
-  font-family: ${common.fontsStrToCss(this.form.firstLineFont)};
-  font-size: ${this.form.firstLineFontSize}px !important;
-  line-height: ${this.form.firstLineLineHeight || this.form.firstLineFontSize}px !important;
+    scAndNewMemberStyle() {
+      return `${common.getScAndNewMemberStyle(this.form)}
+
+yt-live-chat-paid-message-renderer :is(#author-name, #author-name *),
+yt-live-chat-membership-item-renderer :is(#header-content-inner-column, #header-content-inner-column *) {
+  color: var(--paid-msg-line-1-color);
 }
 
-yt-live-chat-paid-message-renderer #purchase-amount,
-yt-live-chat-paid-message-renderer #purchase-amount *,
-yt-live-chat-membership-item-renderer #header-subtext,
-yt-live-chat-membership-item-renderer #header-subtext * {
-  ${this.form.secondLineColor ? `color: ${this.form.secondLineColor} !important;` : ''}
-  font-family: ${common.fontsStrToCss(this.form.secondLineFont)};
-  font-size: ${this.form.secondLineFontSize}px !important;
-  line-height: ${this.form.secondLineLineHeight || this.form.secondLineFontSize}px !important;
+yt-live-chat-paid-message-renderer :is(#purchase-amount, #purchase-amount *),
+yt-live-chat-membership-item-renderer :is(#header-subtext, #header-subtext *) {
+  color: var(--paid-msg-line-2-color);
 }
 
-yt-live-chat-paid-message-renderer #content,
-yt-live-chat-paid-message-renderer #content * {
-  ${this.form.scContentColor ? `color: ${this.form.scContentColor} !important;` : ''}
-  font-family: ${common.fontsStrToCss(this.form.scContentFont)};
-  font-size: ${this.form.scContentFontSize}px !important;
-  line-height: ${this.form.scContentLineHeight || this.form.scContentFontSize}px !important;
-}`
-    },
-    showNewMemberBgStyle() {
-      if (this.form.showNewMemberBg) {
-        return `background-color: ${this.form.memberUserNameColor} !important;
-  margin: 4px 0 !important;`
-      } else {
-        return `background-color: transparent !important;
-  box-shadow: none !important;
-  margin: 0 !important;`
-      }
-    },
-    scTickerStyle() {
-      return `${this.form.showScTicker ? '' : `yt-live-chat-ticker-renderer {
-  display: none !important;
-}`}
+yt-live-chat-paid-message-renderer :is(#content, #content *) {
+  color: var(--paid-msg-content-color);
+}
 
-/* SuperChat Ticker */
-yt-live-chat-ticker-paid-message-item-renderer,
-yt-live-chat-ticker-paid-message-item-renderer *,
-yt-live-chat-ticker-sponsor-item-renderer,
-yt-live-chat-ticker-sponsor-item-renderer * {
-  ${this.form.secondLineColor ? `color: ${this.form.secondLineColor} !important;` : ''}
-  font-family: ${common.fontsStrToCss(this.form.secondLineFont)};
-}`
+yt-live-chat-ticker-paid-message-item-renderer #content {
+  color: var(--paid-msg-line-2-color) !important;
+}
+`
     },
     animationStyle() {
       return common.getAnimationStyle(this.form)
@@ -720,24 +688,18 @@ yt-live-chat-ticker-sponsor-item-renderer * {
     },
 
     getBgStyleForAuthorType(authorType, color) {
+      if (!color) {
+        return ''
+      }
       let typeSelector = authorType ? `[author-type="${authorType}"]` : ''
+      let varName = authorType ? `--text-msg-bg-color-${authorType}` : '--text-msg-bg-color'
       if (!this.form.useBarsInsteadOfBg) {
-        return `yt-live-chat-text-message-renderer${typeSelector},
-yt-live-chat-text-message-renderer${typeSelector}[is-highlighted] {
-  ${color ? `background-color: ${color} !important;` : ''}
+        return `yt-live-chat-text-message-renderer${typeSelector} {
+  background-color: var(${varName});
 }`
       } else {
         return `yt-live-chat-text-message-renderer${typeSelector}::after {
-  ${color ? `border: 2px solid ${color};` : ''}
-  content: "";
-  position: absolute;
-  display: block;
-  left: 8px;
-  top: 4px;
-  bottom: 4px;
-  width: 1px;
-  box-sizing: border-box;
-  border-radius: 2px;
+  border: 2px solid var(${varName});
 }`
       }
     }

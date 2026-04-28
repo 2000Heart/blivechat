@@ -268,12 +268,7 @@ export default {
     }
 
     if (document.visibilityState === 'visible') {
-      if (this.roomKeyValue === null) {
-        this.init()
-      } else {
-        // 正式房间要随机延迟加载，防止同时请求导致雪崩
-        window.setTimeout(this.init, Math.random() * 3000)
-      }
+      this.init()
     } else {
       // 当前窗口不可见，延迟到可见时加载，防止OBS中一次并发太多请求（OBS中浏览器不可见时也会加载网页，除非显式设置）
       document.addEventListener('visibilitychange', this.onVisibilityChange)
@@ -363,6 +358,7 @@ export default {
       cfg.maxNumber = toInt(cfg.maxNumber, chatConfig.DEFAULT_CONFIG.maxNumber)
 
       cfg.blockGiftDanmaku = toBool(cfg.blockGiftDanmaku)
+      cfg.blockMirrorMessages = toBool(cfg.blockMirrorMessages)
       cfg.blockLevel = toInt(cfg.blockLevel, chatConfig.DEFAULT_CONFIG.blockLevel)
       cfg.blockNewbie = toBool(cfg.blockNewbie)
       cfg.blockNotMobileVerified = toBool(cfg.blockNotMobileVerified)
@@ -438,6 +434,11 @@ export default {
       case 'roomSetCustomStyle':
         this.customStyleElement.textContent = data.css
         break
+      case 'roomSetMessageConfig':
+        if (this.chatClient && this.chatClient.setMsgConfig) {
+          this.chatClient.setMsgConfig(data)
+        }
+        break
       case 'roomStartClient':
         if (this.chatClient) {
           this.chatClient.start()
@@ -490,6 +491,7 @@ export default {
         privilegeType: data.privilegeType,
         repeated: 1,
         translation: this.config.autoTranslate ? data.translation : '',
+        isMirror: data.isMirror,
         // 给模板用的字段
         uid: data.uid,
         medalLevel: data.medalLevel,
@@ -629,6 +631,8 @@ export default {
 
     filterTextMessage(data) {
       if (this.config.blockGiftDanmaku && data.isGiftDanmaku) {
+        return false
+      } else if (this.config.blockMirrorMessages && data.isMirror) {
         return false
       } else if (this.config.blockLevel > 0 && data.authorLevel < this.config.blockLevel) {
         return false

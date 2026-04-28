@@ -225,8 +225,10 @@ class AddTextMsg:
     """用户Open ID或ID"""
     medal_name: str = ''
     """勋章名"""
+    is_mirror: bool = False
+    """是否跨房弹幕，v1.10.2 起为列表第 18 项（0/1）"""
     identity_ext: dict = dataclasses.field(default_factory=dict)
-    """平台扩展身份信息"""
+    """平台扩展身份信息；v1.10.2 后与 is_mirror 并存时为列表第 19 项。旧版仅第 18 项为 dict 时解析为此字段。"""
 
     @classmethod
     def from_command(cls, data: list):
@@ -234,6 +236,16 @@ class AddTextMsg:
         content_type_params = data[14]
         if content_type == ContentType.EMOTICON:
             content_type_params = {'url': content_type_params[0]}
+
+        data_len = len(data)
+        raw18 = data[18] if data_len > 18 else None
+        if data_len > 18 and isinstance(raw18, dict):
+            is_mirror = False
+            identity_ext = raw18
+        else:
+            is_mirror = bool(raw18) if data_len > 18 else False
+            raw19 = data[19] if data_len > 19 else None
+            identity_ext = raw19 if isinstance(raw19, dict) else {}
 
         return cls(
             avatar_url=data[0],
@@ -253,7 +265,8 @@ class AddTextMsg:
             content_type_params=content_type_params,
             uid=data[16],
             medal_name=data[17],
-            identity_ext=data[18] if len(data) > 18 and isinstance(data[18], dict) else {},
+            is_mirror=is_mirror,
+            identity_ext=identity_ext,
         )
 
 

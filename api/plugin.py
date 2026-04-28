@@ -224,6 +224,7 @@ class PluginWsHandler(_PluginApiHandlerBase, tornado.websocket.WebSocketHandler)
             author_type=int(data['authorType']),
             privilege_type=int(data['guardLevel']),
             medal_level=int(data['medalLevel']),
+            medal_name=str(data.get('medalName', '')),
             translation=str(data['translation']),
             content_type=int(data.get('contentType', api.chat.ContentType.TEXT)),
             content_type_params=data.get('contentTypeParams', []),

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>排队管理后台</title>
+    <style>
+      body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; margin: 16px; color: #1f2d3d; }
+      .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+      .obs-box { background: #f5f7fb; border: 1px solid #dfe5ef; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+      .obs-url { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #fff; border: 1px solid #dfe5ef; border-radius: 6px; padding: 8px; margin-top: 6px; word-break: break-all; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #dfe5ef; padding: 8px; font-size: 13px; }
+      th { background: #f5f7fb; text-align: left; }
+      .ops button { margin-right: 6px; margin-bottom: 4px; }
+      #status { margin-bottom: 8px; color: #4a5a6a; }
+      input[type="number"] { width: 110px; }
+      .danger { color: #be2d2d; }
+    </style>
+  </head>
+  <body>
+    <h2>直播排队机后台</h2>
+    <div class="obs-box">
+      <div>OBS 展示页地址（浏览器源 URL）</div>
+      <div id="obsUrl" class="obs-url"></div>
+      <button id="copyObsUrl" style="margin-top:8px;">复制展示页地址</button>
+    </div>
+    <div class="obs-box">
+      <div style="margin-bottom:6px;">展示主题设置</div>
+      <div class="toolbar">
+        <label>底板颜色 <input id="boardColor" type="color" value="#000000" /></label>
+        <label>底板透明度(0-1) <input id="boardOpacity" type="number" min="0" max="1" step="0.05" value="0" /></label>
+        <label>底板圆角(px) <input id="boardRadius" type="number" min="0" max="80" step="1" value="0" /></label>
+        <label>Item颜色 <input id="itemColor" type="color" value="#000000" /></label>
+        <label>Item透明度(0-1) <input id="itemOpacity" type="number" min="0" max="1" step="0.05" value="0.5" /></label>
+        <label>Item圆角(px) <input id="itemRadius" type="number" min="0" max="80" step="1" value="10" /></label>
+        <button id="saveTheme">保存主题</button>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="margin-bottom:4px;">展示页顶部标语（超长则横向滚动，最多 200 字）</div>
+        <input id="bannerText" type="text" maxlength="200" style="width:min(560px,100%);padding:6px 8px;" placeholder="例如：请先弹幕「排队」入队，叫到号请尽快上麦" />
+        <label style="margin-left:10px;">字号(px)
+          <input id="bannerFontSize" type="number" min="12" max="64" step="1" value="15" />
+        </label>
+        <button id="saveBanner" style="margin-left:6px;">保存标语</button>
+      </div>
+    </div>
+    <div id="status">状态加载中...</div>
+    <div class="toolbar">
+      <label>最低粉丝牌等级 <input id="minMedal" type="number" min="0" step="1" /></label>
+      <button id="saveMinMedal">保存门槛</button>
+      <label>随机测试用户数量 <input id="randomCount" type="number" min="1" max="100" step="1" value="5" /></label>
+      <button id="addRandomUsers">添加随机用户入队</button>
+      <button id="clearQueue" class="danger">清空队列</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>用户</th><th>粉丝牌</th><th>礼物价值(coin)</th><th>状态</th><th>入队时间</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <script src="/web/admin.js"></script>
+  </body>
+  </html>

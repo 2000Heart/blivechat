@@ -3,55 +3,24 @@ import * as fonts from './fonts'
 const FALLBACK_FONTS_CSS = '"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", \
 "\\5FAE \\8F6F \\96C5 \\9ED1 ", SimHei, Arial, sans-serif'
 
-export const COMMON_STYLE = `/* Transparent background */
-yt-live-chat-renderer {
-  background-color: transparent !important;
-}
-
-yt-live-chat-ticker-renderer {
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-
+export const COMMON_STYLE = `/* （必需）透明背景 (Required) Transparent background */
+yt-live-chat-renderer,
+yt-live-chat-ticker-renderer,
 yt-live-chat-author-chip #author-name {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
-/* Hide scrollbar */
-yt-live-chat-item-list-renderer #items {
-  overflow: hidden !important;
-}
-
+/* （必需）隐藏滚动条 (Required) Hide scrollbar */
+body,
 yt-live-chat-item-list-renderer #item-scroller {
-  overflow: hidden !important;
+  overflow: hidden;
 }
 
-yt-live-chat-text-message-renderer #content,
-yt-live-chat-membership-item-renderer #content {
-  overflow: visible !important;
-}
-
-/* Hide header and input */
-yt-live-chat-header-renderer,
-yt-live-chat-message-input-renderer {
-  display: none !important;
-}
-
-/* Hide unimportant messages */
-yt-live-chat-text-message-renderer[is-deleted],
-yt-live-chat-membership-item-renderer[is-deleted] {
-  display: none !important;
-}
-
-yt-live-chat-mode-change-message-renderer, 
-yt-live-chat-viewer-engagement-message-renderer, 
-yt-live-chat-restricted-participation-renderer {
-  display: none !important;
-}
-
-yt-live-chat-text-message-renderer a,
-yt-live-chat-membership-item-renderer a {
-  text-decoration: none !important;
+/* 通用规则 Common rules */
+yt-live-chat-renderer * {
+  font-size: var(--font-size);
+  --line-height: calc(var(--font-size) * 1.2);
+  line-height: var(--line-height);
 }`
 
 export function getImportStyle(allFontsStrs) {
@@ -75,30 +44,208 @@ export function getImportStyle(allFontsStrs) {
   return res.join('\n')
 }
 
+export function getVariableStyle(config) {
+  return `/* 基准尺寸，用于整体缩放 Base size for scaling */
+  --base-size: ${config.globalScale}px;
+  --font-base-size: calc(${config.fontScale} * var(--base-size));
+
+  /* 没有首选字体时的备用字体 Fallback font families */
+  --fallback-fonts: ${FALLBACK_FONTS_CSS};
+
+  /* 头像 Avatars */
+  --avatar-size: calc(${config.avatarSize} * var(--base-size));
+
+  /* 时间 Timestamps */
+  --time-color: ${config.timeColor ?? '#999999'};
+  --time-size: calc(${config.timeFontSize} * var(--font-base-size));
+  --time-weight: ${config.timeWeight};
+
+  /* 用户名 Channel names
+    普通、舰长、房管、主播 */
+  --username-color: ${config.userNameColor ?? '#111111'};
+  --username-color-member: ${config.memberUserNameColor ?? 'var(--username-color)'};
+  --username-color-moderator: ${config.moderatorUserNameColor ?? 'var(--username-color)'};
+  --username-color-owner: ${config.ownerUserNameColor ?? 'var(--username-color)'};
+  --username-size: calc(${config.userNameFontSize} * var(--font-base-size));
+  --username-weight: ${config.userNameWeight};
+
+  /* 文本消息 Text messages */
+  --text-content-color: ${config.messageColor ?? '#111111'};
+  --text-content-size: calc(${config.messageFontSize} * var(--font-base-size));
+  --text-content-weight: ${config.messageWeight};
+
+  /* 表情 Emotes */
+  --emote-size: calc(${config.emoticonSize} * var(--font-base-size));
+  --large-emote-size: calc(${config.largeEmoticonSize} * var(--font-base-size));`
+}
+
 export function getAvatarStyle(config) {
-  return `/* Avatars */
-yt-live-chat-text-message-renderer #author-photo,
-yt-live-chat-text-message-renderer #author-photo img,
-yt-live-chat-paid-message-renderer #author-photo,
-yt-live-chat-paid-message-renderer #author-photo img,
-yt-live-chat-membership-item-renderer #author-photo,
-yt-live-chat-membership-item-renderer #author-photo img {
-  ${config.showAvatars ? '' : 'display: none !important;'}
-  width: ${config.avatarSize}px !important;
-  height: ${config.avatarSize}px !important;
-  border-radius: ${config.avatarSize}px !important;
-  margin-right: ${config.avatarSize / 4}px !important;
+  if (!config.showAvatars) {
+    return `/* 头像 Avatars */
+yt-live-chat-item-list-renderer #author-photo {
+    display: none;
+}`
+  }
+  return `/* 头像 Avatars */
+yt-live-chat-item-list-renderer :is(#author-photo, #author-photo img) {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  margin-right: 10px;
 }`
 }
 
 export function getTimeStyle(config) {
-  return `/* Timestamps */
+  if (!config.showTime) {
+    return `/* 时间 Timestamps */
 yt-live-chat-text-message-renderer #timestamp {
-  display: ${config.showTime ? 'inline' : 'none'} !important;
-  ${config.timeColor ? `color: ${config.timeColor} !important;` : ''}
+  display: none;
+}`
+  }
+  return `/* 时间 Timestamps */
+yt-live-chat-text-message-renderer #timestamp {
+  display: inline;
+  color: var(--time-color);
   font-family: ${fontsStrToCss(config.timeFont)};
-  font-size: ${config.timeFontSize}px !important;
-  line-height: ${config.timeLineHeight || config.timeFontSize}px !important;
+  --font-size: var(--time-size);
+  font-weight: var(--time-weight);
+}`
+}
+
+export function getUserNameStyle(config) {
+  return `/* 用户名 Channel names */
+yt-live-chat-text-message-renderer #author-name {
+  ${config.showUserNames ? '' : 'display: none;'}
+  color: var(--username-color);
+  font-family: ${fontsStrToCss(config.userNameFont)};
+  --font-size: var(--username-size);
+  font-weight: var(--username-weight);
+}
+
+yt-live-chat-text-message-renderer :is(#author-name, yt-live-chat-author-badge-renderer)[type="owner"] {
+  color: var(--username-color-owner);
+}
+
+yt-live-chat-text-message-renderer :is(#author-name, yt-live-chat-author-badge-renderer)[type="moderator"] {
+  color: var(--username-color-moderator);
+}
+
+yt-live-chat-text-message-renderer :is(#author-name, yt-live-chat-author-badge-renderer)[type="member"] {
+  color: var(--username-color-member);
+}
+
+${config.showBadges ? `yt-live-chat-text-message-renderer yt-live-chat-author-badge-renderer :is(img, yt-icon) {
+  --font-size: var(--username-size);
+  width: var(--line-height);
+  height: var(--line-height);
+}` : `/* 隐藏勋章 Hide badges */
+yt-live-chat-text-message-renderer #chat-badges {
+  display: none;
+}`}`
+}
+
+export function getMessageStyle(config) {
+  return `/* 文本消息 Text messages */
+yt-live-chat-text-message-renderer :is(#message, #message *) {
+  color: var(--text-content-color);
+  font-family: ${fontsStrToCss(config.messageFont)};
+  --font-size: var(--text-content-size);
+  font-weight: var(--text-content-weight);
+}
+
+${EMOTICON_STYLE}
+
+${getReverseScrollStyle(config)}`
+}
+
+const EMOTICON_STYLE = `yt-live-chat-text-message-renderer #message .emoji {
+  width: auto;
+  height: var(--emote-size);
+}
+
+yt-live-chat-text-message-renderer #message .emoji.blc-large-emoji {
+  height: var(--large-emote-size);
+}`
+
+function getReverseScrollStyle(config) {
+  if (!config.messageReverseScroll) {
+    return ''
+  }
+  return `/* 反向滚动 Reverse scrolling */
+yt-live-chat-item-list-renderer,
+yt-live-chat-item-list-renderer #items > * {
+  rotate: 180deg;
+  backface-visibility: hidden;
+}`
+}
+
+export function getScAndNewMemberStyle(config) {
+  return `/* 付费、上舰消息 Super Chats / Membership messages */
+yt-live-chat-paid-message-renderer {
+  margin: 4px 0;
+}
+
+${getScAndNewMemberFontStyle(config)}
+
+yt-live-chat-membership-item-renderer :is(#card, #header) {
+  background-color: var(--membership-msg-bg-color);
+  margin: 4px 0;
+}
+
+${getScTickerStyle(config)}
+
+${config.showOtherThings ? '' : `yt-live-chat-item-list-renderer {
+  display: none;
+}`}`
+}
+
+function getScAndNewMemberFontStyle(config) {
+  return `yt-live-chat-paid-message-renderer :is(#author-name, #author-name *),
+yt-live-chat-membership-item-renderer :is(#header-content-inner-column, #header-content-inner-column *) {
+  font-family: ${fontsStrToCss(config.firstLineFont)};
+  --font-size: var(--paid-msg-line-1-size);
+  font-weight: var(--paid-msg-line-1-weight);
+}
+
+yt-live-chat-membership-item-renderer yt-live-chat-author-badge-renderer :is(img, yt-icon) {
+  width: var(--line-height);
+  height: var(--line-height);
+}
+
+yt-live-chat-paid-message-renderer :is(#purchase-amount, #purchase-amount *),
+yt-live-chat-membership-item-renderer :is(#header-subtext, #header-subtext *) {
+  font-family: ${fontsStrToCss(config.secondLineFont)};
+  --font-size: var(--paid-msg-line-2-size);
+  font-weight: var(--paid-msg-line-2-weight);
+}
+
+yt-live-chat-paid-message-renderer :is(#content, #content *) {
+  font-family: ${fontsStrToCss(config.scContentFont)};
+  --font-size: var(--paid-msg-content-size);
+  font-weight: var(--paid-msg-content-weight);
+}`
+}
+
+function getScTickerStyle(config) {
+  if (!config.showScTicker) {
+    return `yt-live-chat-ticker-renderer {
+  display: none;
+}`
+  }
+  return `/* SC固定栏 Super Chat ticker */
+yt-live-chat-ticker-renderer :is(#items, #content) {
+  height: unset;
+}
+
+yt-live-chat-ticker-paid-message-item-renderer #author-photo img {
+  --font-size: var(--paid-msg-line-2-size);
+  width: var(--line-height);
+  height: var(--line-height);
+}
+
+yt-live-chat-ticker-paid-message-item-renderer #text {
+  font-family: ${fontsStrToCss(config.secondLineFont)};
+  --font-size: var(--paid-msg-line-2-size);
+  font-weight: var(--paid-msg-line-2-weight);
 }`
 }
 
@@ -118,7 +265,7 @@ export function getAnimationStyle(config) {
   let curTime = 0
   if (config.animateIn) {
     keyframes.push(`  0% { opacity: 0;${!config.slide ? ''
-      : ` translate: ${config.reverseSlide ? 16 : -16}px;`
+      : ` translate: calc(${config.reverseSlide ? 16 : -16} * var(--base-size));`
     } }`)
     curTime += config.fadeInTime
     keyframes.push(`  ${curTime / totalTime * 100}% { opacity: 1; translate: none; }`)
@@ -128,10 +275,10 @@ export function getAnimationStyle(config) {
     keyframes.push(`  ${curTime / totalTime * 100}% { opacity: 1; translate: none; }`)
     curTime += config.fadeOutTime
     keyframes.push(`  ${curTime / totalTime * 100}% { opacity: 0;${!config.slide ? ''
-      : ` translate: ${config.reverseSlide ? -16 : 16}px;`
+      : ` translate: calc(${config.reverseSlide ? -16 : 16} * var(--base-size);`
     } }`)
   }
-  return `/* Animation */
+  return `/* 动画 Animation */
 @keyframes anim {
 ${keyframes.join('\n')}
 }
@@ -152,11 +299,8 @@ export function fontsArrToStr(fontsArr) {
 
 export function fontsStrToCss(fontsStr) {
   let fontsArr = fontsStrToArr(fontsStr)
-  if (fontsArr.length === 0) {
-    return FALLBACK_FONTS_CSS
-  }
   fontsArr = fontsArr.map(cssEscapeStr)
-  fontsArr.push(FALLBACK_FONTS_CSS)
+  fontsArr.push('var(--fallback-fonts)')
   return fontsArr.join(', ')
 }
 

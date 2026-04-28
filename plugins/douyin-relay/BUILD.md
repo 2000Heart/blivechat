@@ -5,11 +5,12 @@
 ## 前置条件
 
 1. 在 **blivechat 项目根目录** 下操作（以便 `pathex` 能找到 `blcsdk`）。
-2. 已安装插件与主程序依赖（含 `aiohttp`、`cachetools`、PyInstaller），例如：
+2. 已安装插件与主程序依赖（含 `aiohttp`、`cachetools`、`PySide6`、PyInstaller），例如：
 
    ```sh
    pip install -r requirements.txt
    pip install -r blcsdk/requirements.txt
+   pip install PySide6
    ```
 
 3. 若分发包需要**内置 sidecar**（无需用户安装 dycast 源码）：
@@ -58,6 +59,11 @@ chmod +x build.sh   # 仅首次
 
 - 目录：`dist/douyin-relay/`（含 `douyin-relay.exe`、`plugin.json`、`data/`、`log/`、`_internal/` 等）。
 - 压缩包：`dist/douyin-relay.zip`（由 spec 末尾的 `zipfile` 步骤生成，便于分发）。
+
+### PySide6 管理界面说明
+
+- 管理界面已切换为 PySide6（浅色 Fluent 风格），采用独立 UI 线程，不再依赖 tkinter。
+- 若运行时缺少 PySide6，插件主流程仍可运行，但「管理」窗口无法打开；请先安装 `PySide6` 后重试。
 
 将 **整个目录** 或 **解压后的 zip 内容** 放到 `data/plugins/douyin-relay/`，勿只复制单个 exe（缺少 `_internal/` 会导致无法启动）。
 
