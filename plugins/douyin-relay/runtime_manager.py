@@ -5,6 +5,7 @@ import contextlib
 import logging
 import os
 import shlex
+import subprocess
 import signal
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -12,6 +13,14 @@ from typing import Any, Dict, Optional
 from dycast_bridge_client import DycastBridgeClient
 
 logger = logging.getLogger('douyin-relay.' + __name__)
+
+
+def _quote_exec_for_shell(exe_path: str) -> str:
+    # Windows asyncio.create_subprocess_shell 走 cmd.exe，单引号不会被当作引号。
+    # shlex.quote 在 Windows 会产生单引号，导致“文件名、目录名或卷标语法不正确”。
+    if os.name == 'nt':
+        return subprocess.list2cmdline([exe_path])
+    return shlex.quote(exe_path)
 
 
 @dataclass
@@ -51,7 +60,7 @@ class DycastRuntimeManager:
             raise RuntimeError(f'dycast path not found: {self._cfg.dycast_path}')
         cmd = self._cfg.node_cmd.format(
             port=self._cfg.port,
-            node=shlex.quote(self._cfg.node_exe),
+            node=_quote_exec_for_shell(self._cfg.node_exe),
         )
         kw: Dict[str, Any] = {
             'cwd': self._cfg.dycast_path,
