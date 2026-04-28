@@ -1,4 +1,4 @@
-import { getBaseUrl } from '@/api/base'
+import { ensureBaseUrlInited, getBaseUrl } from '@/api/base'
 import * as chat from '.'
 import * as chatModels from './models'
 
@@ -46,13 +46,14 @@ export default class ChatClientRelay {
     this.msgHandler.onDebugMsg(new chatModels.DebugMsg({ content }))
   }
 
-  wsConnect() {
+  async wsConnect() {
     if (this.isDestroying) {
       return
     }
 
     this.addDebugMsg('Connecting')
 
+    await ensureBaseUrlInited()
     let baseUrl = getBaseUrl()
     if (baseUrl === null) {
       this.addDebugMsg('No available endpoint')
@@ -166,6 +167,12 @@ export default class ChatClientRelay {
       }
 
       let content = data[4]
+      const raw18 = data.length > 18 ? data[18] : 0
+      const legacyIdentityAt18 = raw18 && typeof raw18 === 'object' && !Array.isArray(raw18)
+      const isMirror = legacyIdentityAt18 ? false : Boolean(raw18)
+      const identityExt = legacyIdentityAt18
+        ? raw18
+        : (data.length > 19 && data[19] && typeof data[19] === 'object' ? data[19] : {})
       data = new chatModels.AddTextMsg({
         avatarUrl: data[0],
         timestamp: data[1],
@@ -181,9 +188,10 @@ export default class ChatClientRelay {
         id: data[11],
         translation: data[12],
         emoticon: emoticon,
+        isMirror,
         uid: data[16],
         medalName: data[17],
-        identityExt: data[18] || {},
+        identityExt,
       })
       this.msgHandler.onAddText(data)
       break

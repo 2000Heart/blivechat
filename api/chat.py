@@ -74,6 +74,7 @@ def make_text_message_data(
     content_type_params: list = None,
     uid: str = '',
     medal_name: str = '',
+    is_mirror: bool = False,
     identity_ext: dict = None,
 ):
     # 为了节省带宽用list而不是dict
@@ -114,7 +115,9 @@ def make_text_message_data(
         uid,
         # 17: medalName
         medal_name,
-        # 18: identityExt
+        # 18: isMirror（与 v1.10.2 协议一致）
+        1 if is_mirror else 0,
+        # 19: identityExt（与 is_mirror 并存；旧版仅 18 项为 dict 时由 SDK/前端兼容解析）
         identity_ext if isinstance(identity_ext, dict) else {},
     ]
 
