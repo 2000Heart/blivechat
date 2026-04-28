@@ -5,12 +5,11 @@
 ## 前置条件
 
 1. 在 **blivechat 项目根目录** 下操作（以便 `pathex` 能找到 `blcsdk`）。
-2. 已安装插件与主程序依赖（含 `aiohttp`、`cachetools`、`PySide6`、PyInstaller），例如：
+2. 已安装插件依赖与打包依赖，例如：
 
    ```sh
-   pip install -r requirements.txt
-   pip install -r blcsdk/requirements.txt
-   pip install PySide6
+   python -m pip install -r plugins/douyin-relay/requirements.txt
+   python -m pip install -r blcsdk/requirements.txt
    ```
 
 3. 若分发包需要**内置 sidecar**（无需用户安装 dycast 源码）：

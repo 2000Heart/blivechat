@@ -1,0 +1,16 @@
+# douyin-relay plugin dependencies
+#
+# Usage:
+#   python -m pip install -r plugins/douyin-relay/requirements.txt
+#
+# Keep this list aligned with README.md and BUILD.md.
+
+# Core deps used by relay server and runtime
+aiohttp~=3.9.0
+cachetools==5.3.1
+
+# Admin UI
+PySide6
+
+# Optional local dycast helper server (`dycast/server.py`)
+websockets

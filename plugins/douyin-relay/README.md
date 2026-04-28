@@ -103,15 +103,13 @@ Cookie 等同账号登录态，请勿泄露或提交到公开仓库。
 
 ## 依赖
 
-与主项目一致，需已安装 `aiohttp`、`cachetools`（见主仓库 `requirements.txt` / `blivedm/requirements.txt`）。
-
-管理界面依赖 `PySide6`（已替换原 tkinter 管理窗口）：
+推荐直接安装插件依赖清单（避免漏装）：
 
 ```bash
-pip install PySide6
+python -m pip install -r plugins/douyin-relay/requirements.txt
 ```
 
-若缺少该依赖，插件核心转发仍可运行，但插件「管理」窗口无法打开。
+其中管理界面依赖 `PySide6`（已替换原 tkinter 管理窗口）。若缺少该依赖，插件核心转发仍可运行，但插件「管理」窗口无法打开。
 
 ## 故障排查
 
