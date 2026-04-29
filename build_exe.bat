@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 if not exist "blivedm\blivedm\__init__.py" (
   echo 缺少 blivedm 子模块，正在初始化...
-  git submodule update --init --recursive || exit /b 1
+  git submodule update --init --recursive blivedm || exit /b 1
 )
 
 if not exist "frontend\dist\index.html" (
