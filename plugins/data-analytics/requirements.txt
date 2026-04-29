@@ -1,3 +1,4 @@
+aiohttp~=3.9.0
 # blivechat插件SDK，需要从项目根目录的blcsdk目录导入
 # 确保blivechat项目在Python路径中，或者将blcsdk复制到插件目录
 

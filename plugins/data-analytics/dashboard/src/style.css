@@ -1,0 +1,24 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Noto Sans SC', 'IBM Plex Sans', 'PingFang SC', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px circle at -10% -20%, rgba(20, 184, 166, 0.12), transparent 50%),
+    radial-gradient(1000px circle at 110% -30%, rgba(56, 189, 248, 0.14), transparent 55%),
+    #020617;
+  color: #e2e8f0;
+}
+
+#app {
+  min-height: 100vh;
+}

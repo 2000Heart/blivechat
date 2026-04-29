@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "author": "blivechat",
   "description": "保存直播弹幕数据到数据库，用于数据分析。支持弹幕、礼物、上舰、醒目留言等所有消息类型。数据存储在SQLite数据库中，便于后续分析和查询。",
-  "run": "data-analytics.exe",
+  "run": "../../../.venv/bin/python -u main.py",
   "enabled": true
 }
 

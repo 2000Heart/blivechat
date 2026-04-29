@@ -1,139 +1,90 @@
-# 打包说明
+# 数据分析插件 — 打包说明
 
-## 打包为 exe 文件
+与 [插件系统 — 打包插件](../../blivechat.wiki/插件系统.md) 及 `plugins/msg-logging/msg-logging.spec` 流程一致。
 
-### 前置要求
+## 前置条件
 
-1. **操作系统**: 建议在 Windows 系统上打包，因为 exe 文件是 Windows 专用的
-   - 在 macOS/Linux 上无法直接打包 Windows exe 文件
-   - 如果必须在 macOS/Linux 上打包，需要使用 Wine 或虚拟机
+1. 在 **blivechat 项目根目录** 下操作（或从本目录执行 `./build.sh`，脚本会自行 `cd` 到根目录），以便 `pathex` 能找到 `blcsdk`。
+2. 已安装插件依赖与 PyInstaller，例如：
 
-2. 安装 PyInstaller:
-   ```bash
-   pip install pyinstaller
-   ```
-   或者
-   ```bash
-   python3 -m pip install pyinstaller
+   ```sh
+   python -m pip install -r plugins/data-analytics/requirements.txt
+   python -m pip install -r blcsdk/requirements.txt
+   python -m pip install pyinstaller
    ```
 
-3. 确保在 blivechat 项目根目录下运行打包命令
+3. **构建看板前端**（生成 `web/dist`，打包必需）：
 
-### macOS/Linux 用户注意事项
-
-如果你在 macOS 或 Linux 系统上：
-- **无法直接打包 Windows exe**: PyInstaller 只能打包当前操作系统的可执行文件
-- **替代方案**:
-  1. 使用 Windows 虚拟机或 Wine 环境打包
-  2. 直接使用 Python 脚本运行（修改 `plugin.json` 中的 `run` 为 `"python -u main.py"`）
-  3. 在 Windows 系统上打包后分发
-
-### 打包步骤
-
-1. **进入插件目录**
-   ```bash
-   cd plugins/data-analytics
+   ```sh
+   cd plugins/data-analytics/dashboard
+   npm install
+   npm run build
    ```
 
-2. **运行 PyInstaller**
-   
-   在 Windows 上:
-   ```bash
-   pyinstaller data-analytics.spec
-   ```
-   
-   或者使用 Python 模块方式:
-   ```bash
-   python -m PyInstaller data-analytics.spec
-   ```
-   
-   如果 `pyinstaller` 命令找不到，使用:
-   ```bash
-   python3 -m PyInstaller data-analytics.spec
-   ```
+4. **Windows 可执行文件**：建议在 Windows 上打包；在 macOS/Linux 上 PyInstaller 只能生成当前系统的可执行文件（见下文）。
 
-3. **打包结果**
-   - 打包后的目录: `dist/data-analytics/`（包含 exe、_internal 目录和数据文件）
-   - 压缩包: `dist/data-analytics.zip`（推荐使用）
+## 打包命令
 
-### 使用打包后的文件
+**路径相对于当前工作目录。** 任选其一，不要混用路径写法。
 
-**重要提示**：必须使用完整的目录结构，不能只复制 exe 文件！
+### 方式 A：在 blivechat 仓库根目录执行（推荐）
 
-1. **方法一：使用压缩包（推荐）**
-   - 解压 `dist/data-analytics.zip` 到 `data/plugins/data-analytics/`
-   - 确保目录结构如下：
-     ```
-     data/plugins/data-analytics/
-     ├── data-analytics.exe
-     ├── plugin.json
-     ├── _internal/          # 包含所有依赖和 Python DLL（必需！）
-     │   ├── python313.dll
-     │   └── ... (其他依赖文件)
-     ├── log/
-     └── data/
-     ```
-
-2. **方法二：直接复制目录**
-   - 将整个 `dist/data-analytics/` 目录复制到 `data/plugins/data-analytics/`
-   - 确保复制时包含所有文件和子目录，特别是 `_internal/` 目录
-
-**错误的使用方式**：
-- ❌ 只复制 `data-analytics.exe` 文件（会缺少 `_internal/` 目录和 `plugin.json`）
-- ❌ 只复制部分文件
-- ✅ 必须使用 `dist/data-analytics.zip` 解压，或复制整个 `dist/data-analytics/` 目录
-
-### 注意事项
-
-- 打包后的 exe 文件需要和 `plugin.json` 在同一目录
-- `log/` 和 `data/` 目录会自动创建，但建议在打包时包含 `.gitkeep` 文件
-- 确保 blivechat 项目在打包时可以被找到（通过 PYTHONPATH 设置）
-- 打包后的 exe 文件较大（通常几十MB），因为包含了 Python 解释器和所有依赖
-
-### 验证打包
-
-打包完成后，可以手动运行 exe 文件测试：
-
-```bash
-cd dist/data-analytics
-./data-analytics.exe
+```sh
+cd /path/to/blivechat
+python -m PyInstaller -y plugins/data-analytics/data-analytics.spec
 ```
 
-如果出现错误，检查：
-1. 是否正确包含了所有依赖
-2. blcsdk 模块是否正确打包
-3. 数据文件（plugin.json）是否正确包含
+（若已安装命令：`pyinstaller -y plugins/data-analytics/data-analytics.spec`）
 
-### 常见问题
+### 方式 B：在插件目录 `plugins/data-analytics/` 下执行
 
-**Q: 在 macOS/Linux 上无法打包 Windows exe**
-A: PyInstaller 只能打包当前操作系统的可执行文件。如果需要 Windows exe，请在 Windows 系统上打包，或使用虚拟机/Wine。
+此时 spec 与 `main.py` 就在当前目录，应写**文件名**，不要再带 `plugins/...` 前缀：
 
-**Q: 提示 "Python was built without a shared library"**
-A: 这通常发生在 macOS 上。解决方案：
-- 使用 Homebrew 安装的 Python: `brew install python`
-- 或使用 conda 环境: `conda install python`
-- 或直接在 Windows 系统上打包
+```sh
+cd /path/to/blivechat/plugins/data-analytics
+python -m PyInstaller -y data-analytics.spec
+```
 
-**Q: 打包后无法找到 blcsdk 模块**
-A: 确保在 blivechat 项目根目录下运行打包命令，PYTHONPATH 会指向项目根目录
+若在 `plugins/data-analytics` 里误执行 `python -m PyInstaller -y plugins/data-analytics/data-analytics.spec`，会去找子目录 `plugins/data-analytics/plugins/...`，从而报错 **`Spec file ... not found`**。
 
-**Q: 打包后的 exe 文件很大**
-A: 这是正常的，PyInstaller 会打包 Python 解释器和所有依赖。当前使用目录模式，启动速度较快，但需要确保 `_internal/` 目录和 exe 文件在同一目录下。
+### 方式 C：一键从插件目录调用（脚本会 `cd` 到仓库根）
 
-**Q: 打包后无法创建数据库文件**
-A: 确保 `data/` 目录有写权限，或者检查 exe 文件是否在正确的目录下运行
+```sh
+cd /path/to/blivechat/plugins/data-analytics
+chmod +x build.sh   # 仅首次
+./build.sh
+```
 
-**Q: 运行时提示 "Failed to load Python DLL"**
-A: 这通常是因为：
-1. **缺少 `_internal/` 目录**：确保使用了完整的目录结构，不能只复制 exe 文件
-2. **PyInstaller 版本过旧**：确保使用最新版本的 PyInstaller（支持 Python 3.13）
-   ```bash
-   pip install --upgrade pyinstaller
-   ```
-3. **Python 版本兼容性**：如果使用 Python 3.13，需要 PyInstaller 6.0.0 或更高版本
-4. **如果仍有问题**：可以尝试使用 Python 3.12 重新打包
+## 产物
 
-**Q: 不想打包，直接使用 Python 脚本可以吗？**
-A: 可以！修改 `plugin.json` 中的 `run` 字段为 `"run": "python -u main.py"`，然后确保从 blivechat 项目根目录运行即可。
+- 目录：`dist/data-analytics/`（含可执行文件、`web/` 静态资源、`plugin.json`、`data/`、`log/`、`_internal/` 等）。
+- 压缩包：`dist/data-analytics.zip`（由 spec 末尾的 `zipfile` 步骤自动生成，便于分发）。
 
+将 **`dist/data-analytics/` 整目录** 复制到 `data/plugins/data-analytics/`（或把 zip 解压到该路径）。**勿只复制单个 exe**（缺少 `_internal/` 会导致无法启动）。
+
+分发用的 `plugin.json` 中 `"run"` 应与产物可执行文件名一致，例如 Windows：`"run": "data-analytics.exe"`。
+
+## 平台说明
+
+PyInstaller **只能在当前系统上生成对应平台的可执行文件**。若需向 Windows 用户分发 `.exe`，请在 **Windows**（或对应虚拟机）上执行上述命令；在 macOS 上构建得到的是无后缀的 `data-analytics`，需在 `plugin.json` 的 `run` 中写实际文件名（例如 `"run": "data-analytics"`）。
+
+## 源码调试（不打包）
+
+可将 `data/plugins/data-analytics/plugin.json` 的 `run` 改为本机 Python，例如：
+
+```json
+"run": "python -u main.py"
+```
+
+并在含 `main.py` 的插件目录下启动（或配合 `cd` 与绝对路径，见插件系统文档）。
+
+## 常见问题
+
+**Q: 打包后看板 404 或静态资源缺失**  
+A: 请先执行 `dashboard` 下的 `npm run build`，确保存在 `plugins/data-analytics/web/dist/`（内含 `index.html` 等）后再打包。
+
+**Q: 提示找不到 blcsdk**  
+A: 必须在 blivechat **仓库根**执行方式 A / `./build.sh`，或在插件目录用方式 B；勿在错误 cwd 下带错 spec 路径。
+
+**Q: 不想打包，直接用 Python**  
+A: 将 `plugin.json` 的 `run` 设为 `python -u main.py`（或指向本机解释器绝对路径），从项目根启动 blivechat 即可。

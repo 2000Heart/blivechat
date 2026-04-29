@@ -1,242 +1,191 @@
-# 数据分析插件
+# 数据分析插件（data-analytics）
 
-这个插件用于保存直播弹幕数据到SQLite数据库，便于后续进行数据分析。
+用于持久化直播消息并提供本地可视化看板。插件会将弹幕、礼物、上舰、醒目留言写入 SQLite，并通过内置 HTTP API 给前端看板查询。
 
-## 功能特性
+## 快速开始
 
-- **完整数据保存**：保存所有类型的消息数据
-  - 弹幕（danmaku）
-  - 礼物（gifts）
-  - 上舰（members）
-  - 醒目留言（super_chat）
+### 方式一：使用打包版（推荐）
 
-- **结构化存储**：使用SQLite数据库存储，便于查询和分析
-- **丰富的数据字段**：包含用户信息、时间戳、内容等完整信息
-- **高性能索引**：为常用查询字段创建索引，提高查询速度
+1. 按 [BUILD.md](BUILD.md) 构建插件。
+2. 将产物目录放到 `data/plugins/data-analytics/`。
+3. 在 blivechat 插件管理中启用插件。
+4. 点击插件 `Admin UI`，浏览器会直接打开数据看板。
 
-## 安装和使用
+### 方式二：源码运行
 
-### 方法一：使用打包的 exe 文件（推荐）
+1. 将插件目录放到 `data/plugins/data-analytics/`。
+2. 将 `plugin.json` 的 `run` 改为 `python -u main.py`。
+3. 从项目根目录启动 blivechat，并在插件管理中启用本插件。
 
-1. 按照 [BUILD.md](BUILD.md) 中的说明打包插件为 exe 文件
-2. 将打包后的文件放到 `data/plugins/data-analytics/` 目录下
-3. 在blivechat的插件管理界面启用插件
-4. 插件会自动开始保存数据到 `data/plugins/data-analytics/data/analytics.db`
+## 管理页与配置
 
-### 方法二：直接使用 Python 脚本
+- 默认地址：`http://127.0.0.1:18766/?token=...`
+- 配置文件：`data/web_config.json`
+  - `host`
+  - `port`
+  - `adminToken`
+- 点击 `Admin UI` 会自动拼接 token 打开看板，无需手动选择数据库文件。
 
-1. 将插件目录放到 `data/plugins/data-analytics/` 目录下
-2. 确保blivechat项目在Python路径中（通常从项目根目录运行blivechat会自动满足）
-3. 修改 `plugin.json` 中的 `run` 字段为 `"run": "python -u main.py"`
-4. 在blivechat的插件管理界面启用插件
-5. 插件会自动开始保存数据到 `data/plugins/data-analytics/data/analytics.db`
+## 本地 API
 
-### 方法三：修改运行命令
+服务默认监听本机（`127.0.0.1`），当前仅保留 `/api/v2/*`。  
+`/api/v1/*` 已下线，访问时返回 `410 Gone`。
 
-如果无法直接导入blcsdk，可以修改 `plugin.json` 中的 `run` 字段：
+常用查询参数：
 
-```json
-{
-  "run": "python -c \"import sys; sys.path.insert(0, '/path/to/blivechat'); exec(open('main.py').read())\""
-}
-```
+- `room_id`
+- `from_ts` / `to_ts`（Unix 秒）
+- `source`（`all` / `bilibili` / `douyin`）
+- `limit` / `offset`
 
-将 `/path/to/blivechat` 替换为实际的blivechat项目路径。
+鉴权方式：
 
-### 使用数据分析脚本
+- `?token=...`，或
+- `Authorization: Bearer <token>`
 
-运行分析脚本查看统计数据：
+**说明**：所有 `/api/` 前缀接口均需上述鉴权。
 
-```bash
-# 查看所有房间
-python analyze.py
+### API v2（看板多维分析，数据来自 `analytics_v2.db`）
 
-# 分析指定房间
-python analyze.py 123456
+插件启动时会自动执行旧库迁移（若存在 `analytics.db`），并切换为 v2-only 存储。
 
-# 分析所有房间
-python analyze.py --all
-```
+- `GET /api/v2/kpis`：营收与人数类 KPI
+- `GET /api/v2/trend/revenue`：按日/周/月的营收趋势
+- `GET /api/v2/segments/users`：按贡献金额的用户分层计数
+- `GET /api/v2/explore/events`：统一事件流明细分页
+- `GET /api/v2/series/active-hour-of-day`：**跨日期按 0–23 点叠加**的活跃分析；统计 **弹幕 + 礼物** 事件条数，并返回每小时 **去重用户数**（优先 `uid`，否则 `author_name`）。时间桶使用 **服务器本地时区**（`meta.timezoneNote` 为 `local_server`）。
+- `GET /api/v2/rankings/danmaku-authors?limit=`：弹幕条数排行
+- `GET /api/v2/rankings/gift-authors?limit=&sort=count|amount`：送礼次数或金额排行
+- `GET /api/v2/users/danmaku?uid=&author_name=&limit=&offset=`：某用户在筛选条件下的弹幕分页（`uid` 与 `author_name` 二选一必填；有 `uid` 时按 `uid` 匹配）
+- `GET /api/v2/users/gifts?uid=&author_name=&limit=&offset=`：同上，礼物明细分页
+
+v2 常用查询参数：`room_id`、`from_ts` / `to_ts`、`source`、`limit` / `offset`，以及 `view_mode`、`granularity`（见前端全局上下文）。
 
 ## 数据库结构
 
-### rooms 表
-存储房间信息
-- `room_id`: 房间ID（主键）
-- `room_key_type`: 房间键类型（1=房间ID, 2=身份码）
-- `room_key_value`: 房间键值
-- `created_at`: 创建时间
+数据库文件：`data/plugins/data-analytics/data/analytics_v2.db`（唯一读写库）
 
-### danmaku 表
-存储弹幕数据
-- `id`: 消息ID（主键）
-- `room_id`: 房间ID
-- `timestamp`: 时间戳（秒）
-- `uid`: 用户ID
-- `author_name`: 用户名
-- `author_type`: 用户类型（0=普通, 1=舰队, 2=房管, 3=主播）
-- `author_level`: 用户等级
-- `content`: 弹幕内容
-- `translation`: 翻译内容
-- `is_gift_danmaku`: 是否礼物弹幕
-- `is_newbie`: 是否新用户
-- `is_mobile_verified`: 是否绑定手机
-- `privilege_type`: 舰队等级
-- `medal_level`: 勋章等级
-- `medal_name`: 勋章名称
-- `content_type`: 内容类型（0=文本, 1=表情）
-- `avatar_url`: 头像URL
+### 表：`rooms`
 
-### gifts 表
-存储礼物数据
-- `id`: 消息ID（主键）
-- `room_id`: 房间ID
-- `timestamp`: 时间戳
-- `uid`: 用户ID
-- `author_name`: 用户名
-- `gift_id`: 礼物ID
-- `gift_name`: 礼物名称
-- `gift_icon_url`: 礼物图标URL
-- `num`: 数量
-- `total_coin`: 总价（金瓜子，1000=1元）
-- `total_free_coin`: 总价（银瓜子）
-- `privilege_type`: 舰队等级
-- `medal_level`: 勋章等级
-- `medal_name`: 勋章名称
-- `avatar_url`: 头像URL
+- `room_id` INTEGER PRIMARY KEY
+- `room_key_type` INTEGER NOT NULL（1=房间ID,2=身份码）
+- `room_key_value` TEXT NOT NULL
+- `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-### members 表
-存储上舰数据
-- `id`: 消息ID（主键）
-- `room_id`: 房间ID
-- `timestamp`: 时间戳
-- `uid`: 用户ID
-- `author_name`: 用户名
-- `privilege_type`: 舰队等级（1=总督, 2=提督, 3=舰长）
-- `num`: 数量
-- `unit`: 单位（月）
-- `total_coin`: 总价（金瓜子）
-- `medal_level`: 勋章等级
-- `medal_name`: 勋章名称
-- `avatar_url`: 头像URL
+### v2 数据库：`analytics_v2.db`
 
-### super_chat 表
-存储醒目留言数据
-- `id`: 消息ID（主键）
-- `room_id`: 房间ID
-- `timestamp`: 时间戳
-- `uid`: 用户ID
-- `author_name`: 用户名
-- `price`: 价格（元）
-- `content`: 内容
-- `translation`: 翻译内容
-- `privilege_type`: 舰队等级
-- `medal_level`: 勋章等级
-- `medal_name`: 勋章名称
-- `avatar_url`: 头像URL
+- 路径：`data/plugins/data-analytics/data/analytics_v2.db`
+- 由脚本 `python3 migrate_v2.py`（可加 `--full` 清空 v2 事实表后全量导入）从 `analytics.db` 导入到表 `fact_events`。
+- 弹幕文本存于 `fact_events.content`（仅 `event_type=danmaku` 时有值）。
 
-## 数据分析示例
+### 表：`danmaku`
 
-### 使用Python分析数据
+- `id` TEXT PRIMARY KEY
+- `room_id` INTEGER NOT NULL
+- `timestamp` INTEGER NOT NULL
+- `uid` TEXT
+- `author_name` TEXT NOT NULL
+- `author_type` INTEGER NOT NULL
+- `author_level` INTEGER NOT NULL
+- `content` TEXT NOT NULL
+- `translation` TEXT
+- `is_gift_danmaku` INTEGER NOT NULL DEFAULT 0
+- `is_newbie` INTEGER NOT NULL DEFAULT 0
+- `is_mobile_verified` INTEGER NOT NULL DEFAULT 1
+- `privilege_type` INTEGER NOT NULL DEFAULT 0
+- `medal_level` INTEGER NOT NULL DEFAULT 0
+- `medal_name` TEXT
+- `content_type` INTEGER NOT NULL DEFAULT 0
+- `avatar_url` TEXT
+- `source` TEXT NOT NULL DEFAULT `'bilibili'`
+- `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-```python
-import sqlite3
-from datetime import datetime
+### 表：`gifts`
 
-# 连接数据库
-conn = sqlite3.connect('data/plugins/data-analytics/data/analytics.db')
-conn.row_factory = sqlite3.Row
-cursor = conn.cursor()
+- `id` TEXT PRIMARY KEY
+- `room_id` INTEGER NOT NULL
+- `timestamp` INTEGER NOT NULL
+- `uid` TEXT
+- `author_name` TEXT NOT NULL
+- `gift_id` INTEGER NOT NULL
+- `gift_name` TEXT NOT NULL
+- `gift_icon_url` TEXT
+- `num` INTEGER NOT NULL
+- `total_coin` INTEGER NOT NULL DEFAULT 0
+- `total_free_coin` INTEGER NOT NULL DEFAULT 0
+- `privilege_type` INTEGER NOT NULL DEFAULT 0
+- `medal_level` INTEGER NOT NULL DEFAULT 0
+- `medal_name` TEXT
+- `avatar_url` TEXT
+- `source` TEXT NOT NULL DEFAULT `'bilibili'`
+- `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-# 查询某个房间的弹幕数量
-room_id = 123456
-cursor.execute('SELECT COUNT(*) FROM danmaku WHERE room_id = ?', (room_id,))
-danmaku_count = cursor.fetchone()[0]
-print(f'弹幕总数: {danmaku_count}')
+### 表：`members`
 
-# 查询礼物统计
-cursor.execute('''
-    SELECT gift_name, SUM(num) as total_num, SUM(total_coin) as total_coin
-    FROM gifts
-    WHERE room_id = ?
-    GROUP BY gift_name
-    ORDER BY total_coin DESC
-    LIMIT 10
-''', (room_id,))
-print('礼物排行:')
-for row in cursor.fetchall():
-    print(f"  {row['gift_name']}: {row['total_num']}个, {row['total_coin']/1000:.2f}元")
+- `id` TEXT PRIMARY KEY
+- `room_id` INTEGER NOT NULL
+- `timestamp` INTEGER NOT NULL
+- `uid` TEXT
+- `author_name` TEXT NOT NULL
+- `privilege_type` INTEGER NOT NULL
+- `num` INTEGER NOT NULL
+- `unit` TEXT NOT NULL
+- `total_coin` INTEGER NOT NULL
+- `medal_level` INTEGER NOT NULL DEFAULT 0
+- `medal_name` TEXT
+- `avatar_url` TEXT
+- `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-# 查询活跃用户
-cursor.execute('''
-    SELECT author_name, COUNT(*) as count
-    FROM danmaku
-    WHERE room_id = ?
-    GROUP BY uid, author_name
-    ORDER BY count DESC
-    LIMIT 10
-''', (room_id,))
-print('活跃用户:')
-for row in cursor.fetchall():
-    print(f"  {row['author_name']}: {row['count']}条弹幕")
+### 表：`super_chat`
 
-# 查询时间段统计
-cursor.execute('''
-    SELECT 
-        strftime('%Y-%m-%d %H:00:00', datetime(timestamp, 'unixepoch')) as hour,
-        COUNT(*) as count
-    FROM danmaku
-    WHERE room_id = ?
-    GROUP BY hour
-    ORDER BY hour
-''', (room_id,))
-print('时间段统计:')
-for row in cursor.fetchall():
-    print(f"  {row['hour']}: {row['count']}条弹幕")
+- `id` TEXT PRIMARY KEY
+- `room_id` INTEGER NOT NULL
+- `timestamp` INTEGER NOT NULL
+- `uid` TEXT
+- `author_name` TEXT NOT NULL
+- `price` INTEGER NOT NULL
+- `content` TEXT NOT NULL
+- `translation` TEXT
+- `privilege_type` INTEGER NOT NULL DEFAULT 0
+- `medal_level` INTEGER NOT NULL DEFAULT 0
+- `medal_name` TEXT
+- `avatar_url` TEXT
+- `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-conn.close()
+### 索引
+
+- `idx_danmaku_room_time`、`idx_danmaku_uid`
+- `idx_gifts_room_time`、`idx_gifts_uid`
+- `idx_members_room_time`、`idx_members_uid`
+- `idx_super_chat_room_time`、`idx_super_chat_uid`
+
+## 前端开发
+
+```bash
+cd plugins/data-analytics/dashboard
+npm install
+npm run dev
 ```
 
-### 使用SQL查询
+构建：
 
-```sql
--- 查询所有房间的弹幕总数
-SELECT room_id, COUNT(*) as danmaku_count
-FROM danmaku
-GROUP BY room_id;
+```bash
+cd plugins/data-analytics/dashboard
+npm run build
+```
 
--- 查询某个时间段的弹幕
-SELECT * FROM danmaku
-WHERE room_id = 123456
-  AND timestamp >= UNIX_TIMESTAMP('2024-01-01 00:00:00')
-  AND timestamp < UNIX_TIMESTAMP('2024-01-02 00:00:00');
+构建产物会输出到 `plugins/data-analytics/web/dist`，运行时优先加载该目录。
 
--- 查询礼物价值排行
-SELECT gift_name, SUM(total_coin) as total_value
-FROM gifts
-WHERE room_id = 123456
-GROUP BY gift_name
-ORDER BY total_value DESC;
+## 命令行分析脚本
 
--- 查询上舰统计
-SELECT 
-    CASE privilege_type
-        WHEN 1 THEN '总督'
-        WHEN 2 THEN '提督'
-        WHEN 3 THEN '舰长'
-        ELSE '未知'
-    END as guard_type,
-    COUNT(*) as count,
-    SUM(total_coin) as total_value
-FROM members
-WHERE room_id = 123456
-GROUP BY privilege_type;
+```bash
+python analyze.py
+python analyze.py 123456
+python analyze.py --all
 ```
 
 ## 注意事项
 
-- 数据库文件会持续增长，建议定期备份
-- 可以通过SQL删除旧数据来清理空间
-- 插件默认禁用，需要在插件管理中启用
-- 确保有足够的磁盘空间存储数据
+- 数据库会持续增长，建议定期备份或清理历史数据。
+- 默认绑定本机地址并使用 token 鉴权，不建议对公网暴露。
 
