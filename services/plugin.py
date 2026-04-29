@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import random
+import signal
 import string
 import subprocess
 from typing import *
@@ -259,15 +260,38 @@ class Plugin:
         if proc.poll() is not None:
             return
         try:
-            proc.terminate()
+            self._terminate_process_tree(proc)
             try:
                 proc.wait(timeout=10.0)
             except subprocess.TimeoutExpired:
                 logger.warning('plugin=%s subprocess did not exit, killing', self._id)
-                proc.kill()
+                self._kill_process_tree(proc)
                 proc.wait(timeout=5.0)
         except Exception:
             logger.exception('plugin=%s failed to terminate subprocess pid=%s', self._id, getattr(proc, 'pid', None))
+
+    @staticmethod
+    def _terminate_process_tree(proc: subprocess.Popen):
+        if os.name == 'nt':
+            # /T 会同时结束子进程；不加 /F，先尝试温和退出
+            subprocess.run(
+                ['taskkill', '/PID', str(proc.pid), '/T'],
+                capture_output=True,
+                check=False,
+            )
+            return
+        os.killpg(proc.pid, signal.SIGTERM)
+
+    @staticmethod
+    def _kill_process_tree(proc: subprocess.Popen):
+        if os.name == 'nt':
+            subprocess.run(
+                ['taskkill', '/PID', str(proc.pid), '/T', '/F'],
+                capture_output=True,
+                check=False,
+            )
+            return
+        os.killpg(proc.pid, signal.SIGKILL)
 
     def _set_token(self, token):
         if self._token == token:

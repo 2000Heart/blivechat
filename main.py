@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import asyncio
+import atexit
 import contextlib
 import logging
 import logging.handlers
@@ -42,6 +43,7 @@ server: Optional[tornado.httpserver.HTTPServer] = None
 
 cmd_args = None
 shut_down_event: Optional[asyncio.Event] = None
+_shut_down_started = False
 
 
 async def main():
@@ -109,7 +111,12 @@ def init_signal_handlers():
 
 
 def on_shut_down_signal():
-    shut_down_event.set()
+    start_shut_down()
+
+
+def start_shut_down():
+    if shut_down_event is not None:
+        shut_down_event.set()
 
 
 def on_reload_signal():
@@ -176,6 +183,11 @@ async def run():
 
 
 async def shut_down():
+    global _shut_down_started
+    if _shut_down_started:
+        return
+    _shut_down_started = True
+
     with contextlib.suppress(Exception):
         services.plugin.shut_down()
 
@@ -205,4 +217,6 @@ async def _shut_down_on_init_failed():
 
 
 if __name__ == '__main__':
+    # 兜底：窗口直接关闭等场景下，尽量确保插件子进程也被回收
+    atexit.register(services.plugin.shut_down)
     sys.exit(asyncio.run(main()))

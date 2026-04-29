@@ -21,7 +21,62 @@
       "avatar_url": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_oINAklAzigkB1b4kBISIZAZiEA0AJY19PgIAP.jpeg?from=3067671334",
       "medal_level": 0,
       "queued_at": 1777352231,
-      "gift_value_coin": 400,
+      "gift_value_coin": 0,
+      "manual_adjusted": false,
+      "passed_at": null,
+      "called_at": null
+    },
+    {
+      "uid": "風***",
+      "name": "風***",
+      "avatar_url": "https://i0.hdslb.com/bfs/face/cb63cd542ab0c8512743f899b777bddc7f28fccf.jpg",
+      "medal_level": 20,
+      "queued_at": 1777360239,
+      "gift_value_coin": 0,
+      "manual_adjusted": false,
+      "passed_at": null,
+      "called_at": null
+    },
+    {
+      "uid": "_***",
+      "name": "_***",
+      "avatar_url": "https://i2.hdslb.com/bfs/face/b0592c053802fc6cd8b2fca776c071359752176a.jpg",
+      "medal_level": 13,
+      "queued_at": 1777360892,
+      "gift_value_coin": 0,
+      "manual_adjusted": false,
+      "passed_at": null,
+      "called_at": null
+    },
+    {
+      "uid": "H***",
+      "name": "H***",
+      "avatar_url": "https://i0.hdslb.com/bfs/face/848846637a94f111f2ae7a20544f83da932f7efb.jpg",
+      "medal_level": 24,
+      "queued_at": 1777363394,
+      "gift_value_coin": 5200,
+      "manual_adjusted": false,
+      "passed_at": null,
+      "called_at": null
+    },
+    {
+      "uid": "新***",
+      "name": "新***",
+      "avatar_url": "https://i0.hdslb.com/bfs/face/be80158141e724bf5ff01e06f5bd9ab7132c09e2.jpg",
+      "medal_level": 20,
+      "queued_at": 1777366286,
+      "gift_value_coin": 0,
+      "manual_adjusted": false,
+      "passed_at": null,
+      "called_at": null
+    },
+    {
+      "uid": "血***",
+      "name": "血***",
+      "avatar_url": "https://i0.hdslb.com/bfs/face/feed3e0faaaf3d3864c057d6d72b0481d7ba40ec.jpg",
+      "medal_level": 7,
+      "queued_at": 1777367643,
+      "gift_value_coin": 100,
       "manual_adjusted": false,
       "passed_at": null,
       "called_at": null
