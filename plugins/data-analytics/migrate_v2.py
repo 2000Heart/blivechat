@@ -21,12 +21,19 @@ def _iter_source_rows(conn: sqlite3.Connection, sql: str) -> Iterable[sqlite3.Ro
         yield row
 
 
+def _has_column(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    cur = conn.execute(f"PRAGMA table_info({table})")
+    return any(r["name"] == column for r in cur.fetchall())
+
+
 def _event_rows_from_legacy(source_conn: sqlite3.Connection) -> List[Tuple]:
     rows: List[Tuple] = []
+    danmaku_source_expr = "IFNULL(source, 'bilibili') AS source" if _has_column(source_conn, "danmaku", "source") else "'bilibili' AS source"
+    gifts_source_expr = "IFNULL(source, 'bilibili') AS source" if _has_column(source_conn, "gifts", "source") else "'bilibili' AS source"
     for row in _iter_source_rows(
         source_conn,
-        '''
-        SELECT id, room_id, timestamp, IFNULL(source, 'bilibili') AS source, uid, author_name, author_type, privilege_type, medal_level, content
+        f'''
+        SELECT id, room_id, timestamp, {danmaku_source_expr}, uid, author_name, author_type, privilege_type, medal_level, content
         FROM danmaku
         ''',
     ):
@@ -37,8 +44,8 @@ def _event_rows_from_legacy(source_conn: sqlite3.Connection) -> List[Tuple]:
         ))
     for row in _iter_source_rows(
         source_conn,
-        '''
-        SELECT id, room_id, timestamp, IFNULL(source, 'bilibili') AS source, uid, author_name, gift_name, num, total_coin, privilege_type, medal_level
+        f'''
+        SELECT id, room_id, timestamp, {gifts_source_expr}, uid, author_name, gift_name, num, total_coin, privilege_type, medal_level
         FROM gifts
         ''',
     ):
