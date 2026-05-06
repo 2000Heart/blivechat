@@ -5,6 +5,7 @@
   const copyObsUrlBtn = document.getElementById("copyObsUrl");
   const minMedalInput = document.getElementById("minMedal");
   const saveMinMedalBtn = document.getElementById("saveMinMedal");
+  const captainPriorityEnabledInput = document.getElementById("captainPriorityEnabled");
   const randomCountInput = document.getElementById("randomCount");
   const addRandomUsersBtn = document.getElementById("addRandomUsers");
   const clearQueueBtn = document.getElementById("clearQueue");
@@ -64,6 +65,9 @@
     if (Object.prototype.hasOwnProperty.call(cfg, "item_radius")) itemRadiusInput.value = cfg.item_radius;
     if (Object.prototype.hasOwnProperty.call(cfg, "banner_text")) bannerTextInput.value = cfg.banner_text || "";
     if (Object.prototype.hasOwnProperty.call(cfg, "banner_font_size")) bannerFontSizeInput.value = cfg.banner_font_size;
+    if (Object.prototype.hasOwnProperty.call(cfg, "captain_priority_enabled")) {
+      captainPriorityEnabledInput.checked = !!cfg.captain_priority_enabled;
+    }
     statusEl.textContent = `当前人数: ${users.length}，当前叫号: ${s.callingUserId || "无"}`;
     bodyEl.innerHTML = "";
     users.forEach((u) => {
@@ -72,6 +76,7 @@
         <td>${u.rank}</td>
         <td>${u.name || u.uid}</td>
         <td>${u.medalLevel}</td>
+        <td>${u.isCaptain ? "是" : "否"}</td>
         <td>
           <input data-type="gift" data-uid="${u.uid}" type="number" min="0" step="0.1" value="${coinToYuan(u.giftValueCoin)}" />
           <button data-type="gift-save" data-uid="${u.uid}">保存</button>
@@ -108,6 +113,9 @@
 
   saveMinMedalBtn.addEventListener("click", () => {
     action("set_min_medal_level", { value: Number(minMedalInput.value || 0) });
+  });
+  captainPriorityEnabledInput.addEventListener("change", () => {
+    action("set_captain_priority_enabled", { value: captainPriorityEnabledInput.checked });
   });
   addRandomUsersBtn.addEventListener("click", () => {
     const count = Number(randomCountInput.value || 1);

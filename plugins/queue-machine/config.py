@@ -26,6 +26,7 @@ class AppConfig:
     item_radius: int = 10
     banner_text: str = ""
     banner_font_size: int = 15
+    captain_priority_enabled: bool = True
 
 
 _cfg = AppConfig()
@@ -61,6 +62,9 @@ def reload() -> None:
         item_radius=max(0, int(sec.get("item_radius", 10))),
         banner_text=str(sec.get("banner_text", ""))[:200],
         banner_font_size=max(12, min(64, int(sec.get("banner_font_size", 15)))),
+        captain_priority_enabled=bool(
+            str(sec.get("captain_priority_enabled", "true")).strip().lower() in ("1", "true", "yes", "on")
+        ),
     )
 
 
@@ -81,6 +85,7 @@ def save() -> None:
         "item_radius": str(_cfg.item_radius),
         "banner_text": _cfg.banner_text,
         "banner_font_size": str(_cfg.banner_font_size),
+        "captain_priority_enabled": "true" if _cfg.captain_priority_enabled else "false",
     }
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         parser.write(f)

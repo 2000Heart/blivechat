@@ -23,6 +23,7 @@ class QueueConfig:
     item_radius: int = 10
     banner_text: str = ""
     banner_font_size: int = 15
+    captain_priority_enabled: bool = True
 
 
 @dataclasses.dataclass
@@ -32,6 +33,7 @@ class QueueUser:
     avatar_url: str
     medal_level: int
     queued_at: int
+    privilege_type: int = 0
     gift_value_coin: int = 0
     manual_adjusted: bool = False
     passed_at: Optional[int] = None
@@ -41,12 +43,69 @@ class QueueUser:
     def is_passed(self) -> bool:
         return self.passed_at is not None
 
+    @property
+    def is_captain(self) -> bool:
+        return self.privilege_type > 0
+
 
 class QueueEngine:
     def __init__(self, cfg: Optional[QueueConfig] = None):
         self.cfg = cfg or QueueConfig()
         self._users: Dict[str, QueueUser] = {}
         self._manual_calling_uid: Optional[str] = None
+
+    @staticmethod
+    def _to_bool(value: object, default: bool) -> bool:
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return default
+        text = str(value).strip().lower()
+        if text in ("1", "true", "yes", "on"):
+            return True
+        if text in ("0", "false", "no", "off"):
+            return False
+        return default
+
+    @staticmethod
+    def _safe_int(value: object, default: int = 0) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _normalize_privilege_type(value: int) -> int:
+        if value in (1, 2, 3):
+            return int(value)
+        return 0
+
+    @classmethod
+    def _guard_weight(cls, value: int) -> int:
+        normalized = cls._normalize_privilege_type(value)
+        # GuardLevel: LV3=1(总督), LV2=2(提督), LV1=3(舰长)
+        if normalized == 1:
+            return 3
+        if normalized == 2:
+            return 2
+        if normalized == 3:
+            return 1
+        return 0
+
+    @staticmethod
+    def _normal_sort_key(user: QueueUser) -> tuple:
+        return (-user.gift_value_coin, user.queued_at)
+
+    def _ordered_normal_users(self) -> List[QueueUser]:
+        normal = [u for u in self._users.values() if not u.is_passed]
+        if not self.cfg.captain_priority_enabled:
+            normal.sort(key=self._normal_sort_key)
+            return normal
+        captain_users = [u for u in normal if u.is_captain]
+        non_captain_users = [u for u in normal if not u.is_captain]
+        captain_users.sort(key=lambda x: (-self._guard_weight(x.privilege_type), -x.gift_value_coin, x.queued_at))
+        non_captain_users.sort(key=self._normal_sort_key)
+        return captain_users + non_captain_users
 
     def export_state(self) -> dict:
         return {
@@ -70,6 +129,7 @@ class QueueEngine:
             item_radius=max(0, int(cfg.get("item_radius", 10))),
             banner_text=str(cfg.get("banner_text", ""))[:200],
             banner_font_size=max(12, min(64, int(cfg.get("banner_font_size", 15)))),
+            captain_priority_enabled=self._to_bool(cfg.get("captain_priority_enabled", True), True),
         )
         manual_calling_uid = data.get("manual_calling_uid")
         self._manual_calling_uid = str(manual_calling_uid) if manual_calling_uid else None
@@ -84,23 +144,26 @@ class QueueEngine:
                 avatar_url=str(row.get("avatar_url", "")),
                 medal_level=int(row.get("medal_level", 0)),
                 queued_at=int(row.get("queued_at", now_ts())),
+                privilege_type=self._normalize_privilege_type(self._safe_int(row.get("privilege_type", 0), 0)),
                 gift_value_coin=int(row.get("gift_value_coin", 0)),
                 manual_adjusted=bool(row.get("manual_adjusted", False)),
                 passed_at=row.get("passed_at"),
                 called_at=row.get("called_at"),
             )
 
-    def join_queue(self, *, uid: str, name: str, avatar_url: str, medal_level: int) -> bool:
+    def join_queue(self, *, uid: str, name: str, avatar_url: str, medal_level: int, privilege_type: int = 0) -> bool:
         if medal_level < self.cfg.min_medal_level:
             return False
         uid = uid.strip()
         if not uid:
             return False
+        normalized_privilege_type = self._normalize_privilege_type(privilege_type)
         existed = self._users.get(uid)
         if existed:
             existed.name = name or existed.name
             existed.avatar_url = avatar_url or existed.avatar_url
             existed.medal_level = medal_level
+            existed.privilege_type = normalized_privilege_type
             return True
         self._users[uid] = QueueUser(
             uid=uid,
@@ -108,6 +171,7 @@ class QueueEngine:
             avatar_url=avatar_url or "",
             medal_level=medal_level,
             queued_at=now_ts(),
+            privilege_type=normalized_privilege_type,
         )
         return True
 
@@ -172,9 +236,8 @@ class QueueEngine:
 
     def ordered_users(self) -> List[QueueUser]:
         passed = [u for u in self._users.values() if u.is_passed]
-        normal = [u for u in self._users.values() if not u.is_passed]
         passed.sort(key=lambda x: (x.passed_at or 0, x.queued_at))
-        normal.sort(key=lambda x: (-x.gift_value_coin, x.queued_at))
+        normal = self._ordered_normal_users()
         return passed + normal
 
     def calling_user_id(self) -> Optional[str]:
@@ -183,10 +246,9 @@ class QueueEngine:
             if u is not None and not u.is_passed:
                 return self._manual_calling_uid
             self._manual_calling_uid = None
-        normal = [u for u in self._users.values() if not u.is_passed]
+        normal = self._ordered_normal_users()
         if not normal:
             return None
-        normal.sort(key=lambda x: (-x.gift_value_coin, x.queued_at))
         return normal[0].uid
 
     def snapshot(self) -> dict:
@@ -204,6 +266,8 @@ class QueueEngine:
                     "queuedSeconds": max(0, now - u.queued_at),
                     "giftValueCoin": u.gift_value_coin,
                     "giftValueYuan": round(u.gift_value_coin / 1000.0, 3),
+                    "privilegeType": u.privilege_type,
+                    "isCaptain": u.is_captain,
                     "status": "passed" if u.is_passed else "normal",
                     "passedAt": u.passed_at,
                     "calledAt": u.called_at,

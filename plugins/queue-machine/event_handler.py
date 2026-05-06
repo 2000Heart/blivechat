@@ -40,6 +40,7 @@ class MsgHandler(blcsdk.BaseHandler):
                 name=str(message.author_name or "").strip(),
                 avatar_url=str(message.avatar_url or ""),
                 medal_level=int(message.medal_level or 0),
+                privilege_type=int(message.privilege_type or 0),
             )
             if changed:
                 self._on_changed()

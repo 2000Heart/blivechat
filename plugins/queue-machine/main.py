@@ -77,6 +77,7 @@ async def init() -> None:
             item_radius=cfg.item_radius,
             banner_text=cfg.banner_text,
             banner_font_size=cfg.banner_font_size,
+            captain_priority_enabled=cfg.captain_priority_enabled,
         )
     )
     _engine.load_state(store.load_state())
@@ -209,6 +210,12 @@ async def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str,
             runtime_cfg.banner_text = text
             runtime_cfg.banner_font_size = font_size
             config.save()
+        elif action == "set_captain_priority_enabled":
+            enabled = _coerce_bool(payload.get("value", True), True)
+            _engine.cfg.captain_priority_enabled = enabled
+            runtime_cfg = config.get_config()
+            runtime_cfg.captain_priority_enabled = enabled
+            config.save()
         else:
             return {"ok": False, "error": f"unknown action: {action}"}
         if ok:
@@ -240,6 +247,19 @@ def _clamp_int(value: Any, min_v: int, max_v: int) -> int:
     except (TypeError, ValueError):
         num = min_v
     return max(min_v, min(max_v, num))
+
+
+def _coerce_bool(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    text = str(value).strip().lower()
+    if text in ("1", "true", "yes", "on"):
+        return True
+    if text in ("0", "false", "no", "off"):
+        return False
+    return default
 
 
 if __name__ == "__main__":
