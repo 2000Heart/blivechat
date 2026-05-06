@@ -179,7 +179,7 @@ async def init():
         except Exception as e:
             _sidecar = None
             await blcsdk.log(
-                f'抖音 sidecar 启动失败，自动降级 legacy 模式: {e}',
+                f'抖音 sidecar 启动失败: {e}',
                 logging.ERROR,
             )
     else:
@@ -300,6 +300,40 @@ def get_runtime_status() -> Dict[str, Any]:
     }
 
 
+def _apply_sidecar_runtime_config() -> Dict[str, Any]:
+    if _sidecar is None:
+        return {'ok': False, 'error': 'sidecar manager is not running'}
+    cfg = config.get_config()
+    if cfg.relay_backend != 'sidecar':
+        return {'ok': True, 'applied': False, 'reason': 'relay_backend is not sidecar'}
+
+    room = (cfg.douyin_room_id or '').strip()
+    raw_headers = str(cfg.douyin_cookie or '')
+    relay_ws = config.get_dycast_relay_ws_url()
+    client = _sidecar.bridge_client()
+
+    # 配置更新后统一重新下发，确保 sidecar 使用最新 room/cookie。
+    disconnect_ret = client.disconnect()
+    if room == '':
+        _notify_admin_status_changed()
+        return {
+            'ok': True,
+            'applied': True,
+            'disconnected': bool(disconnect_ret.get('ok', False)),
+            'connected': False,
+            'reason': 'empty room_id',
+        }
+    connect_ret = client.connect(room_num=room, relay_ws_url=relay_ws, raw_headers=raw_headers)
+    _notify_admin_status_changed()
+    return {
+        'ok': bool(connect_ret.get('ok', False)),
+        'applied': True,
+        'disconnected': bool(disconnect_ret.get('ok', False)),
+        'connected': bool(connect_ret.get('ok', False)),
+        'connect_ret': connect_ret,
+    }
+
+
 def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     if action != 'sidecar':
         return {'ok': False, 'error': f'unsupported action: {action}'}
@@ -331,6 +365,8 @@ def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             return {'ok': False, 'error': str(e)}
         _notify_admin_status_changed()
         return {'ok': True, 'scheduled': True}
+    if op == 'apply_config':
+        return _apply_sidecar_runtime_config()
     return {'ok': False, 'error': f'unsupported op: {op}'}
 
 

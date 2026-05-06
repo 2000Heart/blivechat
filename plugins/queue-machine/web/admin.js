@@ -25,6 +25,18 @@
     return new Date(ts * 1000).toLocaleString();
   }
 
+  function coinToYuan(coin) {
+    const n = Number(coin);
+    if (!Number.isFinite(n) || n <= 0) return "0.0";
+    return (n / 1000).toFixed(1);
+  }
+
+  function yuanToCoin(yuan) {
+    const n = Number(yuan);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.round(n * 1000);
+  }
+
   async function action(action, payload) {
     const res = await fetch("/api/admin/action", {
       method: "POST",
@@ -61,7 +73,7 @@
         <td>${u.name || u.uid}</td>
         <td>${u.medalLevel}</td>
         <td>
-          <input data-type="gift" data-uid="${u.uid}" type="number" min="0" value="${u.giftValueCoin}" />
+          <input data-type="gift" data-uid="${u.uid}" type="number" min="0" step="0.1" value="${coinToYuan(u.giftValueCoin)}" />
           <button data-type="gift-save" data-uid="${u.uid}">保存</button>
         </td>
         <td>${u.status === "passed" ? "过号" : "普通"}</td>
@@ -90,7 +102,7 @@
     if (type === "gift-save") {
       const input = bodyEl.querySelector(`input[data-type="gift"][data-uid="${uid}"]`);
       const value = input ? Number(input.value) : 0;
-      return action("set_gift_value", { uid, giftValueCoin: value });
+      return action("set_gift_value", { uid, giftValueCoin: yuanToCoin(value) });
     }
   });
 

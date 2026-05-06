@@ -267,7 +267,15 @@ async def _open_plugin_admin_window_async() -> None:
             'include_social': 'true' if include_social_var.get() else 'false',
         })
         if ok:
-            messagebox.showinfo('保存成功', '房间号/Cookie 已保存到 config.ini 并完成重载。', parent=root)
+            ret = _run_action('sidecar', {'op': 'apply_config'})
+            if ret.get('ok'):
+                messagebox.showinfo('保存成功', '配置已保存并实时应用到 sidecar。', parent=root)
+            else:
+                messagebox.showwarning(
+                    '已保存',
+                    '配置已保存并完成重载，但实时应用失败，请查看插件日志或手动点击 Sidecar 连接。',
+                    parent=root,
+                )
         else:
             messagebox.showerror('保存失败', '保存或重载配置失败，请查看插件日志。', parent=root)
 
@@ -727,7 +735,14 @@ def _run_qt_admin_ui() -> None:
             def _worker() -> None:
                 ok = config.update_relay_config_values(data)
                 if ok:
-                    self._bridge.saveDone.emit(True, '房间号/Cookie 已保存到 config.ini 并完成重载')
+                    ret = _run_action('sidecar', {'op': 'apply_config'})
+                    if ret.get('ok'):
+                        self._bridge.saveDone.emit(True, '配置已保存并实时应用到 sidecar')
+                    else:
+                        self._bridge.saveDone.emit(
+                            False,
+                            '配置已保存并完成重载，但实时应用失败，请查看插件日志或手动点击 Sidecar 连接',
+                        )
                 else:
                     self._bridge.saveDone.emit(False, '保存或重载配置失败，请查看插件日志')
 
