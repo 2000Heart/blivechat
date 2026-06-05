@@ -32,7 +32,7 @@
             </div>
           </div>
           <div>
-            <el-input v-model="customUrl" placeholder="https://example.com/path/to/you/template/index.html"></el-input>
+            <el-input v-model="customUrl" placeholder="https://example.com/path/to/your/template/index.html"></el-input>
           </div>
         </div>
       </el-radio>
@@ -193,7 +193,8 @@ export default {
   display: flex;
   flex-flow: row nowrap;
   gap: 1em;
-  max-height: 300px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .thumbnail {
@@ -204,15 +205,12 @@ export default {
 
 .description {
   flex: auto;
-  overflow-y: auto;
-  text-wrap: wrap;
-  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 @media only screen and (max-width: 992px) {
   .description-line {
     flex-wrap: wrap;
-    max-height: unset;
   }
 
   .thumbnail {
