@@ -74,9 +74,7 @@ nc-live-chat-paid-message-renderer #purchase-amount {
 }
 
 nc-live-chat-paid-message-renderer #timestamp {
-  color: #555;
-  font-size: 11px;
-  margin-left: auto;
+  display: none;
 }
 
 nc-live-chat-paid-message-renderer #message {

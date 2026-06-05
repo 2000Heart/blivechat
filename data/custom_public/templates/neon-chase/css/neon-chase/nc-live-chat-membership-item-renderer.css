@@ -33,9 +33,7 @@ nc-live-chat-membership-item-renderer #title {
 }
 
 nc-live-chat-membership-item-renderer #timestamp {
-  color: #555;
-  font-size: 11px;
-  margin-left: auto;
+  display: none;
 }
 
 nc-live-chat-membership-item-renderer .member-message {

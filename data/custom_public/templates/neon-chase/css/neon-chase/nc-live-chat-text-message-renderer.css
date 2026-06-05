@@ -27,6 +27,7 @@
 .nc-message {
   margin-bottom: 4px;
   text-align: left;
+  padding: 0 8px;
 }
 
 /* ---- 用户信息行 ---- */
@@ -57,10 +58,7 @@
 }
 
 .nc-ts {
-  color: #555;
-  font-size: 11px;
-  flex-shrink: 0;
-  opacity: 0.7;
+  display: none;
 }
 
 /* ---- 气泡公共 ---- */
@@ -68,7 +66,7 @@
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  display: inline-block;
+  display: block;
 }
 
 .nc-bubble-inner {
@@ -133,7 +131,7 @@
 .nc-breathe {
   border: 2px solid var(--nc-dim);
   border-radius: 12px;
-  display: inline-block;
+  display: block;
   animation: nc-breathe-line 2.5s ease-in-out infinite;
 }
 
@@ -145,7 +143,7 @@
 .nc-static {
   border: 1.5px solid var(--nc-static-color, rgba(255,255,255,0.06));
   border-radius: 12px;
-  display: inline-block;
+  display: block;
 }
 
 .nc-static .nc-bubble-inner {
