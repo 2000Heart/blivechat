@@ -1,0 +1,197 @@
+@layer nc {
+
+/* ---- 追光动画 ---- */
+@property --nc-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes nc-chase {
+  0% { --nc-angle: 0deg; }
+  100% { --nc-angle: 360deg; }
+}
+
+@keyframes nc-chase-dual {
+  0% { --nc-angle: 0deg; }
+  100% { --nc-angle: 360deg; }
+}
+
+/* ---- 呼吸灯动画 ---- */
+@keyframes nc-breathe-line {
+  0%, 100% { border-color: var(--nc-dim); }
+  50% { border-color: var(--nc-bright); }
+}
+
+/* ---- 消息容器 ---- */
+.nc-message {
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+/* ---- 用户信息行 ---- */
+.nc-author-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  margin-bottom: 6px;
+  flex-wrap: nowrap;
+}
+
+.nc-author-row nc-img-shadow {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  flex: none;
+  align-self: center;
+}
+
+.nc-author-row nc-img-shadow img {
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-sizing: border-box;
+}
+
+.nc-ts {
+  color: #555;
+  font-size: 11px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* ---- 气泡公共 ---- */
+.nc-bubble {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.nc-bubble-inner {
+  position: relative;
+  margin: 2px;
+  border-radius: 11px;
+  z-index: 1;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* ---- 追光边框（单段，舰长/提督） ---- */
+.nc-chase::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  z-index: 0;
+  background: conic-gradient(
+    from var(--nc-angle, 0deg),
+    var(--nc-dim) 0deg,
+    var(--nc-dim) 270deg,
+    var(--nc-c1) 285deg,
+    var(--nc-c2) 315deg,
+    var(--nc-c1) 340deg,
+    var(--nc-dim) 355deg,
+    var(--nc-dim) 360deg
+  );
+  animation: nc-chase 3s linear infinite;
+}
+
+/* ---- 双段追光（总督） ---- */
+.nc-chase-dual::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  z-index: 0;
+  background: conic-gradient(
+    from var(--nc-angle, 0deg),
+    var(--nc-dim) 0deg,
+    var(--nc-dim) 120deg,
+    var(--nc-c1) 130deg,
+    var(--nc-c2) 150deg,
+    var(--nc-dim) 165deg,
+    var(--nc-dim) 290deg,
+    var(--nc-c1) 300deg,
+    var(--nc-c2) 320deg,
+    var(--nc-dim) 335deg,
+    var(--nc-dim) 360deg
+  );
+  animation: nc-chase-dual 3s linear infinite;
+}
+
+/* ---- 呼吸灯边框 ---- */
+.nc-breathe {
+  border: 2px solid var(--nc-dim);
+  border-radius: 12px;
+  display: inline-block;
+  animation: nc-breathe-line 2.5s ease-in-out infinite;
+}
+
+.nc-breathe .nc-bubble-inner {
+  margin: 0;
+}
+
+/* ---- 静态边框 ---- */
+.nc-static {
+  border: 1.5px solid var(--nc-static-color, rgba(255,255,255,0.06));
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.nc-static .nc-bubble-inner {
+  margin: 0;
+}
+
+/* ---- 身份 → CSS 变量映射 ---- */
+
+/* 舰长 */
+.nc-chase.sailor { --nc-dim: rgba(33,150,243,0.06); --nc-c1: #2196F3; --nc-c2: #00E5FF; }
+.nc-chase.sailor .nc-bubble-inner { background: #12121f; }
+
+/* 提督 */
+.nc-chase.commander { --nc-dim: rgba(156,39,176,0.06); --nc-c1: #9C27B0; --nc-c2: #E040FB; }
+.nc-chase.commander .nc-bubble-inner { background: #12121f; }
+
+/* 总督（双段追光） */
+.nc-chase-dual.gov { --nc-dim: rgba(255,215,0,0.06); --nc-c1: #FFD700; --nc-c2: #E65100; }
+.nc-chase-dual.gov .nc-bubble-inner {
+  background: #18180a;
+  text-shadow: 0 0 6px rgba(255,215,0,0.15);
+}
+
+/* 房管 */
+.nc-static.admin { --nc-static-color: rgba(76,175,80,0.4); }
+.nc-static.admin .nc-bubble-inner { background: #121f12; }
+
+/* 主播 */
+.nc-static.owner { --nc-static-color: rgba(255,64,129,0.4); }
+.nc-static.owner .nc-bubble-inner { background: #1f0d14; }
+
+/* 普通用户 */
+.nc-static.user .nc-bubble-inner { background: #12121f; }
+
+/* ---- 呼吸灯颜色映射 ---- */
+
+/* 免费礼物 — 淡蓝 */
+.nc-breathe.free-gift { --nc-dim: rgba(0,229,255,0.15); --nc-bright: rgba(0,229,255,0.7); }
+.nc-breathe.free-gift .nc-bubble-inner { background: #0d1a1a; }
+
+/* 付费礼物 — 金色 */
+.nc-breathe.paid-gift { --nc-dim: rgba(255,200,0,0.15); --nc-bright: rgba(255,215,0,0.7); }
+.nc-breathe.paid-gift .nc-bubble-inner { background: #1a1a0a; }
+
+/* 大额 SC — 炽红 */
+.nc-breathe.large-sc { --nc-dim: rgba(255,23,68,0.15); --nc-bright: rgba(255,23,68,0.7); }
+.nc-breathe.large-sc .nc-bubble-inner { background: #1a0505; }
+
+}

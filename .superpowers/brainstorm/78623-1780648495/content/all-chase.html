@@ -1,0 +1,164 @@
+<h2>单段追光 — 完整色彩一览</h2>
+<p class="subtitle">统一使用单段追光效果</p>
+
+<style>
+  @keyframes chase {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  .chase {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .chase::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    z-index: 0;
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      var(--dim) 0deg,
+      var(--dim) 270deg,
+      var(--c1) 285deg,
+      var(--c2) 315deg,
+      var(--c1) 340deg,
+      var(--dim) 355deg,
+      var(--dim) 360deg
+    );
+    animation: chase 3s linear infinite;
+  }
+  .chase .inner {
+    position: relative;
+    margin: 2px;
+    border-radius: 11px;
+    z-index: 1;
+  }
+  /* 大额加速 */
+  .chase-fast::before { animation-duration: 1.5s; }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:20px; max-width:500px; font-family:system-ui,sans-serif; display:flex; flex-direction:column; gap:12px;">
+
+  <!-- 普通用户 -->
+  <div style="border:1.5px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 14px; background:#12121f;">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#2a2a3a; flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:28</span>
+      <span style="color:#777;font-size:13px;">普通用户</span>
+    </div>
+    <span style="color:#999;font-size:13px;">普通弹幕 — 无动效</span>
+  </div>
+
+  <!-- 舰长 -->
+  <div class="chase" style="--dim:rgba(33,150,243,0.06); --c1:#2196F3; --c2:#00E5FF;">
+    <div class="inner" style="padding:10px 14px; background:#12121f;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00E5FF); flex-shrink:0;"></div>
+        <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长用户</span>
+      </div>
+      <span style="color:#BBDEFB;font-size:13px;">蓝 → 青 追光</span>
+    </div>
+  </div>
+
+  <!-- 提督 -->
+  <div class="chase" style="--dim:rgba(156,39,176,0.06); --c1:#9C27B0; --c2:#E040FB;">
+    <div class="inner" style="padding:10px 14px; background:#12121f;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#E040FB); flex-shrink:0;"></div>
+        <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督用户</span>
+      </div>
+      <span style="color:#E1BEE7;font-size:13px;">紫 → 品红 追光</span>
+    </div>
+  </div>
+
+  <!-- 总督 -->
+  <div class="chase" style="--dim:rgba(255,215,0,0.06); --c1:#FFD700; --c2:#FF8F00;">
+    <div class="inner" style="padding:10px 14px; background:#18180a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督用户</span>
+      </div>
+      <span style="color:#FFF9C4;font-size:13px;">金 → 橙 追光</span>
+    </div>
+  </div>
+
+  <!-- 房管 -->
+  <div class="chase" style="--dim:rgba(76,175,80,0.06); --c1:#4CAF50; --c2:#00E676;">
+    <div class="inner" style="padding:10px 14px; background:#121f12;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4CAF50,#00E676); flex-shrink:0;"></div>
+        <span style="color:#81C784;font-size:13px;font-weight:600;">房管用户</span>
+      </div>
+      <span style="color:#C8E6C9;font-size:13px;">绿 → 亮青 追光</span>
+    </div>
+  </div>
+
+  <!-- 主播 -->
+  <div class="chase" style="--dim:rgba(255,64,129,0.06); --c1:#FF4081; --c2:#FF9100;">
+    <div class="inner" style="padding:10px 14px; background:#1f0d14;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF4081,#FF9100); flex-shrink:0;"></div>
+        <span style="color:#FF80AB;font-size:13px;font-weight:600;">主播</span>
+      </div>
+      <span style="color:#F8BBD0;font-size:13px;">品红 → 橙 追光</span>
+    </div>
+  </div>
+
+  <!-- 付费留言 -->
+  <div class="chase chase-fast" style="--dim:rgba(230,81,0,0.08); --c1:#E65100; --c2:#FFD700;">
+    <div class="inner" style="padding:10px 14px; background:#1a0d00; box-shadow:inset 0 0 15px rgba(230,81,0,0.06);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#E65100,#FFD700); flex-shrink:0;"></div>
+        <span style="color:#FFB300;font-size:13px;font-weight:600;">付费用户</span>
+        <span style="color:#FF8F00;font-size:11px;">¥1388</span>
+      </div>
+      <span style="color:#FFF3E0;font-size:13px;text-shadow:0 0 6px rgba(255,152,0,0.15);">¥100以上 — 加速追光</span>
+    </div>
+  </div>
+
+  <!-- 礼物消息 -->
+  <div class="chase chase-fast" style="--dim:rgba(255,215,0,0.06); --c1:#FFD700; --c2:#FF6F00;">
+    <div class="inner" style="padding:10px 14px; background:#18180a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF6F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">用户</span>
+        <span style="font-size:12px; color:#FFD700;">摩天大楼 x1</span>
+      </div>
+      <span style="color:#FFF9C4;font-size:13px;">¥450 礼物 — 金色追光</span>
+    </div>
+  </div>
+
+  <!-- 开通舰长 -->
+  <div class="chase chase-fast" style="--dim:rgba(33,150,243,0.06); --c1:#2196F3; --c2:#E040FB;">
+    <div class="inner" style="padding:10px 14px; background:#12121f;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#E040FB); flex-shrink:0;"></div>
+        <span style="color:#CE93D8;font-size:13px;font-weight:600;">用户</span>
+        <span style="font-size:12px; color:#90CAF9;">开通了舰长</span>
+      </div>
+      <span style="color:#C5CAE9;font-size:13px;">开通舰长 — 蓝紫双色追光</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>整体感觉怎么样？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>满意，继续下一步</h3><p>颜色和动效都ok</p></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>需要调色</h3><p>修改某些颜色的搭配</p></div>
+    </div>
+  </div>
+</div>

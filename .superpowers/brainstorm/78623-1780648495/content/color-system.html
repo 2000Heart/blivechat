@@ -1,0 +1,144 @@
+<h2>霓虹色码系统 — 如何映射身份到边框</h2>
+<p class="subtitle">赛博霓虹边框 + 身份色 = 不冲突且一眼可辨</p>
+
+<div class="section">
+  <h3>方案 A：边框渐变色 + 对应发光</h3>
+  <p class="subtitle" style="margin-bottom:16px;">每条消息边框使用对应的渐变，普通用户用中性色系</p>
+
+  <div style="background:#0d0d1a; border-radius:16px; padding:20px; max-width:480px; font-family:system-ui,sans-serif;">
+
+    <!-- 普通用户 |
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 4px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:#334; flex-shrink:0;"></div>
+        <span style="color:#666;font-size:11px;">14:30</span>
+        <span style="color:#888;font-size:13px;">普通用户</span>
+      </div>
+      <div style="border:1.5px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 14px; background:rgba(255,255,255,0.02);">
+        <span style="color:#999;font-size:13px;">普通弹幕内容</span>
+      </div>
+    </div-->
+
+    <!-- 舰长 蓝色 -->
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 4px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00BCD4); flex-shrink:0;"></div>
+        <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长用户</span>
+      </div>
+      <div style="border:1.5px solid rgba(33,150,243,0.5); border-radius:12px; padding:10px 14px; background:rgba(33,150,243,0.05); box-shadow:0 0 12px rgba(33,150,243,0.1);">
+        <span style="color:#BBDEFB;font-size:13px;">舰长弹幕内容</span>
+      </div>
+    </div>
+
+    <!-- 提督 紫色 -->
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 4px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#E040FB); flex-shrink:0;"></div>
+        <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督用户</span>
+      </div>
+      <div style="border:1.5px solid rgba(156,39,176,0.5); border-radius:12px; padding:10px 14px; background:rgba(156,39,176,0.05); box-shadow:0 0 12px rgba(156,39,176,0.1);">
+        <span style="color:#E1BEE7;font-size:13px;">提督弹幕内容</span>
+      </div>
+    </div>
+
+    <!-- 总督 金色 -->
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 4px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督用户</span>
+      </div>
+      <div style="border:1.5px solid rgba(255,215,0,0.5); border-radius:12px; padding:10px 14px; background:rgba(255,215,0,0.05); box-shadow:0 0 16px rgba(255,215,0,0.15);">
+        <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 6px rgba(255,215,0,0.2);">总督弹幕内容 — 金色发光</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>身份 → 霓虹色映射表</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:13px; color:#ccc;">
+    <tr style="border-bottom:1px solid #333;">
+      <th style="padding:6px 8px; text-align:left;">身份</th>
+      <th style="padding:6px 8px; text-align:left;">边框霓虹色</th>
+      <th style="padding:6px 8px; text-align:left;">发光色</th>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:6px 8px;">普通用户</td>
+      <td style="padding:6px 8px; color:#555;">暗灰 #444</td>
+      <td style="padding:6px 8px; color:#333;">无</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:6px 8px;">舰长</td>
+      <td style="padding:6px 8px; color:#42A5F5;">青蓝 #2196F3</td>
+      <td style="padding:6px 8px; color:#1E88E5;">蓝</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:6px 8px;">房管</td>
+      <td style="padding:6px 8px; color:#66BB6A;">绿色 #4CAF50</td>
+      <td style="padding:6px 8px; color:#43A047;">绿</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:6px 8px;">提督</td>
+      <td style="padding:6px 8px; color:#AB47BC;">紫色 #9C27B0</td>
+      <td style="padding:6px 8px; color:#8E24AA;">紫</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222;">
+      <td style="padding:6px 8px;">总督</td>
+      <td style="padding:6px 8px; color:#FFD700;">金色</td>
+      <td style="padding:6px 8px; color:#FFB300;">金</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 8px;">主播</td>
+      <td style="padding:6px 8px; color:#FF4081;">品红 #FF4081</td>
+      <td style="padding:6px 8px; color:#F50057;">粉红</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>高价值消息（SuperChat/大额礼物）</h3>
+  <p class="subtitle">使用原有价格等级颜色映射，但改用霓虹边框发光样式而非纯色背景</p>
+  <div style="background:#0d0d1a; border-radius:16px; padding:20px; max-width:480px;">
+    <!-- 小 SC -->
+    <div style="margin-bottom:10px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 4px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:#2a2a3a; flex-shrink:0;"></div>
+        <span style="color:#64B5F6;font-size:13px;font-weight:600;">SC用户</span>
+        <span style="color:#4FC3F7;font-size:11px;">¥30</span>
+      </div>
+      <div style="border:1.5px solid rgba(0,229,255,0.6); border-radius:12px; padding:10px 14px; background:rgba(0,229,255,0.06); box-shadow:0 0 15px rgba(0,229,255,0.15);">
+        <span style="color:#E0F7FA;font-size:13px;">醒目留言内容</span>
+      </div>
+    </div>
+    <!-- 大 SC 带 shimmer -->
+    <div style="margin-bottom:8px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 4px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">大额用户</span>
+        <span style="color:#FFB300;font-size:11px;">¥1388</span>
+      </div>
+      <div style="border:1.5px solid rgba(245,124,0,0.6); border-radius:12px; padding:10px 14px; background:rgba(245,124,0,0.06); box-shadow:0 0 20px rgba(245,124,0,0.2), inset 0 0 15px rgba(245,124,0,0.03); animation:borderPulse 2s ease-in-out infinite;">
+        <span style="color:#FFF3E0;font-size:13px;text-shadow:0 0 8px rgba(245,124,0,0.3);">大额醒目留言 — 带脉冲发光动效</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>你觉得这个色码方案如何？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>很好</h3><p>就这样继续</p></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>调整颜色</h3><p>某些颜色想改一下</p></div>
+    </div>
+    <div class="option" data-choice="alternative" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content"><h3>换一种方案</h3><p>不希望按身份换边框色</p></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,421 @@
+@layer nc {
+
+nc-live-chat-author-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#author-name.nc-live-chat-author-chip {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+#author-name.nc-live-chat-author-chip[type='moderator'] {
+  color: #81C784;
+}
+
+#author-name.nc-live-chat-author-chip[type='owner'] {
+  color: #FF80AB;
+}
+
+#author-name.nc-live-chat-author-chip[type='member'] {
+  color: #ffffff;
+}
+
+/* ---- 粉丝牌（medal） ---- */
+#medal.nc-live-chat-author-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  position: relative;
+  overflow: hidden;
+}
+
+#medal.nc-live-chat-author-chip .medal-guard-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-left: -4px;
+}
+
+#medal.nc-live-chat-author-chip .medal-guard-badge nc-live-chat-author-badge-renderer {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#medal.nc-live-chat-author-chip .medal-name {
+  margin-right: 2px;
+}
+
+#medal.nc-live-chat-author-chip .medal-level {
+  font-size: 10px;
+  padding: 0 2px;
+  border-radius: 2px;
+  min-width: 12px;
+  text-align: center;
+}
+
+/* ---- 粉丝牌等级颜色 ---- */
+
+#medal.nc-live-chat-author-chip[data-level="1"],
+#medal.nc-live-chat-author-chip[data-level="2"],
+#medal.nc-live-chat-author-chip[data-level="3"],
+#medal.nc-live-chat-author-chip[data-level="4"],
+#medal.nc-live-chat-author-chip[data-level="5"] {
+  background: linear-gradient(135deg, rgba(135, 206, 250, 0.2), rgba(100, 149, 237, 0.2));
+  border: 1px solid rgba(135, 206, 250, 0.3);
+}
+#medal.nc-live-chat-author-chip[data-level="1"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="1"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="2"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="2"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="3"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="3"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="4"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="4"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="5"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="5"] .medal-level {
+  color: rgba(100, 149, 237, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="1"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="2"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="3"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="4"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="5"] .medal-level {
+  background: rgba(100, 149, 237, 0.15);
+}
+
+#medal.nc-live-chat-author-chip[data-level="6"],
+#medal.nc-live-chat-author-chip[data-level="7"],
+#medal.nc-live-chat-author-chip[data-level="8"],
+#medal.nc-live-chat-author-chip[data-level="9"],
+#medal.nc-live-chat-author-chip[data-level="10"] {
+  background: linear-gradient(135deg, rgba(70, 130, 180, 0.4), rgba(65, 105, 225, 0.4));
+  border: 1px solid rgba(70, 130, 180, 0.5);
+}
+#medal.nc-live-chat-author-chip[data-level="6"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="6"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="7"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="7"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="8"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="8"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="9"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="9"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="10"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="10"] .medal-level {
+  color: rgba(173, 216, 230, 1);
+}
+#medal.nc-live-chat-author-chip[data-level="6"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="7"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="8"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="9"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="10"] .medal-level {
+  background: rgba(100, 149, 237, 0.3);
+}
+
+#medal.nc-live-chat-author-chip[data-level="11"],
+#medal.nc-live-chat-author-chip[data-level="12"],
+#medal.nc-live-chat-author-chip[data-level="13"],
+#medal.nc-live-chat-author-chip[data-level="14"],
+#medal.nc-live-chat-author-chip[data-level="15"] {
+  background: linear-gradient(135deg, rgba(255, 20, 147, 0.25), rgba(255, 105, 180, 0.25));
+  border: 1px solid rgba(255, 20, 147, 0.4);
+}
+#medal.nc-live-chat-author-chip[data-level="11"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="11"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="12"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="12"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="13"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="13"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="14"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="14"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="15"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="15"] .medal-level {
+  color: rgba(255, 20, 147, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="11"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="12"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="13"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="14"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="15"] .medal-level {
+  background: rgba(255, 20, 147, 0.2);
+}
+
+#medal.nc-live-chat-author-chip[data-level="16"],
+#medal.nc-live-chat-author-chip[data-level="17"],
+#medal.nc-live-chat-author-chip[data-level="18"],
+#medal.nc-live-chat-author-chip[data-level="19"],
+#medal.nc-live-chat-author-chip[data-level="20"] {
+  background: linear-gradient(135deg, rgba(0, 191, 255, 0.25), rgba(30, 144, 255, 0.25));
+  border: 1px solid rgba(0, 191, 255, 0.4);
+}
+#medal.nc-live-chat-author-chip[data-level="16"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="16"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="17"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="17"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="18"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="18"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="19"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="19"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="20"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="20"] .medal-level {
+  color: rgba(0, 191, 255, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="16"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="17"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="18"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="19"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="20"] .medal-level {
+  background: rgba(0, 191, 255, 0.2);
+}
+
+#medal.nc-live-chat-author-chip[data-level="21"],
+#medal.nc-live-chat-author-chip[data-level="22"],
+#medal.nc-live-chat-author-chip[data-level="23"],
+#medal.nc-live-chat-author-chip[data-level="24"],
+#medal.nc-live-chat-author-chip[data-level="25"] {
+  background: linear-gradient(135deg, rgba(186, 85, 211, 0.4), rgba(147, 112, 219, 0.4));
+  border: 1px solid rgba(186, 85, 211, 0.5);
+}
+#medal.nc-live-chat-author-chip[data-level="21"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="21"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="22"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="22"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="23"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="23"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="24"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="24"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="25"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="25"] .medal-level {
+  color: rgba(221, 160, 221, 1);
+}
+#medal.nc-live-chat-author-chip[data-level="21"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="22"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="23"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="24"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="25"] .medal-level {
+  background: rgba(186, 85, 211, 0.3);
+}
+
+#medal.nc-live-chat-author-chip[data-level="26"],
+#medal.nc-live-chat-author-chip[data-level="27"],
+#medal.nc-live-chat-author-chip[data-level="28"],
+#medal.nc-live-chat-author-chip[data-level="29"],
+#medal.nc-live-chat-author-chip[data-level="30"] {
+  background: linear-gradient(135deg, rgba(220, 20, 60, 0.25), rgba(255, 0, 0, 0.25));
+  border: 1px solid rgba(220, 20, 60, 0.4);
+}
+#medal.nc-live-chat-author-chip[data-level="26"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="26"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="27"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="27"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="28"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="28"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="29"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="29"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="30"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="30"] .medal-level {
+  color: rgba(220, 20, 60, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="26"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="27"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="28"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="29"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="30"] .medal-level {
+  background: rgba(220, 20, 60, 0.2);
+}
+
+#medal.nc-live-chat-author-chip[data-level="31"],
+#medal.nc-live-chat-author-chip[data-level="32"],
+#medal.nc-live-chat-author-chip[data-level="33"],
+#medal.nc-live-chat-author-chip[data-level="34"],
+#medal.nc-live-chat-author-chip[data-level="35"] {
+  background: linear-gradient(135deg, rgba(255, 69, 0, 0.25), rgba(255, 140, 0, 0.25));
+  border: 1px solid rgba(255, 69, 0, 0.4);
+}
+#medal.nc-live-chat-author-chip[data-level="31"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="31"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="32"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="32"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="33"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="33"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="34"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="34"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="35"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="35"] .medal-level {
+  color: rgba(255, 69, 0, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="31"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="32"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="33"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="34"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="35"] .medal-level {
+  background: rgba(255, 69, 0, 0.2);
+}
+
+#medal.nc-live-chat-author-chip[data-level="36"],
+#medal.nc-live-chat-author-chip[data-level="37"],
+#medal.nc-live-chat-author-chip[data-level="38"],
+#medal.nc-live-chat-author-chip[data-level="39"],
+#medal.nc-live-chat-author-chip[data-level="40"] {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 140, 0, 0.25));
+  border: 1px solid rgba(255, 215, 0, 0.4);
+}
+#medal.nc-live-chat-author-chip[data-level="36"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="36"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="37"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="37"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="38"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="38"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="39"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="39"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="40"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="40"] .medal-level {
+  color: rgba(255, 140, 0, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="36"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="37"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="38"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="39"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="40"] .medal-level {
+  background: rgba(255, 140, 0, 0.2);
+}
+
+#medal.nc-live-chat-author-chip[data-level="41"],
+#medal.nc-live-chat-author-chip[data-level="42"],
+#medal.nc-live-chat-author-chip[data-level="43"],
+#medal.nc-live-chat-author-chip[data-level="44"],
+#medal.nc-live-chat-author-chip[data-level="45"],
+#medal.nc-live-chat-author-chip[data-level="46"],
+#medal.nc-live-chat-author-chip[data-level="47"],
+#medal.nc-live-chat-author-chip[data-level="48"],
+#medal.nc-live-chat-author-chip[data-level="49"],
+#medal.nc-live-chat-author-chip[data-level="50"],
+#medal.nc-live-chat-author-chip[data-level="51"],
+#medal.nc-live-chat-author-chip[data-level="52"],
+#medal.nc-live-chat-author-chip[data-level="53"],
+#medal.nc-live-chat-author-chip[data-level="54"],
+#medal.nc-live-chat-author-chip[data-level="55"],
+#medal.nc-live-chat-author-chip[data-level="56"],
+#medal.nc-live-chat-author-chip[data-level="57"],
+#medal.nc-live-chat-author-chip[data-level="58"],
+#medal.nc-live-chat-author-chip[data-level="59"],
+#medal.nc-live-chat-author-chip[data-level="60"],
+#medal.nc-live-chat-author-chip[data-level="61"],
+#medal.nc-live-chat-author-chip[data-level="62"],
+#medal.nc-live-chat-author-chip[data-level="63"],
+#medal.nc-live-chat-author-chip[data-level="64"],
+#medal.nc-live-chat-author-chip[data-level="65"],
+#medal.nc-live-chat-author-chip[data-level="66"],
+#medal.nc-live-chat-author-chip[data-level="67"],
+#medal.nc-live-chat-author-chip[data-level="68"],
+#medal.nc-live-chat-author-chip[data-level="69"],
+#medal.nc-live-chat-author-chip[data-level="70"],
+#medal.nc-live-chat-author-chip[data-level="71"],
+#medal.nc-live-chat-author-chip[data-level="72"],
+#medal.nc-live-chat-author-chip[data-level="73"],
+#medal.nc-live-chat-author-chip[data-level="74"],
+#medal.nc-live-chat-author-chip[data-level="75"],
+#medal.nc-live-chat-author-chip[data-level="76"],
+#medal.nc-live-chat-author-chip[data-level="77"],
+#medal.nc-live-chat-author-chip[data-level="78"],
+#medal.nc-live-chat-author-chip[data-level="79"],
+#medal.nc-live-chat-author-chip[data-level="80"],
+#medal.nc-live-chat-author-chip[data-level="81"],
+#medal.nc-live-chat-author-chip[data-level="82"],
+#medal.nc-live-chat-author-chip[data-level="83"],
+#medal.nc-live-chat-author-chip[data-level="84"],
+#medal.nc-live-chat-author-chip[data-level="85"],
+#medal.nc-live-chat-author-chip[data-level="86"],
+#medal.nc-live-chat-author-chip[data-level="87"],
+#medal.nc-live-chat-author-chip[data-level="88"],
+#medal.nc-live-chat-author-chip[data-level="89"],
+#medal.nc-live-chat-author-chip[data-level="90"],
+#medal.nc-live-chat-author-chip[data-level="91"],
+#medal.nc-live-chat-author-chip[data-level="92"],
+#medal.nc-live-chat-author-chip[data-level="93"],
+#medal.nc-live-chat-author-chip[data-level="94"],
+#medal.nc-live-chat-author-chip[data-level="95"],
+#medal.nc-live-chat-author-chip[data-level="96"],
+#medal.nc-live-chat-author-chip[data-level="97"],
+#medal.nc-live-chat-author-chip[data-level="98"],
+#medal.nc-live-chat-author-chip[data-level="99"],
+#medal.nc-live-chat-author-chip[data-level="100"],
+#medal.nc-live-chat-author-chip[data-level="101"],
+#medal.nc-live-chat-author-chip[data-level="102"],
+#medal.nc-live-chat-author-chip[data-level="103"],
+#medal.nc-live-chat-author-chip[data-level="104"],
+#medal.nc-live-chat-author-chip[data-level="105"],
+#medal.nc-live-chat-author-chip[data-level="106"],
+#medal.nc-live-chat-author-chip[data-level="107"],
+#medal.nc-live-chat-author-chip[data-level="108"],
+#medal.nc-live-chat-author-chip[data-level="109"],
+#medal.nc-live-chat-author-chip[data-level="110"],
+#medal.nc-live-chat-author-chip[data-level="111"],
+#medal.nc-live-chat-author-chip[data-level="112"],
+#medal.nc-live-chat-author-chip[data-level="113"],
+#medal.nc-live-chat-author-chip[data-level="114"],
+#medal.nc-live-chat-author-chip[data-level="115"],
+#medal.nc-live-chat-author-chip[data-level="116"],
+#medal.nc-live-chat-author-chip[data-level="117"],
+#medal.nc-live-chat-author-chip[data-level="118"],
+#medal.nc-live-chat-author-chip[data-level="119"],
+#medal.nc-live-chat-author-chip[data-level="120"] {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 140, 0, 0.25));
+  border: 1px solid rgba(255, 215, 0, 0.4);
+}
+#medal.nc-live-chat-author-chip[data-level="41"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="41"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="42"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="42"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="43"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="43"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="44"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="44"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="45"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="45"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="46"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="46"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="47"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="47"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="48"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="48"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="49"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="49"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="50"] .medal-name,
+#medal.nc-live-chat-author-chip[data-level="50"] .medal-level {
+  color: rgba(255, 140, 0, 0.95);
+}
+#medal.nc-live-chat-author-chip[data-level="41"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="42"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="43"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="44"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="45"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="46"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="47"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="48"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="49"] .medal-level,
+#medal.nc-live-chat-author-chip[data-level="50"] .medal-level {
+  background: rgba(255, 140, 0, 0.2);
+}
+
+/* ---- 独立身份徽章 ---- */
+#chat-badges.nc-live-chat-author-chip:empty {
+  display: none;
+}
+
+}

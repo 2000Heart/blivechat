@@ -1,0 +1,98 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - link "blivechat" [ref=e6] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - heading "blivechat" [level=1] [ref=e8]
+    - generic [ref=e9]: v1.10.2-beta
+    - menubar [ref=e13]:
+      - menuitem " 首页" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: 
+        - text: 首页
+      - menuitem " 样式生成器" [ref=e16] [cursor=pointer]:
+        - generic [ref=e17]: 
+        - text: 样式生成器
+      - menuitem " 帮助" [ref=e18] [cursor=pointer]:
+        - generic [ref=e19]: 
+        - text: 帮助
+      - menuitem " 插件" [ref=e20] [cursor=pointer]:
+        - generic [ref=e21]: 
+        - text: 插件
+      - menuitem " 常用链接 " [ref=e22]:
+        - generic [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 
+          - text: 常用链接
+          - generic [ref=e25]: 
+        - text:     
+      - menuitem " Language " [ref=e26]:
+        - generic [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]: 
+          - text: Language
+          - generic [ref=e29]: 
+  - main [ref=e31]:
+    - text: 
+    - generic [ref=e32]:
+      - paragraph [ref=e33]:
+        - generic [ref=e35]:
+          - tablist [ref=e39]:
+            - tab "常规" [selected] [ref=e40]
+            - tab "屏蔽" [ref=e41]
+            - tab "高级" [ref=e42]
+            - tab "自定义表情" [ref=e43]
+            - tab "自定义HTML模板" [ref=e44]
+          - generic [ref=e45]:
+            - tabpanel "常规" [ref=e46]:
+              - generic [ref=e47]:
+                - generic [ref=e48]: "*房间"
+                - generic [ref=e49]:
+                  - generic [ref=e50]:
+                    - generic [ref=e53]:
+                      - textbox "请选择" [ref=e54] [cursor=pointer]: 身份码
+                      - generic:
+                        - generic [ref=e56] [cursor=pointer]: 
+                        - text: 
+                    - textbox [ref=e59]
+                  - generic [ref=e60]: 身份码不能为空
+              - generic [ref=e61]:
+                - generic [ref=e63]:
+                  - generic [ref=e64]: 显示弹幕
+                  - switch [checked] [ref=e66]:
+                    - checkbox [checked]
+                - generic [ref=e69]:
+                  - generic [ref=e70]: 显示打赏和新舰长
+                  - switch [checked] [ref=e72]:
+                    - checkbox [checked]
+                - generic [ref=e75]:
+                  - generic [ref=e76]: 显示礼物名
+                  - switch [ref=e78]:
+                    - checkbox
+              - generic [ref=e80]:
+                - generic [ref=e82]:
+                  - generic [ref=e83]: 合并相似弹幕
+                  - switch [ref=e85]:
+                    - checkbox
+                - generic [ref=e88]:
+                  - generic [ref=e89]: 合并礼物
+                  - switch [checked] [ref=e91]:
+                    - checkbox [checked]
+              - generic [ref=e93]:
+                - generic [ref=e95]:
+                  - generic [ref=e96]: 最低显示打赏价格（元）
+                  - spinbutton [ref=e99]: "0.1"
+                - generic [ref=e101]:
+                  - generic [ref=e102]: 最大弹幕数
+                  - spinbutton [ref=e105]: "60"
+            - text:     
+      - paragraph [ref=e106]:
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]: 房间URL
+            - generic [ref=e112]:
+              - textbox [ref=e114]
+              - button "" [ref=e115] [cursor=pointer]:
+                - generic [ref=e116]: 
+          - generic [ref=e118]:
+            - button "进入房间" [disabled] [ref=e119]
+            - button "复制测试房间URL" [ref=e120] [cursor=pointer]
+            - button "导出配置" [ref=e121] [cursor=pointer]
+            - button "导入配置" [ref=e122] [cursor=pointer]

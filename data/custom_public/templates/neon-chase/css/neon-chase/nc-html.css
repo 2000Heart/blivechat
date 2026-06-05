@@ -1,0 +1,7 @@
+@layer nc {
+
+nc-html-reset, nc-live-chat-renderer, nc-live-chat-item-list-renderer {
+  display: block;
+}
+
+}

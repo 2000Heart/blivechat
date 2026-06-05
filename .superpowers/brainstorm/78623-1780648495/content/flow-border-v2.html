@@ -1,0 +1,107 @@
+<h2>修正：纯色气泡背景 + 流动霓虹边框</h2>
+<p class="subtitle">气泡内纯色，边框流动</p>
+
+<style>
+  @keyframes borderFlow {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  .flow-border {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .flow-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    background: conic-gradient(from var(--angle, 0deg), var(--c1), var(--c2), var(--c1));
+    animation: borderFlow 3s linear infinite;
+    z-index: 0;
+  }
+  .flow-border .inner {
+    position: relative;
+    margin: 2px;
+    border-radius: 11px;
+    z-index: 1;
+  }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:20px; max-width:480px; font-family:system-ui,sans-serif; display:flex; flex-direction:column; gap:12px;">
+
+  <!-- 普通用户 -->
+  <div style="border:1.5px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 14px; background:#14142a;">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#2a2a3a; flex-shrink:0;"></div>
+      <span style="color:#666;font-size:11px;">14:28</span>
+      <span style="color:#888;font-size:13px;">普通用户</span>
+    </div>
+    <span style="color:#999;font-size:13px;">普通弹幕 — 静态暗灰边框</span>
+  </div>
+
+  <!-- 舰长 -->
+  <div class="flow-border" style="--c1:#2196F3; --c2:#00E5FF;">
+    <div class="inner" style="padding:10px 14px; background:#14142a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00E5FF); flex-shrink:0;"></div>
+        <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长用户</span>
+      </div>
+      <span style="color:#BBDEFB;font-size:13px;">纯色气泡背景 · 蓝青流动边框</span>
+    </div>
+  </div>
+
+  <!-- 提督 -->
+  <div class="flow-border" style="--c1:#9C27B0; --c2:#FF4081;">
+    <div class="inner" style="padding:10px 14px; background:#14142a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#FF4081); flex-shrink:0;"></div>
+        <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督用户</span>
+      </div>
+      <span style="color:#E1BEE7;font-size:13px;">纯色气泡背景 · 紫品红流动边框</span>
+    </div>
+  </div>
+
+  <!-- 总督 -->
+  <div class="flow-border" style="--c1:#FFD700; --c2:#FF8F00;">
+    <div class="inner" style="padding:10px 14px; background:#1a1a0a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督用户</span>
+      </div>
+      <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 4px rgba(255,215,0,0.15);">纯色气泡背景 · 金橙流动边框</span>
+    </div>
+  </div>
+
+  <!-- 大额SC -->
+  <div class="flow-border" style="--c1:#E65100; --c2:#FFD700; animation-duration:1.5s;">
+    <div class="inner" style="padding:10px 14px; background:#1a0d00; box-shadow:inset 0 0 20px rgba(230,81,0,0.08);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#E65100,#FFD700); flex-shrink:0;"></div>
+        <span style="color:#FFB300;font-size:13px;font-weight:600;">大额付费</span>
+        <span style="color:#FF8F00;font-size:11px;">¥1388</span>
+      </div>
+      <span style="color:#FFF3E0;font-size:13px;text-shadow:0 0 6px rgba(255,152,0,0.2);">加速流动 + 暖色光晕</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>这次效果满意吗？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>满意</h3><p>可以继续下一部分</p></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>还想调整</h3><p>有些地方需要改</p></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,183 @@
+<h2>效果映射重组追光 → 大航海 · 呼吸灯 → 付费</h2>
+<p class="subtitle">追光限制给大航海用户；付费消息使用呼吸灯边框</p>
+
+<style>
+  @keyframes chase {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  .chase { position: relative; border-radius: 12px; overflow: hidden; display: inline-block; }
+  .chase::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 14px; z-index: 0;
+    background: conic-gradient(from var(--angle,0deg), var(--dim) 0deg, var(--dim) 270deg, var(--c1) 285deg, var(--c2) 315deg, var(--c1) 340deg, var(--dim) 355deg, var(--dim) 360deg);
+    animation: chase 3s linear infinite;
+  }
+  .chase .inner { position: relative; margin: 2px; border-radius: 11px; z-index: 1; display: inline-block; }
+
+  /* 呼吸灯 */
+  @keyframes breathe {
+    0%, 100% { opacity: 0.4; box-shadow: 0 0 8px var(--glow); }
+    50% { opacity: 1; box-shadow: 0 0 20px var(--glow), 0 0 40px var(--glow); }
+  }
+  .breathe {
+    border-radius: 12px;
+    display: inline-block;
+    border: 2px solid var(--c1);
+    animation: breathe 2.5s ease-in-out infinite;
+  }
+  .breathe .inner { margin: 0; border-radius: 11px; }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:24px; max-width:500px; font-family:system-ui,sans-serif; display:flex; flex-direction:column; gap:16px;">
+
+  <!-- 普通用户 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#2a2a3a;flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:28</span>
+      <span style="color:#888;font-size:13px;">普通用户</span>
+    </div>
+    <div style="border:1.5px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 14px;background:#12121f;display:inline-block;">
+      <span style="color:#aaa;font-size:13px;">普通弹幕 — 无动效</span>
+    </div>
+  </div>
+
+  <!-- 舰长 → 追光 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00E5FF);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:32</span>
+      <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长</span>
+      <span style="font-size:11px;background:linear-gradient(90deg,#2196F3,#00E5FF);padding:1px 6px;border-radius:4px;color:#fff;">舰长</span>
+    </div>
+    <div class="chase" style="--dim:rgba(33,150,243,0.06);--c1:#2196F3;--c2:#00E5FF;">
+      <div class="inner" style="padding:10px 14px;background:#12121f;">
+        <span style="color:#BBDEFB;font-size:13px;">舰长弹幕 — 蓝青追光</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提督 → 追光 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#E040FB);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:35</span>
+      <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督</span>
+      <span style="font-size:11px;background:linear-gradient(90deg,#9C27B0,#E040FB);padding:1px 6px;border-radius:4px;color:#fff;">提督</span>
+    </div>
+    <div class="chase" style="--dim:rgba(156,39,176,0.06);--c1:#9C27B0;--c2:#E040FB;">
+      <div class="inner" style="padding:10px 14px;background:#12121f;">
+        <span style="color:#E1BEE7;font-size:13px;">提督弹幕 — 紫品红追光</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 总督 → 追光（金橙色） -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#E65100);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:40</span>
+      <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督</span>
+      <span style="font-size:11px;background:linear-gradient(90deg,#FFD700,#E65100);padding:1px 6px;border-radius:4px;color:#fff;">总督</span>
+    </div>
+    <div class="chase" style="--dim:rgba(255,215,0,0.06);--c1:#FFD700;--c2:#E65100;">
+      <div class="inner" style="padding:10px 14px;background:#18180a;">
+        <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 4px rgba(255,215,0,0.15);">总督弹幕 — 金橙追光 + 文字发光</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 小礼物 → 呼吸灯（青色） -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#00E5FF,#1DE9B6);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:42</span>
+      <span style="color:#80CBC4;font-size:13px;font-weight:600;">送礼用户</span>
+    </div>
+    <div class="breathe" style="--c1:rgba(0,229,255,0.5);--glow:rgba(0,229,255,0.6);padding:10px 14px;background:#0d1a1a;">
+      <span style="color:#B2EBF2;font-size:13px;">辣条 x10 · 免费礼物 · 淡蓝呼吸</span>
+    </div>
+  </div>
+
+  <!-- 中等礼物 → 呼吸灯（金色） -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FFA000);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:45</span>
+      <span style="color:#FFD54F;font-size:13px;font-weight:600;">送礼用户</span>
+    </div>
+    <div class="breathe" style="--c1:rgba(255,215,0,0.5);--glow:rgba(255,215,0,0.6);padding:10px 14px;background:#1a1a0a;">
+      <span style="color:#FFF9C4;font-size:13px;">摩天大楼 x1 · ¥450 · 金色呼吸</span>
+    </div>
+  </div>
+
+  <!-- 大额SC → 呼吸灯（炽红） -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF1744,#FF9100);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:48</span>
+      <span style="color:#FF8A80;font-size:13px;font-weight:600;">付费用户</span>
+      <span style="color:#FF5252;font-size:11px;">¥1388</span>
+    </div>
+    <div class="breathe" style="--c1:rgba(255,23,68,0.5);--glow:rgba(255,23,68,0.6);padding:10px 14px;background:#1a0505;">
+      <span style="color:#FFCDD2;font-size:13px;text-shadow:0 0 6px rgba(255,23,68,0.2);">醒目留言 ¥1388 · 炽红呼吸</span>
+    </div>
+  </div>
+
+  <!-- 房管 → 静态绿边框 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4CAF50,#00E676);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:50</span>
+      <span style="color:#81C784;font-size:13px;font-weight:600;">房管</span>
+      <span style="font-size:11px;background:linear-gradient(90deg,#4CAF50,#00E676);padding:1px 6px;border-radius:4px;color:#fff;">房管</span>
+    </div>
+    <div style="border:1.5px solid rgba(76,175,80,0.4);border-radius:12px;padding:10px 14px;background:#121f12;display:inline-block;">
+      <span style="color:#C8E6C9;font-size:13px;">房管弹幕 — 静态绿边框</span>
+    </div>
+  </div>
+
+  <!-- 主播 → 静态品红边框 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF4081,#FF9100);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:55</span>
+      <span style="color:#FF80AB;font-size:13px;font-weight:600;">主播</span>
+    </div>
+    <div style="border:1.5px solid rgba(255,64,129,0.4);border-radius:12px;padding:10px 14px;background:#1f0d14;display:inline-block;">
+      <span style="color:#F8BBD0;font-size:13px;">主播弹幕 — 静态品红边框</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h4>效果总结</h4>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;color:#ccc;">
+    <tr style="border-bottom:1px solid #333;"><th style="padding:4px 8px;text-align:left;">类型</th><th style="padding:4px 8px;text-align:left;">边框效果</th><th style="padding:4px 8px;text-align:left;">颜色</th></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">普通</td><td style="padding:4px 8px;color:#666;">静态暗灰</td><td style="padding:4px 8px;color:#666;">#444</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">舰长</td><td style="padding:4px 8px;color:#64B5F6;">追光 3s</td><td style="padding:4px 8px;">蓝→青</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">提督</td><td style="padding:4px 8px;color:#CE93D8;">追光 3s</td><td style="padding:4px 8px;">紫→品红</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">总督</td><td style="padding:4px 8px;color:#FFD54F;">追光 3s</td><td style="padding:4px 8px;">金→橙</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">房管</td><td style="padding:4px 8px;color:#81C784;">静态</td><td style="padding:4px 8px;">绿</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">主播</td><td style="padding:4px 8px;color:#FF80AB;">静态</td><td style="padding:4px 8px;">品红</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">礼物(免费)</td><td style="padding:4px 8px;color:#80CBC4;">呼吸灯 2.5s</td><td style="padding:4px 8px;">淡蓝</td></tr>
+    <tr style="border-bottom:1px solid #222;"><td style="padding:4px 8px;">礼物(付费)</td><td style="padding:4px 8px;color:#FFD54F;">呼吸灯 2.5s</td><td style="padding:4px 8px;">金色渐深</td></tr>
+    <tr><td style="padding:4px 8px;">醒目留言(大额)</td><td style="padding:4px 8px;color:#FF8A80;">呼吸灯 2.5s</td><td style="padding:4px 8px;">炽红</td></tr>
+  </table>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>这个映射满意吗？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>满意，定稿</h3><p>可以写设计文档了</p></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>还需微调</h3><p>某些地方想改改</p></div>
+    </div>
+  </div>
+</div>

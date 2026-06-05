@@ -1,0 +1,52 @@
+@layer nc {
+
+nc-live-chat-item-list-renderer {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  z-index: 0;
+}
+
+#item-scroller.nc-live-chat-item-list-renderer {
+  flex: 1;
+  flex-basis: 0.000000001px;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding-right: var(--scrollbar-width);
+}
+
+nc-live-chat-item-list-renderer[allow-scroll] #item-scroller.nc-live-chat-item-list-renderer {
+  overflow-y: hidden;
+  padding-right: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+nc-live-chat-item-list-renderer[allow-scroll] #item-scroller.nc-live-chat-item-list-renderer::-webkit-scrollbar {
+  display: none;
+}
+
+#item-offset.nc-live-chat-item-list-renderer {
+  position: relative;
+}
+
+#item-scroller.animated.nc-live-chat-item-list-renderer #item-offset.nc-live-chat-item-list-renderer {
+  overflow: hidden;
+}
+
+#items.nc-live-chat-item-list-renderer {
+  flex: 1;
+  flex-basis: 0.000000001px;
+  padding: var(--nc-item-list-padding, 4px 0);
+  text-align: left;
+}
+
+#item-scroller.animated.nc-live-chat-item-list-renderer #items.nc-live-chat-item-list-renderer {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+  transform: translateY(0);
+}
+
+}

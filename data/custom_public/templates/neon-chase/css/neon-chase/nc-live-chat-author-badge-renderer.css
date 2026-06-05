@@ -1,0 +1,29 @@
+@layer nc {
+
+nc-live-chat-author-badge-renderer {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+nc-live-chat-author-badge-renderer #image {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+nc-live-chat-author-badge-renderer img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+nc-live-chat-author-badge-renderer svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+}

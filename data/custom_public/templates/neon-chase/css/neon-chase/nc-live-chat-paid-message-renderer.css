@@ -1,0 +1,88 @@
+@layer nc {
+
+nc-live-chat-paid-message-renderer {
+  display: block;
+  margin-bottom: 4px;
+  text-align: left;
+}
+
+nc-live-chat-paid-message-renderer .paid-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+  margin-bottom: 6px;
+}
+
+nc-live-chat-paid-message-renderer .paid-header nc-img-shadow {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  flex: none;
+}
+
+nc-live-chat-paid-message-renderer .paid-header nc-img-shadow img {
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+}
+
+nc-live-chat-paid-message-renderer #author-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+nc-live-chat-paid-message-renderer #medal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+nc-live-chat-paid-message-renderer #medal .medal-name {
+  color: #aaa;
+}
+
+nc-live-chat-paid-message-renderer #medal .medal-level {
+  color: #aaa;
+  font-size: 10px;
+  padding: 0 2px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+}
+
+nc-live-chat-paid-message-renderer #gift-info {
+  color: #aaa;
+  font-size: 12px;
+}
+
+nc-live-chat-paid-message-renderer #gift-price {
+  color: #FFD54F;
+  font-weight: 600;
+}
+
+nc-live-chat-paid-message-renderer #purchase-amount {
+  color: #FFD54F;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+nc-live-chat-paid-message-renderer #timestamp {
+  color: #555;
+  font-size: 11px;
+  margin-left: auto;
+}
+
+nc-live-chat-paid-message-renderer #message {
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+}

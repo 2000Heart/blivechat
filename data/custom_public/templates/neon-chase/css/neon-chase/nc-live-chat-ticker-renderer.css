@@ -1,0 +1,54 @@
+@layer nc {
+
+nc-live-chat-ticker-renderer {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  min-height: 0;
+  transition: min-height 0.3s ease;
+}
+
+nc-live-chat-ticker-renderer[hidden] {
+  display: none !important;
+}
+
+nc-live-chat-ticker-renderer #items {
+  display: flex;
+  gap: 6px;
+  padding: 4px 0;
+  overflow: hidden;
+}
+
+nc-live-chat-ticker-paid-message-item-renderer {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: width 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+nc-live-chat-ticker-paid-message-item-renderer img {
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+nc-live-chat-ticker-paid-message-item-renderer.sliding-down {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+nc-live-chat-ticker-paid-message-item-renderer.collapsing {
+  transform: translateY(100%);
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+}
+
+nc-live-chat-ticker-paid-message-item-renderer #text {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+}

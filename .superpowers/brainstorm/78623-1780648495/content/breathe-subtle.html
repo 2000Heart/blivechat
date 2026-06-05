@@ -1,0 +1,89 @@
+<h2>呼吸灯修正 — 仅线条呼吸</h2>
+<p class="subtitle">去掉大光晕，边框线条本身淡入淡出</p>
+
+<style>
+  @keyframes chase {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  .chase { position: relative; border-radius: 12px; overflow: hidden; display: inline-block; }
+  .chase::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 14px; z-index: 0;
+    background: conic-gradient(from var(--angle,0deg), var(--dim) 0deg, var(--dim) 270deg, var(--c1) 285deg, var(--c2) 315deg, var(--c1) 340deg, var(--dim) 355deg, var(--dim) 360deg);
+    animation: chase 3s linear infinite;
+  }
+  .chase .inner { position: relative; margin: 2px; border-radius: 11px; z-index: 1; display: inline-block; }
+
+  /* 精简呼吸灯 — 仅边框颜色亮度变化，文字不受影响 */
+  @keyframes lineBreathe {
+    0%, 100% { border-color: var(--dim); }
+    50% { border-color: var(--bright); }
+  }
+  .breathe-line {
+    border-radius: 12px;
+    display: inline-block;
+    border: 2px solid var(--dim);
+    animation: lineBreathe 2.5s ease-in-out infinite;
+    padding: 10px 14px;
+  }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:24px; max-width:500px; font-family:system-ui,sans-serif; display:flex; flex-direction:column; gap:16px;">
+
+  <!-- 小礼物 淡蓝呼吸 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg，#00E5FF，#1DE9B6);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:42</span>
+      <span style="color:#80CBC4;font-size:13px;font-weight:600;">送礼用户</span>
+    </div>
+    <div class="breathe-line" style="--dim:rgba(0,229,255,0.15);--bright:rgba(0,229,255,0.7);background:#0d1a1a;">
+      <span style="color:#B2EBF2;font-size:13px;">辣条 x10 · 免费礼物</span>
+    </div>
+  </div>
+
+  <!-- 付费礼物 金色呼吸 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FFA000);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:45</span>
+      <span style="color:#FFD54F;font-size:13px;font-weight:600;">送礼用户</span>
+    </div>
+    <div class="breathe-line" style="--dim:rgba(255,200,0,0.15);--bright:rgba(255,215,0,0.7);background:#1a1a0a;">
+      <span style="color:#FFF9C4;font-size:13px;">摩天大楼 x1 · ¥450</span>
+    </div>
+  </div>
+
+  <!-- 大额SC 炽红呼吸 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF1744,#FF9100);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:48</span>
+      <span style="color:#FF8A80;font-size:13px;font-weight:600;">付费用户</span>
+      <span style="color:#FF5252;font-size:11px;">¥1388</span>
+    </div>
+    <div class="breathe-line" style="--dim:rgba(255,23,68,0.15);--bright:rgba(255,23,68,0.7);background:#1a0505;">
+      <span style="color:#FFCDD2;font-size:13px;">醒目留言 ¥1388</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <p>呼吸灯效果：边框线条在 <code>opacity: 0.3</code> 到 <code>opacity: 1.0</code> 之间缓慢变化，同时颜色从暗到亮渐变。去掉了大光晕和阴影。</p>
+</div>
+
+<div class="section">
+  <h3>这样ok吗？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>OK</h3><p>设计可以定稿了</p></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>还需微调</h3></div>
+    </div>
+  </div>
+</div>

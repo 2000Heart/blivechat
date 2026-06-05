@@ -1,0 +1,139 @@
+<h2>顺时针流动霓虹边框</h2>
+<p class="subtitle">conic-gradient 旋转实现，主色+辅色搭配</p>
+
+<style>
+  @keyframes borderFlow {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  .flow-border {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .flow-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    background: conic-gradient(from var(--angle, 0deg), var(--c1), var(--c2), var(--c1));
+    animation: borderFlow 3s linear infinite;
+    z-index: 0;
+  }
+  .flow-border .inner {
+    position: relative;
+    margin: 2px;
+    border-radius: 11px;
+    z-index: 1;
+  }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:20px; max-width:480px; font-family:system-ui,sans-serif; display:flex; flex-direction:column; gap:14px;">
+
+  <!-- 普通用户 -- 暗灰无流动 -->
+  <div style="border:1.5px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 14px; background:rgba(255,255,255,0.02);">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#2a2a3a; flex-shrink:0;"></div>
+      <span style="color:#666;font-size:11px;">14:28</span>
+      <span style="color:#888;font-size:13px;">普通用户</span>
+    </div>
+    <span style="color:#999;font-size:13px;">普通弹幕 — 无边框动效</span>
+  </div>
+
+  <!-- 舰长 蓝+青 -->
+  <div class="flow-border" style="--c1:#2196F3; --c2:#00E5FF;">
+    <div class="inner" style="padding:10px 14px; background:rgba(33,150,243,0.04);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00E5FF); flex-shrink:0;"></div>
+        <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长用户</span>
+      </div>
+      <span style="color:#BBDEFB;font-size:13px;">蓝色主调 + 青色辅色 · 流动边框</span>
+    </div>
+  </div>
+
+  <!-- 提督 紫+品红 -->
+  <div class="flow-border" style="--c1:#9C27B0; --c2:#FF4081;">
+    <div class="inner" style="padding:10px 14px; background:rgba(156,39,176,0.04);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#FF4081); flex-shrink:0;"></div>
+        <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督用户</span>
+      </div>
+      <span style="color:#E1BEE7;font-size:13px;">紫色主调 + 品红辅色 · 流动边框</span>
+    </div>
+  </div>
+
+  <!-- 总督 金+橙 -->
+  <div class="flow-border" style="--c1:#FFD700; --c2:#FF6F00;">
+    <div class="inner" style="padding:10px 14px; background:rgba(255,215,0,0.04);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF6F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督用户</span>
+      </div>
+      <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 6px rgba(255,215,0,0.2);">金色主调 + 橙辅色 · 流动边框 + 光晕</span>
+    </div>
+  </div>
+
+  <!-- 房管 绿+青绿 -->
+  <div class="flow-border" style="--c1:#4CAF50; --c2:#00E676;">
+    <div class="inner" style="padding:10px 14px; background:rgba(76,175,80,0.04);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#4CAF50,#00E676); flex-shrink:0;"></div>
+        <span style="color:#81C784;font-size:13px;font-weight:600;">房管用户</span>
+      </div>
+      <span style="color:#C8E6C9;font-size:13px;">绿色主调 + 亮青辅色 · 流动边框</span>
+    </div>
+  </div>
+
+  <!-- 主播 品红+橙 -->
+  <div class="flow-border" style="--c1:#FF4081; --c2:#FF9100;">
+    <div class="inner" style="padding:10px 14px; background:rgba(255,64,129,0.04);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FF4081,#FF9100); flex-shrink:0;"></div>
+        <span style="color:#FF80AB;font-size:13px;font-weight:600;">主播用户</span>
+      </div>
+      <span style="color:#F8BBD0;font-size:13px;">品红主调 + 橙辅色 · 流动边框</span>
+    </div>
+  </div>
+
+  <!-- 大额SC 橙+金 加速流动 -->
+  <div class="flow-border" style="--c1:#E65100; --c2:#FFD700; animation-duration:1.5s;">
+    <div class="inner" style="padding:10px 14px; background:rgba(230,81,0,0.06); box-shadow:inset 0 0 20px rgba(230,81,0,0.05);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#E65100,#FFD700); flex-shrink:0;"></div>
+        <span style="color:#FFB300;font-size:13px;font-weight:600;">大额付费用户</span>
+        <span style="color:#FF8F00;font-size:11px;">¥1388</span>
+      </div>
+      <span style="color:#FFF3E0;font-size:13px;text-shadow:0 0 8px rgba(255,152,0,0.3);">大额醒目留言 — 加速流动 + 脉冲发光</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>实现方式</h3>
+  <p>使用 CSS <code>@property --angle</code> + <code>conic-gradient</code> 动画，纯 CSS 实现，无需 JS 介入。OBS 浏览器源完全支持。</p>
+  <ul>
+    <li>普通消息：无边框动画</li>
+    <li>身份消息：3s 一圈顺时针流动</li>
+    <li>大额消息：1.5s 一圈加速流动 + 发光脉冲</li>
+  </ul>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>颜色搭配ok吗？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>很好</h3><p>色配和动效都满意</p></div>
+    </div>
+    <div class="option" data-choice="colors" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>调整颜色</h3><p>某些颜色搭配想换</p></div>
+    </div>
+  </div>
+</div>

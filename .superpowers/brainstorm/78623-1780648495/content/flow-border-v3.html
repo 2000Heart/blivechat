@@ -1,0 +1,136 @@
+<h2>增强流动感 — 追光效果</h2>
+<p class="subtitle">边框大部分暗色，只有一个亮段沿顺时针滑动</p>
+
+<style>
+  @keyframes borderFlow {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  .flow-border {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .flow-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    z-index: 0;
+  }
+  .flow-border .inner {
+    position: relative;
+    margin: 2px;
+    border-radius: 11px;
+    z-index: 1;
+  }
+
+  /* 方案A：追光 — 亮段滑过 */
+  .flow-chase::before {
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      var(--dim) 0deg,
+      var(--dim) 280deg,
+      var(--c1) 290deg,
+      var(--c2) 320deg,
+      var(--c1) 340deg,
+      var(--dim) 350deg,
+      var(--dim) 360deg
+    );
+  }
+
+  /* 方案B：双追光 */
+  .flow-dual::before {
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      var(--dim) 0deg,
+      var(--dim) 130deg,
+      var(--c1) 140deg,
+      var(--c2) 160deg,
+      var(--dim) 170deg,
+      var(--dim) 300deg,
+      var(--c1) 310deg,
+      var(--c2) 330deg,
+      var(--dim) 340deg,
+      var(--dim) 360deg
+    );
+  }
+
+  /* 方案C：半圈渐变追光 */
+  .flow-semicircle::before {
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      var(--dim) 0deg,
+      var(--dim) 200deg,
+      var(--c1) 220deg,
+      var(--c2) 280deg,
+      var(--c1) 340deg,
+      var(--dim) 360deg
+    );
+  }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:20px; font-family:system-ui,sans-serif;">
+  <h3 style="color:#fff; margin:0 0 16px 0; font-size:15px;">方案A：单段追光（推荐）</h3>
+  <p style="color:#888; font-size:12px; margin:0 0 12px 0;">边框大部分暗色，一个亮段顺时针滑过。最明显的流动感</p>
+  <div class="flow-border flow-chase" style="--dim:rgba(33,150,243,0.1); --c1:#2196F3; --c2:#00E5FF; max-width:480px;">
+    <div class="inner" style="padding:10px 14px; background:#14142a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00E5FF); flex-shrink:0;"></div>
+        <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长用户 — 蓝青追光</span>
+      </div>
+      <span style="color:#BBDEFB;font-size:13px;">可以看到清晰的一个亮点在边框上游走</span>
+    </div>
+  </div>
+</div>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:20px; font-family:system-ui,sans-serif; margin-top:12px;">
+  <h3 style="color:#fff; margin:0 0 16px 0; font-size:15px;">方案B：双段追光</h3>
+  <p style="color:#888; font-size:12px; margin:0 0 12px 0;">两个亮段同时滑过，流动感更强但更柔和</p>
+  <div class="flow-border flow-dual" style="--dim:rgba(156,39,176,0.08); --c1:#9C27B0; --c2:#E040FB; max-width:480px;">
+    <div class="inner" style="padding:10px 14px; background:#14142a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#E040FB); flex-shrink:0;"></div>
+        <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督用户 — 双段追光</span>
+      </div>
+      <span style="color:#E1BEE7;font-size:13px;">两束光同时沿边框顺时针滑动</span>
+    </div>
+  </div>
+</div>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:20px; font-family:system-ui,sans-serif; margin-top:12px;">
+  <h3 style="color:#fff; margin:0 0 16px 0; font-size:15px;">方案C：半圈渐变追光</h3>
+  <p style="color:#888; font-size:12px; margin:0 0 12px 0;">半圈暗→渐变亮→半圈暗，像光波流动</p>
+  <div class="flow-border flow-semicircle" style="--dim:rgba(255,215,0,0.08); --c1:#FFD700; --c2:#FF8F00; max-width:480px;">
+    <div class="inner" style="padding:10px 14px; background:#1a1a0a;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8F00); flex-shrink:0;"></div>
+        <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督用户 — 光波动效</span>
+      </div>
+      <span style="color:#FFF9C4;font-size:13px;">渐变光波沿边框循环流动</span>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>选哪种流动效果？</h3>
+  <div class="options">
+    <div class="option" data-choice="A" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content"><h3>单段追光</h3><p>一束亮光滑过，最明显</p></div>
+    </div>
+    <div class="option" data-choice="B" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content"><h3>双段追光</h3><p>两束光滑过，更柔和</p></div>
+    </div>
+    <div class="option" data-choice="C" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content"><h3>半圈渐变</h3><p>光波感</p></div>
+    </div>
+  </div>
+</div>

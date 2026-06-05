@@ -1,0 +1,128 @@
+<h2>用户信息在气泡外 — 修正布局</h2>
+<p class="subtitle">头像/名称/时间/徽章独立一行，气泡只包聊天内容</p>
+
+<style>
+  @keyframes chase {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  .chase { position: relative; border-radius: 12px; overflow: hidden; display: inline-block; }
+  .chase::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 14px; z-index: 0;
+    background: conic-gradient(from var(--angle,0deg), var(--dim) 0deg, var(--dim) 270deg, var(--c1) 285deg, var(--c2) 315deg, var(--c1) 340deg, var(--dim) 355deg, var(--dim) 360deg);
+    animation: chase 3s linear infinite;
+  }
+  .chase .inner { position: relative; margin: 2px; border-radius: 11px; z-index: 1; }
+  .chase-fast::before { animation-duration: 1.5s; }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:24px; max-width:500px; font-family:system-ui,sans-serif; display:flex; flex-direction:column; gap:16px;">
+
+  <!-- 普通用户 -->
+  <div>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:#2a2a3a;flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:28</span>
+      <span style="color:#888;font-size:13px;">普通用户</span>
+    </div>
+    <div style="border:1.5px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 14px;background:#12121f;display:inline-block;">
+      <span style="color:#aaa;font-size:13px;">普通弹幕内容</span>
+    </div>
+  </div>
+
+  <!-- 舰长 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2196F3,#00E5FF);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:32</span>
+      <span style="color:#64B5F6;font-size:13px;font-weight:600;">舰长用户名</span>
+    </div>
+    <div class="chase" style="--dim:rgba(33,150,243,0.06);--c1:#2196F3;--c2:#00E5FF;">
+      <div class="inner" style="padding:10px 14px;background:#12121f;">
+        <span style="color:#BBDEFB;font-size:13px;">舰长弹幕内容 —— 只有这行在气泡内</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提督 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#9C27B0,#E040FB);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:35</span>
+      <span style="color:#CE93D8;font-size:13px;font-weight:600;">提督用户名</span>
+    </div>
+    <div class="chase" style="--dim:rgba(156,39,176,0.06);--c1:#9C27B0;--c2:#E040FB;">
+      <div class="inner" style="padding:10px 14px;background:#12121f;">
+        <span style="color:#E1BEE7;font-size:13px;">提督弹幕内容</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 总督 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF8F00);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:40</span>
+      <span style="color:#FFD54F;font-size:13px;font-weight:600;">总督用户名</span>
+    </div>
+    <div class="chase" style="--dim:rgba(255,215,0,0.06);--c1:#FFD700;--c2:#FF8F00;">
+      <div class="inner" style="padding:10px 14px;background:#18180a;">
+        <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 4px rgba(255,215,0,0.15);">总督弹幕内容 — 金色发光文字</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 大额SC -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#E65100,#FFD700);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:45</span>
+      <span style="color:#FFB300;font-size:13px;font-weight:600;">付费用户</span>
+      <span style="color:#FF8F00;font-size:11px;">¥1388</span>
+    </div>
+    <div class="chase chase-fast" style="--dim:rgba(230,81,0,0.08);--c1:#E65100;--c2:#FFD700;">
+      <div class="inner" style="padding:10px 14px;background:#1a0d00;box-shadow:inset 0 0 15px rgba(230,81,0,0.06);">
+        <span style="color:#FFF3E0;font-size:13px;text-shadow:0 0 6px rgba(255,152,0,0.15);">¥100以上的醒目留言 — 加速追光动效</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 礼物消息 -->
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 2px;">
+      <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FF6F00);flex-shrink:0;"></div>
+      <span style="color:#555;font-size:11px;">14:50</span>
+      <span style="color:#FFD54F;font-size:13px;font-weight:600;">送礼用户</span>
+    </div>
+    <div class="chase chase-fast" style="--dim:rgba(255,215,0,0.06);--c1:#FFD700;--c2:#FF6F00;">
+      <div class="inner" style="padding:10px 14px;background:#18180a;">
+        <span style="color:#FFF9C4;font-size:13px;">摩天大楼 x1 · ¥450</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <p>布局确认：</p>
+  <ul>
+    <li>用户信息行（头像 + 时间 + 用户名 + 身份徽章）独立在气泡外</li>
+    <li>气泡只包裹聊天内容文字</li>
+    <li>气泡宽度 <code>display:inline-block</code>，适配内容长度</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>这个布局ok吗？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>OK，继续</h3></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>还要调整</h3></div>
+    </div>
+  </div>
+</div>

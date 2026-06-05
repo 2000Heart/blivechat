@@ -1,0 +1,184 @@
+<h2>用户信息行预览 — 粉丝牌+大航海徽章</h2>
+<p class="subtitle">展示各种身份组合下的信息行样式</p>
+
+<style>
+  /* 模拟暗色背景 */
+  .preview { background:#0d0d1a; border-radius:16px; padding:24px; max-width:500px; font-family:system-ui,sans-serif; }
+  .msg { margin-bottom:18px; }
+  .row { display:flex; align-items:center; gap:8px; padding:0 2px; margin-bottom:6px; flex-wrap:wrap; }
+  .avatar { width:24px; height:24px; border-radius:50%; flex-shrink:0; }
+  .ts { color:#555; font-size:11px; }
+  .name { font-size:13px; font-weight:600; }
+  .medal {
+    display:inline-flex; align-items:center; gap:2px;
+    padding:1px 6px; border-radius:4px; font-size:11px; font-weight:600;
+    line-height:1.4;
+  }
+  .medal .mlv { padding:0 2px; border-radius:2px; font-size:10px; }
+  .medal .mnm { margin-right:2px; }
+  .guard-badge { width:16px; height:16px; }
+  .chip-badge { display:inline-flex; align-items:center; }
+
+  /* 粉丝牌颜色方案 */
+  .medal-blue { background:rgba(100,149,237,0.2); border:1px solid rgba(100,149,237,0.3); }
+  .medal-blue .mlv { background:rgba(100,149,237,0.2); }
+  .medal-purple { background:rgba(156,39,176,0.2); border:1px solid rgba(156,39,176,0.3); }
+  .medal-purple .mlv { background:rgba(156,39,176,0.2); }
+  .medal-gold { background:rgba(255,215,0,0.2); border:1px solid rgba(255,215,0,0.3); }
+  .medal-gold .mlv { background:rgba(255,215,0,0.2); }
+  .medal-green { background:rgba(76,175,80,0.2); border:1px solid rgba(76,175,80,0.3); }
+  .medal-green .mlv { background:rgba(76,175,80,0.2); }
+  .medal-default { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); }
+  .medal-default .mlv { background:rgba(255,255,255,0.1); }
+
+  .bubble { border-radius:12px; padding:10px 14px; display:inline-block; }
+  .bubble-text { font-size:13px; }
+</style>
+
+<div class="preview">
+
+  <!-- 场景1: 普通用户，无粉丝牌 -->
+  <div class="msg">
+    <div class="row">
+      <div class="avatar" style="background:#2a2a3a;"></div>
+      <span class="ts">14:28</span>
+      <span class="name" style="color:#888;">普通用户</span>
+    </div>
+    <div class="bubble" style="border:1.5px solid rgba(255,255,255,0.06);background:#12121f;">
+      <span class="bubble-text" style="color:#aaa;">弹幕内容</span>
+    </div>
+    <div style="color:#666;font-size:11px;margin-top:4px;">← 无粉丝牌，仅头像+时间+名称</div>
+  </div>
+
+  <!-- 场景2: 普通用户，有粉丝牌 -->
+  <div class="msg">
+    <div class="row">
+      <div class="avatar" style="background:#3a2a3a;"></div>
+      <span class="ts">14:30</span>
+      <span class="name" style="color:#888;">有牌用户</span>
+      <span class="medal medal-default">
+        <span class="mnm" style="color:#aaa;">主播名</span>
+        <span class="mlv" style="color:#aaa;">20</span>
+      </span>
+    </div>
+    <div class="bubble" style="border:1.5px solid rgba(255,255,255,0.06);background:#12121f;">
+      <span class="bubble-text" style="color:#aaa;">弹幕内容</span>
+    </div>
+    <div style="color:#666;font-size:11px;margin-top:4px;">← 有粉丝牌，显示在名称右侧</div>
+  </div>
+
+  <!-- 场景3: 舰长，有粉丝牌 -->
+  <div class="msg">
+    <div class="row">
+      <div class="avatar" style="background:linear-gradient(135deg,#2196F3,#00E5FF);"></div>
+      <span class="ts">14:32</span>
+      <span class="name" style="color:#64B5F6;">舰长用户</span>
+      <!-- 粉丝牌+舰长logo组合 -->
+      <span class="medal medal-blue">
+        <img class="guard-badge" src="./img/guard-level-3.png" style="width:14px;height:14px;">
+        <span class="mnm" style="color:#90CAF9;">主播名</span>
+        <span class="mlv" style="color:#90CAF9;">35</span>
+      </span>
+    </div>
+    <div class="bubble" style="border:1.5px solid rgba(255,255,255,0.06);background:#12121f;">
+      <span class="bubble-text" style="color:#aaa;">弹幕内容 — 边框实际有追光动效</span>
+    </div>
+    <div style="color:#666;font-size:11px;margin-top:4px;">← 舰长logo嵌入粉丝牌左侧</div>
+  </div>
+
+  <!-- 场景4: 提督，有粉丝牌 -->
+  <div class="msg">
+    <div class="row">
+      <div class="avatar" style="background:linear-gradient(135deg,#9C27B0,#E040FB);"></div>
+      <span class="ts">14:35</span>
+      <span class="name" style="color:#CE93D8;">提督用户</span>
+      <span class="medal medal-purple">
+        <img class="guard-badge" src="./img/guard-level-2.png" style="width:14px;height:14px;">
+        <span class="mnm" style="color:#CE93D8;">主播名</span>
+        <span class="mlv" style="color:#CE93D8;">58</span>
+      </span>
+    </div>
+    <div class="bubble" style="border:1.5px solid rgba(255,255,255,0.06);background:#12121f;">
+      <span class="bubble-text" style="color:#aaa;">弹幕内容 — 边框实际有追光动效</span>
+    </div>
+  </div>
+
+  <!-- 场景5: 总督，有粉丝牌 -->
+  <div class="msg">
+    <div class="row">
+      <div class="avatar" style="background:linear-gradient(135deg,#FFD700,#E65100);"></div>
+      <span class="ts">14:40</span>
+      <span class="name" style="color:#FFD54F;">总督用户</span>
+      <span class="medal medal-gold">
+        <img class="guard-badge" src="./img/guard-level-1.png" style="width:14px;height:14px;">
+        <span class="mnm" style="color:#FFD54F;">粉丝团</span>
+        <span class="mlv" style="color:#FFD54F;">120</span>
+      </span>
+    </div>
+    <div class="bubble" style="border:1.5px solid rgba(255,255,255,0.06);background:#18180a;">
+      <span class="bubble-text" style="color:#FFF9C4;">总督弹幕内容 — 边框追光+文字微发光</span>
+    </div>
+  </div>
+
+  <!-- 场景6: 房管，有粉丝牌 -->
+  <div class="msg">
+    <div class="row">
+      <div class="avatar" style="background:linear-gradient(135deg,#4CAF50,#00E676);"></div>
+      <span class="ts">14:45</span>
+      <span class="name" style="color:#81C784;">房管用户</span>
+      <span class="medal medal-green">
+        <span class="mnm" style="color:#A5D6A7;">主播名</span>
+        <span class="mlv" style="color:#A5D6A7;">42</span>
+      </span>
+      <!-- 房管徽章 -->
+      <span class="chip-badge" style="display:inline-flex;align-items:center;">
+        <span style="background:rgba(76,175,80,0.3);color:#81C784;font-size:10px;padding:1px 5px;border-radius:3px;">房管</span>
+      </span>
+    </div>
+    <div class="bubble" style="border:1.5px solid rgba(76,175,80,0.4);background:#121f12;">
+      <span class="bubble-text" style="color:#C8E6C9;">房管弹幕内容</span>
+    </div>
+  </div>
+
+  <!-- 场景7: 粉丝牌各种颜色预览 -->
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid #222;">
+    <h4 style="color:#888;font-size:13px;margin:0 0 12px 0;">粉丝牌（medal）颜色按等级变化</h4>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <span class="medal medal-blue" style="color:#90CAF9;">Lv.1-5 淡蓝</span>
+      <span class="medal" style="background:rgba(25,25,112,0.2);border:1px solid rgba(0,0,139,0.3);color:#7B9FDD;">Lv.6-10 深蓝</span>
+      <span class="medal" style="background:rgba(255,20,147,0.2);border:1px solid rgba(255,20,147,0.3);color:#F48FB1;">Lv.11-15 粉</span>
+      <span class="medal" style="background:rgba(0,191,255,0.2);border:1px solid rgba(0,191,255,0.3);color:#81D4FA;">Lv.16-20 青</span>
+      <span class="medal medal-purple">Lv.21-25 紫</span>
+      <span class="medal" style="background:rgba(220,20,60,0.2);border:1px solid rgba(220,20,60,0.3);color:#EF9A9A;">Lv.26-30 红</span>
+      <span class="medal" style="background:rgba(255,69,0,0.2);border:1px solid rgba(255,69,0,0.3);color:#FFAB91;">Lv.31-35 橙</span>
+      <span class="medal medal-gold">Lv.36+ 金</span>
+    </div>
+    <p style="color:#666;font-size:11px;margin-top:8px;">继承 liquid-glass 的 medal 配色方案，每个5级一个色段</p>
+  </div>
+
+  <!-- 逻辑说明 -->
+  <div style="margin-top:16px;">
+    <h4 style="color:#888;font-size:13px;margin:0 0 8px 0;">显示逻辑（继承自 liquid-glass）</h4>
+    <ul style="color:#666;font-size:12px;list-style:none;padding:0;margin:0;">
+      <li style="margin-bottom:4px;">• 有粉丝牌时 → 显示 <code style="color:#888;">[大航海logo][牌名][等级]</code> 组合徽章</li>
+      <li style="margin-bottom:4px;">• 大航海logo嵌入粉丝牌左侧，取代独立舰长徽章</li>
+      <li style="margin-bottom:4px;">• 房管另有独立徽章显示在粉丝牌右侧</li>
+      <li style="margin-bottom:4px;">• 主播无主播徽章（用名称颜色品红区分）</li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>用户信息展示这样满意吗？</h3>
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>满意</h3><p>可以写实现了</p></div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">!</div>
+      <div class="content"><h3>想调整</h3><p>展示方式需要修改</p></div>
+    </div>
+  </div>
+</div>

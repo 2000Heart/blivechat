@@ -1,0 +1,133 @@
+<h2>总督专属升级方案</h2>
+<p class="subtitle">在金色追光基础上，增加更多区分度</p>
+
+<style>
+  @keyframes chase {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @keyframes chase-dual {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+  @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  .chase { position: relative; border-radius: 12px; overflow: hidden; display: inline-block; }
+  .chase::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 14px; z-index: 0;
+    background: conic-gradient(from var(--angle,0deg), var(--dim) 0deg, var(--dim) 270deg, var(--c1) 285deg, var(--c2) 315deg, var(--c1) 340deg, var(--dim) 355deg, var(--dim) 360deg);
+    animation: chase 3s linear infinite;
+  }
+  .chase .inner { position: relative; margin: 2px; border-radius: 11px; z-index: 1; display: inline-block; }
+
+  /* 双段追光 */
+  .chase-dual { position: relative; border-radius: 12px; overflow: hidden; display: inline-block; }
+  .chase-dual::before {
+    content: ''; position: absolute; inset: -2px; border-radius: 14px; z-index: 0;
+    background: conic-gradient(from var(--angle,0deg), var(--dim) 0deg, var(--dim) 120deg, var(--c1) 130deg, var(--c2) 150deg, var(--dim) 165deg, var(--dim) 290deg, var(--c1) 300deg, var(--c2) 320deg, var(--dim) 335deg, var(--dim) 360deg);
+    animation: chase-dual 3s linear infinite;
+  }
+  .chase-dual .inner { position: relative; margin: 2px; border-radius: 11px; z-index: 1; display: inline-block; }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: inset 0 0 15px rgba(255,215,0,0.03); }
+    50% { box-shadow: inset 0 0 25px rgba(255,215,0,0.08); }
+  }
+
+  /* 舰长参考 */
+  .ref { display:flex; align-items:center; gap:8px; margin-bottom:4px; padding:0 2px; }
+  .ref-name { font-size:12px; font-weight:600; }
+  .avatar { width:22px; height:22; border-radius:50%; flex-shrink:0; }
+</style>
+
+<div style="background:#0d0d1a; border-radius:16px; padding:24px; max-width:520px; font-family:system-ui,sans-serif;">
+
+  <h3 style="color:#fff;font-size:14px;margin:0 0 16px 0;">A: 双段追光（推荐）</h3>
+  <p style="color:#888;font-size:12px;margin:0 0 12px 0;">两个金色亮段同时顺时针追光，比其他大航海明显更丰富</p>
+
+  <!-- 舰长（对比） -->
+  <div style="margin-bottom:14px; opacity:0.5;">
+    <div class="ref">
+      <div class="avatar" style="background:linear-gradient(135deg,#2196F3,#00E5FF);width:22px;height:22px;border-radius:50%;"></div>
+      <span style="color:#555;font-size:11px;">14:32</span>
+      <span class="ref-name" style="color:#64B5F6;">舰长</span>
+    </div>
+    <div class="chase" style="--dim:rgba(33,150,243,0.06);--c1:#2196F3;--c2:#00E5FF;">
+      <div class="inner" style="padding:10px 14px;background:#12121f;">
+        <span style="color:#BBDEFB;font-size:13px;">舰长 — 单段追光</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 总督A -->
+  <div style="margin-bottom:16px;">
+    <div class="ref">
+      <div class="avatar" style="background:linear-gradient(135deg,#FFD700,#E65100);width:22px;height:22px;border-radius:50%;"></div>
+      <span style="color:#555;font-size:11px;">14:40</span>
+      <span class="ref-name" style="color:#FFD54F;">总督</span>
+    </div>
+    <div class="chase-dual" style="--dim:rgba(255,215,0,0.06);--c1:#FFD700;--c2:#E65100;">
+      <div class="inner" style="padding:10px 14px;background:#18180a;">
+        <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 6px rgba(255,215,0,0.15);">总督 — 双段追光，两束光同时环绕</span>
+      </div>
+    </div>
+  </div>
+
+  <hr style="border-color:#222;margin:20px 0;">
+
+  <h3 style="color:#fff;font-size:14px;margin:0 0 16px 0;">B: 单段追光 + 内发光脉冲</h3>
+  <p style="color:#888;font-size:12px;margin:0 0 12px 0;">追光不变，气泡内部有极淡的金色脉冲光晕</p>
+
+  <div style="margin-bottom:16px;">
+    <div class="ref">
+      <div class="avatar" style="background:linear-gradient(135deg,#FFD700,#E65100);width:22px;height:22px;border-radius:50%;"></div>
+      <span style="color:#555;font-size:11px;">14:42</span>
+      <span class="ref-name" style="color:#FFD54F;">总督</span>
+    </div>
+    <div class="chase" style="--dim:rgba(255,215,0,0.06);--c1:#FFD700;--c2:#E65100;">
+      <div class="inner" style="padding:10px 14px;background:#18180a;animation:glow-pulse 3s ease-in-out infinite;">
+        <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 6px rgba(255,215,0,0.15);">总督 — 单段追光 + 内发光脉冲</span>
+      </div>
+    </div>
+  </div>
+
+  <hr style="border-color:#222;margin:20px 0;">
+
+  <h3 style="color:#fff;font-size:14px;margin:0 0 16px 0;">C: 双段追光 + 微弱金色渐变背景</h3>
+  <p style="color:#888;font-size:12px;margin:0 0 12px 0;">气泡背景从中心向边缘有极淡的金色辐射，搭配双段追光</p>
+
+  <div style="margin-bottom:16px;">
+    <div class="ref">
+      <div class="avatar" style="background:linear-gradient(135deg,#FFD700,#E65100);width:22px;height:22px;border-radius:50%;"></div>
+      <span style="color:#555;font-size:11px;">14:45</span>
+      <span class="ref-name" style="color:#FFD54F;">总督</span>
+    </div>
+    <div class="chase-dual" style="--dim:rgba(255,215,0,0.06);--c1:#FFD700;--c2:#E65100;">
+      <div class="inner" style="padding:10px 14px;background:radial-gradient(ellipse at 50% 0%, rgba(255,215,0,0.06) 0%, #18180a 70%);">
+        <span style="color:#FFF9C4;font-size:13px;text-shadow:0 0 8px rgba(255,215,0,0.2);">总督 — 双段追光 + 金色渐变背景</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <p>对比参考：舰长为单段追光，总督在此基础上增加区分。</p>
+</div>
+
+<div class="section">
+  <h3>选哪种？</h3>
+  <div class="options">
+    <div class="option" data-choice="A" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content"><h3>双段追光</h3><p>简洁，追光量加倍</p></div>
+    </div>
+    <div class="option" data-choice="B" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content"><h3>追光+内发光</h3><p>保留单段，加内部光晕</p></div>
+    </div>
+    <div class="option" data-choice="C" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content"><h3>双段+渐变背景</h3><p>最丰富</p></div>
+    </div>
+  </div>
+</div>

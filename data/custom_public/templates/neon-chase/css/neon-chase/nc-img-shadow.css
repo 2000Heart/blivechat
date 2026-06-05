@@ -1,0 +1,9 @@
+@layer nc {
+
+nc-img-shadow {
+  display: inline-block;
+  overflow: visible;
+  flex: none;
+}
+
+}
