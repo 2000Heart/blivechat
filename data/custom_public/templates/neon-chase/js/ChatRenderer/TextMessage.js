@@ -64,18 +64,20 @@ function(constants, ImgShadow, AuthorChip) {
         return constants.getTimeTextHourMin(this.time)
       },
       bubbleClass() {
+        // 大航海身份优先：有 privilegeType 就用追光动画
+        switch (this.privilegeType) {
+          case 1: return 'nc-chase-dual gov'
+          case 2: return 'nc-chase commander'
+          case 3: return 'nc-chase sailor'
+        }
+        // 非大航海才判断基础用户类型
         if (this.authorType === constants.AUTHOR_TYPE_ADMIN) {
           return 'nc-static admin'
         }
         if (this.authorType === constants.AUTHOR_TYPE_OWNER) {
           return 'nc-static owner'
         }
-        switch (this.privilegeType) {
-          case 1: return 'nc-chase-dual gov'
-          case 2: return 'nc-chase commander'
-          case 3: return 'nc-chase sailor'
-          default: return 'nc-static user'
-        }
+        return 'nc-static user'
       }
     }
   }

@@ -1,5 +1,27 @@
 @layer nc {
 
+nc-live-chat-text-message-renderer,
+nc-live-chat-paid-message-renderer,
+nc-live-chat-membership-item-renderer {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+nc-live-chat-text-message-renderer,
+nc-live-chat-paid-message-renderer {
+  margin-top: 6px;
+}
+
+nc-live-chat-membership-item-renderer {
+  margin-top: 8px;
+}
+
+nc-live-chat-text-message-renderer {
+  display: block;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 /* ---- 追光动画 ---- */
 @property --nc-angle {
   syntax: '<angle>';
@@ -27,7 +49,6 @@
 .nc-message {
   margin-bottom: 4px;
   text-align: left;
-  padding: 0 8px;
 }
 
 /* ---- 用户信息行 ---- */
@@ -36,19 +57,18 @@
   align-items: center;
   gap: 8px;
   padding: 0 4px;
-  margin-bottom: 6px;
-  flex-wrap: nowrap;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .nc-author-row nc-img-shadow {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  max-width: 24px;
-  max-height: 24px;
+  width: 29px;
+  height: 29px;
+  min-width: 29px;
+  min-height: 29px;
+  max-width: 29px;
+  max-height: 29px;
   flex: none;
-  align-self: center;
 }
 
 .nc-author-row nc-img-shadow img {
@@ -66,7 +86,9 @@
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  display: block;
+  display: inline-block;
+  max-width: 100%;
+  margin-left: 0;
 }
 
 .nc-bubble-inner {
@@ -76,12 +98,19 @@
   z-index: 1;
   padding: 10px 14px;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 29px;
   line-height: 1.5;
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
   white-space: normal;
+}
+
+/* ---- 表情图片：比文本稍大一点 ---- */
+.nc-bubble-inner .emoji {
+  height: 1.25em;
+  width: auto;
+  vertical-align: middle;
 }
 
 /* ---- 追光边框（单段，舰长/提督） ---- */
@@ -131,7 +160,7 @@
 .nc-breathe {
   border: 2px solid var(--nc-dim);
   border-radius: 12px;
-  display: block;
+  display: inline-block;
   animation: nc-breathe-line 2.5s ease-in-out infinite;
 }
 
@@ -143,7 +172,7 @@
 .nc-static {
   border: 1.5px solid var(--nc-static-color, rgba(255,255,255,0.06));
   border-radius: 12px;
-  display: block;
+  display: inline-block;
 }
 
 .nc-static .nc-bubble-inner {
@@ -152,13 +181,13 @@
 
 /* ---- 身份 → CSS 变量映射 ---- */
 
-/* 舰长 */
+/* 舰长（蓝） */
 .nc-chase.sailor { --nc-dim: rgba(33,150,243,0.06); --nc-c1: #2196F3; --nc-c2: #00E5FF; }
-.nc-chase.sailor .nc-bubble-inner { background: #12121f; }
+.nc-chase.sailor .nc-bubble-inner { background: #0d1a24; }
 
-/* 提督 */
+/* 提督（紫） */
 .nc-chase.commander { --nc-dim: rgba(156,39,176,0.06); --nc-c1: #9C27B0; --nc-c2: #E040FB; }
-.nc-chase.commander .nc-bubble-inner { background: #12121f; }
+.nc-chase.commander .nc-bubble-inner { background: #1a0d1f; }
 
 /* 总督（双段追光） */
 .nc-chase-dual.gov { --nc-dim: rgba(255,215,0,0.06); --nc-c1: #FFD700; --nc-c2: #E65100; }

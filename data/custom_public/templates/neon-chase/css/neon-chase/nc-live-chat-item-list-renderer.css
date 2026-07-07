@@ -39,6 +39,7 @@ nc-live-chat-item-list-renderer[allow-scroll] #item-scroller.nc-live-chat-item-l
   flex-basis: 0.000000001px;
   padding: var(--nc-item-list-padding, 4px 0);
   text-align: left;
+  overflow: hidden;
 }
 
 #item-scroller.animated.nc-live-chat-item-list-renderer #items.nc-live-chat-item-list-renderer {
@@ -46,7 +47,6 @@ nc-live-chat-item-list-renderer[allow-scroll] #item-scroller.nc-live-chat-item-l
   left: 0;
   position: absolute;
   right: 0;
-  transform: translateY(0);
 }
 
 }

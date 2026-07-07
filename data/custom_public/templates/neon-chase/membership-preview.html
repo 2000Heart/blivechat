@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<title>Neon Chase - 大航海开通消息预览</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #050510;
+  color: #fff;
+  font-family: -apple-system, "Microsoft YaHei", sans-serif;
+  padding: 30px;
+}
+h1 { text-align: center; font-size: 24px; margin-bottom: 8px; color: #aaa; }
+h2 { text-align: center; font-size: 14px; margin-bottom: 30px; color: #666; font-weight: 400; }
+
+.preview-container {
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-note {
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+  margin-top: 20px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<h1>🌌 neon-chase · 大航海开通消息</h1>
+<h2>宇宙星球轨道 — 头像为恒星 · 行星公转环绕</h2>
+
+<div id="app">
+  <div class="preview-container">
+    <membership-item
+      avatar-url="//static.hdslb.com/images/member/noface.gif"
+      author-name="用户名"
+      :privilege-type="3"
+    ></membership-item>
+    <membership-item
+      avatar-url="//static.hdslb.com/images/member/noface.gif"
+      author-name="用户名"
+      :privilege-type="2"
+    ></membership-item>
+    <membership-item
+      avatar-url="//static.hdslb.com/images/member/noface.gif"
+      author-name="用户名"
+      :privilege-type="1"
+    ></membership-item>
+  </div>
+</div>
+
+<p class="preview-note">
+  舰长 ✦ 蓝色双星系统 · 2行星 | 提督 ✦ 紫色三星系统 · 3行星 | 总督 👑 黄金星系 · 4行星+超新星<br>
+  日冕光晕 · 流星拖尾 · 闪烁星空 · 入场动画<br>
+  刷新页面查看入场动画
+</p>
+
+<link rel="stylesheet" href="./css/neon-chase/nc-live-chat-membership-item-renderer.css">
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="./js/ChatRenderer/MembershipItem.js"></script>
+
+<script>
+const { createApp } = Vue
+
+const app = createApp({
+  components: {
+    'membership-item': chatRendererMembershipItem.default,
+  }
+})
+
+app.mount('#app')
+</script>
+</body>
+</html>

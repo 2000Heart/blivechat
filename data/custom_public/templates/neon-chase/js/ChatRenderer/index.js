@@ -5,66 +5,103 @@
     root.chatRendererTextMessage.default,
     root.chatRendererPaidMessage.default,
     root.chatRendererMembershipItem.default,
-    root.chatRendererTicker.default,
   )
 }(this,
-function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
+function(_, constants, TextMessage, PaidMessage, MembershipItem) {
   const exports = {}
 
   const CHAT_SMOOTH_ANIMATION_TIME_MS = 84
 
+  // ===== MessageItem 包装组件：将 v-if/v-else-if 条件渲染内聚到一个组件内 =====
+  // 避免 Vue 3 编译器对 <template v-for> + v-if/v-else-if 产生 Block tree，
+  // 导致 patch 时按位置匹配而非按 key 匹配，造成 splice 后所有列表项被重建。
+  const MessageItem = {
+    template: `
+    <text-message v-if="msg.type === MESSAGE_TYPE_TEXT"
+      :time="msg.time"
+      :avatarUrl="msg.avatarUrl"
+      :authorName="msg.authorName"
+      :authorType="msg.authorType"
+      :privilegeType="msg.privilegeType"
+      :contentParts="getContentParts(msg)"
+      :medalLevel="msg.medalLevel"
+      :medalName="msg.medalName"
+    ></text-message>
+    <paid-message v-else-if="msg.type === MESSAGE_TYPE_GIFT"
+      :time="msg.time"
+      :avatarUrl="msg.avatarUrl"
+      :authorName="getAuthorName(msg)"
+      :authorType="msg.authorType"
+      :privilegeType="msg.privilegeType"
+      :price="msg.price"
+      :priceText="''"
+      :content="msg.price <= 0 ? '' : getGiftContent(msg)"
+      :medalLevel="msg.medalLevel"
+      :medalName="msg.medalName"
+      :giftName="msg.giftName"
+      :giftNum="msg.num"
+    ></paid-message>
+    <membership-item v-else-if="msg.type === MESSAGE_TYPE_MEMBER"
+      :time="msg.time"
+      :avatarUrl="msg.avatarUrl"
+      :authorName="getAuthorName(msg)"
+      :privilegeType="msg.privilegeType"
+      :title="msg.title"
+      :medalLevel="msg.medalLevel"
+      :medalName="msg.medalName"
+    ></membership-item>
+    <paid-message v-else-if="msg.type === MESSAGE_TYPE_SUPER_CHAT"
+      :time="msg.time"
+      :avatarUrl="msg.avatarUrl"
+      :authorName="getAuthorName(msg)"
+      :authorType="msg.authorType"
+      :privilegeType="msg.privilegeType"
+      :price="msg.price"
+      :content="getContent(msg)"
+      :medalLevel="msg.medalLevel"
+      :medalName="msg.medalName"
+    ></paid-message>
+    `,
+    props: {
+      message: Object,
+      showGiftName: Boolean,
+    },
+    components: {
+      TextMessage,
+      PaidMessage,
+      MembershipItem,
+    },
+    computed: {
+      msg() { return this.message },
+      MESSAGE_TYPE_TEXT() { return constants.MESSAGE_TYPE_TEXT },
+      MESSAGE_TYPE_GIFT() { return constants.MESSAGE_TYPE_GIFT },
+      MESSAGE_TYPE_MEMBER() { return constants.MESSAGE_TYPE_MEMBER },
+      MESSAGE_TYPE_SUPER_CHAT() { return constants.MESSAGE_TYPE_SUPER_CHAT },
+    },
+    methods: {
+      getContentParts(msg) { return constants.getShowContentParts(msg) },
+      getAuthorName(msg) { return constants.getShowAuthorName(msg) },
+      getContent(msg) { return constants.getShowContent(msg) },
+      getGiftContent(msg) { return constants.getGiftShowContent(msg, this.showGiftName) },
+    },
+  }
+
   exports.default = {
     template: `
   <nc-live-chat-renderer style="--scrollbar-width:11px;">
-    <ticker class="style-scope nc-live-chat-renderer" v-model:messages="paidMessages" :showGiftName="showGiftName"></ticker>
+
     <nc-live-chat-item-list-renderer allow-scroll>
       <div ref="scroller" id="item-scroller" class="style-scope nc-live-chat-item-list-renderer animated">
         <div ref="itemOffset" id="item-offset" class="style-scope nc-live-chat-item-list-renderer">
-          <div ref="items" id="items" class="style-scope nc-live-chat-item-list-renderer" style="overflow: hidden"
-            :style="{ transform: 'translateY(' + Math.floor(scrollPixelsRemaining) + 'px)' }"
+          <div ref="items" id="items" class="style-scope nc-live-chat-item-list-renderer"
+            :style="{ transform: \`translateY(\${Math.floor(scrollPixelsRemaining)}px)\` }"
           >
-            <template v-for="message in messages">
-              <text-message :key="'text-' + message.id" v-if="message.type === MESSAGE_TYPE_TEXT"
-                :time="message.time"
-                :avatarUrl="message.avatarUrl"
-                :authorName="message.authorName"
-                :authorType="message.authorType"
-                :privilegeType="message.privilegeType"
-                :contentParts="getShowContentParts(message)"
-                :medalLevel="message.medalLevel"
-                :medalName="message.medalName"
-              ></text-message>
-              <paid-message :key="'gift-' + message.id" v-else-if="message.type === MESSAGE_TYPE_GIFT"
-                :time="message.time"
-                :avatarUrl="message.avatarUrl"
-                :authorName="getShowAuthorName(message)"
-                :price="message.price"
-                :priceText="''"
-                :content="message.price <= 0 ? '' : getGiftShowContent(message)"
-                :medalLevel="message.medalLevel"
-                :medalName="message.medalName"
-                :giftName="message.giftName"
-                :giftNum="message.num"
-              ></paid-message>
-              <membership-item :key="'member-' + message.id" v-else-if="message.type === MESSAGE_TYPE_MEMBER"
-                :time="message.time"
-                :avatarUrl="message.avatarUrl"
-                :authorName="getShowAuthorName(message)"
-                :privilegeType="message.privilegeType"
-                :title="message.title"
-                :medalLevel="message.medalLevel"
-                :medalName="message.medalName"
-              ></membership-item>
-              <paid-message :key="'sc-' + message.id" v-else-if="message.type === MESSAGE_TYPE_SUPER_CHAT"
-                :time="message.time"
-                :avatarUrl="message.avatarUrl"
-                :authorName="getShowAuthorName(message)"
-                :price="message.price"
-                :content="getShowContent(message)"
-                :medalLevel="message.medalLevel"
-                :medalName="message.medalName"
-              ></paid-message>
-            </template>
+            <message-item
+              v-for="message in messages"
+              :key="message.id"
+              :message="message"
+              :showGiftName="showGiftName"
+            ></message-item>
           </div>
         </div>
       </div>
@@ -73,10 +110,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
     `,
     name: 'ChatRenderer',
     components: {
-      Ticker,
-      TextMessage,
-      MembershipItem,
-      PaidMessage
+      MessageItem,
     },
     props: {
       maxNumber: Number,
@@ -102,6 +136,10 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
         lastSmoothChatMessageAddMs: null,
         smoothScrollRafHandle: null,
         lastSmoothScrollUpdate: null,
+        membershipPauseUntil: null,
+        _pauseTimer: null,
+        isCatchingUp: false,
+        _catchUpTimer: null,
       }
     },
     mounted() {
@@ -159,6 +197,16 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
         this.scrollTimeRemainingMs = this.scrollPixelsRemaining = 0
         this.smoothScrollRafHandle = null
         this.preinsertHeight = 0
+        this.membershipPauseUntil = null
+        this.isCatchingUp = false
+        if (this._pauseTimer) {
+          clearTimeout(this._pauseTimer)
+          this._pauseTimer = null
+        }
+        if (this._catchUpTimer) {
+          clearTimeout(this._catchUpTimer)
+          this._catchUpTimer = null
+        }
         this.maybeResizeScrollContainer()
         this.scrollToBottom()
       },
@@ -258,10 +306,44 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
       },
 
       async flushMessagesBuffer() {
+        // 正在追播中：消息已进入 buffer，由 catchUpNext 逐个处理
+        if (this.isCatchingUp) {
+          return
+        }
+
+        // 开通会员暂停中：延迟到暂停结束后开始追播
+        if (this.membershipPauseUntil) {
+          const now = performance.now()
+          if (now < this.membershipPauseUntil) {
+            if (!this._pauseTimer) {
+              this._pauseTimer = setTimeout(() => {
+                this._pauseTimer = null
+                this.membershipPauseUntil = null
+                this.startCatchUp()
+              }, this.membershipPauseUntil - now)
+            }
+            return
+          }
+          this.membershipPauseUntil = null
+        }
+
         if (this.messagesBuffer.length <= 0) {
           return
         }
 
+        // 检测是否有开通会员消息，计算暂停时长（取最长的）
+        let membershipPauseMs = 0
+        for (let message of this.messagesBuffer) {
+          if (message.type === constants.MESSAGE_TYPE_MEMBER) {
+            const durations = { 3: 3000, 2: 8000, 1: 20000 }
+            const dur = durations[message.privilegeType] || 3000
+            if (dur > membershipPauseMs) {
+              membershipPauseMs = dur
+            }
+          }
+        }
+
+        // 正常模式：全部刷新
         let removeNum = Math.max(this.messages.length + this.messagesBuffer.length - this.maxNumber, 0)
         if (removeNum > 0) {
           this.messages.splice(0, removeNum)
@@ -275,6 +357,73 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem, Ticker) {
         this.messagesBuffer = []
         await this.$nextTick()
         this.showNewMessages()
+
+        // 有开通会员时进入暂停
+        if (membershipPauseMs > 0) {
+          this.membershipPauseUntil = performance.now() + membershipPauseMs
+        }
+      },
+
+      // 追播模式：逐个回放暂停期间积压的消息
+      startCatchUp() {
+        if (this.isCatchingUp || this.messagesBuffer.length <= 0) {
+          this.isCatchingUp = false
+          return
+        }
+        this.isCatchingUp = true
+        this.catchUpNext()
+      },
+
+      async catchUpNext() {
+        if (this.messagesBuffer.length <= 0) {
+          this.isCatchingUp = false
+          return
+        }
+
+        // 取队首一条消息
+        const message = this.messagesBuffer.shift()
+
+        // 检测是否为开通会员，计算暂停时长
+        // 舰长:3秒, 提督:8秒, 总督:20秒
+        if (message.type === constants.MESSAGE_TYPE_MEMBER) {
+          const durations = { 3: 3000, 2: 8000, 1: 20000 }
+          const pauseMs = durations[message.privilegeType] || 3000
+
+          // 显示这条会员消息
+          let removeNum = Math.max(this.messages.length + 1 - this.maxNumber, 0)
+          if (removeNum > 0) {
+            this.messages.splice(0, removeNum)
+            await this.$nextTick()
+          }
+
+          this.preinsertHeight = this.$refs.items.clientHeight
+          this.messages.push(message)
+          await this.$nextTick()
+          this.showNewMessages()
+
+          // 停止追播，进入暂停
+          this.isCatchingUp = false
+          this.membershipPauseUntil = performance.now() + pauseMs
+          return
+        }
+
+        // 普通消息：显示后继续追播下一条
+        let removeNum = Math.max(this.messages.length + 1 - this.maxNumber, 0)
+        if (removeNum > 0) {
+          this.messages.splice(0, removeNum)
+          await this.$nextTick()
+        }
+
+        this.preinsertHeight = this.$refs.items.clientHeight
+        this.messages.push(message)
+        await this.$nextTick()
+        this.showNewMessages()
+
+        // 按正常弹幕速率继续追播
+        this._catchUpTimer = setTimeout(() => {
+          this._catchUpTimer = null
+          this.catchUpNext()
+        }, this.isSmoothed ? 200 : 80)
       },
       showNewMessages() {
         let hasScrollBar = this.$refs.items.clientHeight > this.$refs.scroller.clientHeight

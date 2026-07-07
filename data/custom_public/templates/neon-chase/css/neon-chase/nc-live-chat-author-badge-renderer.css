@@ -7,22 +7,22 @@ nc-live-chat-author-badge-renderer {
 }
 
 nc-live-chat-author-badge-renderer #image {
-  width: 16px;
-  height: 16px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 nc-live-chat-author-badge-renderer img {
-  width: 16px;
-  height: 16px;
+  width: 36px;
+  height: 36px;
   display: block;
 }
 
 nc-live-chat-author-badge-renderer svg {
-  width: 16px;
-  height: 16px;
+  width: 36px;
+  height: 36px;
   display: block;
 }
 

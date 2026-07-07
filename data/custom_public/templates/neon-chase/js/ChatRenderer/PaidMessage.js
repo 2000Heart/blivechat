@@ -2,9 +2,10 @@
   root.chatRendererPaidMessage = factory(
     root.chatRendererConstants,
     root.chatRendererImgShadow.default,
+    root.chatRendererAuthorChip.default,
   )
 }(this,
-function(constants, ImgShadow) {
+function(constants, ImgShadow, AuthorChip) {
   const exports = {}
 
   exports.default = {
@@ -14,22 +15,20 @@ function(constants, ImgShadow) {
       <img-shadow id="author-photo" height="24" width="24"
         :imgUrl="avatarUrl"
       ></img-shadow>
-      <span id="author-name">{{ authorName }}</span>
-      <span v-if="medalName && medalLevel > 0" id="medal" :data-level="medalLevel">
-        <span class="medal-name">{{ medalName }}</span>
-        <span class="medal-level">{{ medalLevel }}</span>
-      </span>
-      <span v-if="giftName" id="gift-info">
-        <span id="gift-name">{{ giftName }}</span>
-        <span v-if="giftNum > 1" id="gift-num">x{{ giftNum }}</span>
-        <span v-if="price > 0" id="gift-price">{{ showGiftPriceText }}</span>
-      </span>
-      <span v-if="!isGift" id="purchase-amount">{{ showPriceText }}</span>
+      <author-chip
+        :authorName="authorName" :authorType="authorType" :privilegeType="privilegeType"
+        :medalLevel="medalLevel" :medalName="medalName"
+      ></author-chip>
       <span id="timestamp">{{ timeText }}</span>
     </div>
     <div class="nc-bubble nc-breathe" :class="breatheClass">
       <div class="nc-bubble-inner">
-        <span id="message" v-if="content">{{ content }}</span>
+        <span id="message" v-if="content && !isGift">{{ content }}</span>
+        <span v-if="giftName" id="gift-info">
+          <span id="gift-name">{{ giftName }}</span>
+          <span v-if="giftNum > 1" id="gift-num">x{{ giftNum }}</span>
+        </span>
+        <span id="purchase-amount" v-if="price > 0">{{ showPriceText }}</span>
       </div>
     </div>
   </nc-live-chat-paid-message-renderer>
@@ -37,10 +36,13 @@ function(constants, ImgShadow) {
     name: 'PaidMessage',
     components: {
       ImgShadow,
+      AuthorChip,
     },
     props: {
       avatarUrl: String,
       authorName: String,
+      authorType: Number,
+      privilegeType: Number,
       price: Number,
       priceText: String,
       time: Date,
@@ -65,9 +67,6 @@ function(constants, ImgShadow) {
       },
       showPriceText() {
         return this.priceText || `CN¥${constants.formatCurrency(this.price)}`
-      },
-      showGiftPriceText() {
-        return `CN¥${constants.formatCurrency(this.price)}`
       },
       timeText() {
         return constants.getTimeTextHourMin(this.time)

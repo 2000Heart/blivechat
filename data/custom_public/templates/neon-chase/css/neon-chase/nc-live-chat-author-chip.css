@@ -4,12 +4,13 @@ nc-live-chat-author-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 #author-name.nc-live-chat-author-chip {
   color: #ffffff;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 29px;
 }
 
 #author-name.nc-live-chat-author-chip[type='moderator'] {
@@ -31,7 +32,7 @@ nc-live-chat-author-chip {
   gap: 4px;
   padding: 1px 5px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 25px;
   font-weight: 600;
   line-height: 1.2;
   position: relative;
@@ -43,15 +44,15 @@ nc-live-chat-author-chip {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   margin-left: -4px;
 }
 
 #medal.nc-live-chat-author-chip .medal-guard-badge nc-live-chat-author-badge-renderer {
-  width: 14px;
-  height: 14px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -62,10 +63,10 @@ nc-live-chat-author-chip {
 }
 
 #medal.nc-live-chat-author-chip .medal-level {
-  font-size: 10px;
+  font-size: 22px;
   padding: 0 2px;
   border-radius: 2px;
-  min-width: 12px;
+  min-width: 26px;
   text-align: center;
 }
 

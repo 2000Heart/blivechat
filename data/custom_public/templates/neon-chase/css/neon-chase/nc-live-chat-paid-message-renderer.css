@@ -4,6 +4,8 @@ nc-live-chat-paid-message-renderer {
   display: block;
   margin-bottom: 4px;
   text-align: left;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 nc-live-chat-paid-message-renderer .paid-header {
@@ -11,14 +13,14 @@ nc-live-chat-paid-message-renderer .paid-header {
   align-items: center;
   gap: 8px;
   padding: 0 2px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 nc-live-chat-paid-message-renderer .paid-header nc-img-shadow {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
+  width: 29px;
+  height: 29px;
+  min-width: 29px;
+  min-height: 29px;
   flex: none;
 }
 
@@ -27,60 +29,29 @@ nc-live-chat-paid-message-renderer .paid-header nc-img-shadow img {
   border: 1.5px solid rgba(255, 255, 255, 0.15);
 }
 
-nc-live-chat-paid-message-renderer #author-name {
+
+nc-live-chat-paid-message-renderer #message {
   color: #ffffff;
-  font-weight: 600;
-  font-size: 13px;
+  font-size: 29px;
+  line-height: 1.5;
 }
 
-nc-live-chat-paid-message-renderer #medal {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
-nc-live-chat-paid-message-renderer #medal .medal-name {
-  color: #aaa;
-}
-
-nc-live-chat-paid-message-renderer #medal .medal-level {
-  color: #aaa;
-  font-size: 10px;
-  padding: 0 2px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-}
-
-nc-live-chat-paid-message-renderer #gift-info {
-  color: #aaa;
-  font-size: 12px;
-}
-
-nc-live-chat-paid-message-renderer #gift-price {
+/* 气泡内价格 */
+nc-live-chat-paid-message-renderer .nc-bubble #purchase-amount {
+  display: block;
+  margin-top: 4px;
   color: #FFD54F;
   font-weight: 600;
+  font-size: 32px;
 }
 
-nc-live-chat-paid-message-renderer #purchase-amount {
-  color: #FFD54F;
-  font-weight: 600;
-  font-size: 12px;
+nc-live-chat-paid-message-renderer .nc-bubble {
+  margin-left: 0;
+  max-width: 100%;
 }
 
 nc-live-chat-paid-message-renderer #timestamp {
   display: none;
-}
-
-nc-live-chat-paid-message-renderer #message {
-  color: #ffffff;
-  font-size: 13px;
-  line-height: 1.5;
 }
 
 }
