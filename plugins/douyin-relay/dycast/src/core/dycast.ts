@@ -24,6 +24,7 @@ import type {
   Text,
   User
 } from './model';
+import { pickStarGuardMembership } from './membership';
 import { fetchUser, getImInfo, getLiveInfo } from './request';
 import { getSignature } from './signature';
 // import { logUserCast } from '@/utils/debugUtil';
@@ -103,6 +104,10 @@ export interface CastUser {
   medalLevel?: number;
   /** 粉丝团名称（user.fans_club.data.club_name）→ medal_name */
   medalName?: string;
+  /** 星守护等会员类型，供中继映射 privilege / guard_level */
+  membershipType?: string;
+  /** 会员展示名，如「星守护」 */
+  membershipName?: string;
 }
 
 export interface CastGift {
@@ -984,13 +989,15 @@ export class DyCast {
   private _getCastUser(data?: User): CastUser | undefined {
     if (!data) return void 0;
     const { medalLevel, medalName } = this._pickFansClubDisplay(data);
+    const membership = pickStarGuardMembership(data);
     return {
       id: data.secUid,
       name: data.nickname,
       gender: data.gender,
       avatar: data.avatarThumb?.urlList?.[0],
       medalLevel,
-      medalName
+      medalName,
+      ...(membership || {})
     };
   }
 

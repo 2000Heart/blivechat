@@ -11088,7 +11088,7 @@ export interface User {
   secret?: number;
   shareQrcodeUri?: string;
   incomeSharePercent?: number;
-  badgeImageList?: Image;
+  badgeImageList?: Image[];
   followInfo?: User_FollowInfo;
   payGrade?: User_PayGrade;
   fansClub?: User_FansClub;
@@ -11128,7 +11128,7 @@ export interface User {
   adversaryUserStatus?: number;
   userVipInfo?: UserVIPInfo;
   commerceWebcastConfigIds?: string;
-  badgeImageListV2?: Image;
+  badgeImageListV2?: Image[];
   industryCertification?: IndustryCertification;
   locationCity?: string;
   fansGroupInfo?: User_FansGroupInfo;
@@ -11312,15 +11312,17 @@ function _encodeUser(message: User, bb: ByteBuffer): void {
     writeVarint64(bb, intToLong($incomeSharePercent));
   }
 
-  // optional Image badgeImageList = 21;
-  let $badgeImageList = message.badgeImageList;
-  if ($badgeImageList !== undefined) {
-    writeVarint32(bb, 170);
-    let nested = popByteBuffer();
-    _encodeImage($badgeImageList, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
+  // repeated Image badgeImageList = 21;
+  let array$badgeImageList = message.badgeImageList;
+  if (array$badgeImageList !== undefined) {
+    for (let value of array$badgeImageList) {
+      writeVarint32(bb, 170);
+      let nested = popByteBuffer();
+      _encodeImage(value, nested);
+      writeVarint32(bb, nested.limit);
+      writeByteBuffer(bb, nested);
+      pushByteBuffer(nested);
+    }
   }
 
   // optional User_FollowInfo followInfo = 22;
@@ -11692,15 +11694,17 @@ function _encodeUser(message: User, bb: ByteBuffer): void {
     writeVarint64(bb, $commerceWebcastConfigIds);
   }
 
-  // optional Image badgeImageListV2 = 61;
-  let $badgeImageListV2 = message.badgeImageListV2;
-  if ($badgeImageListV2 !== undefined) {
-    writeVarint32(bb, 490);
-    let nested = popByteBuffer();
-    _encodeImage($badgeImageListV2, nested);
-    writeVarint32(bb, nested.limit);
-    writeByteBuffer(bb, nested);
-    pushByteBuffer(nested);
+  // repeated Image badgeImageListV2 = 61;
+  let array$badgeImageListV2 = message.badgeImageListV2;
+  if (array$badgeImageListV2 !== undefined) {
+    for (let value of array$badgeImageListV2) {
+      writeVarint32(bb, 490);
+      let nested = popByteBuffer();
+      _encodeImage(value, nested);
+      writeVarint32(bb, nested.limit);
+      writeByteBuffer(bb, nested);
+      pushByteBuffer(nested);
+    }
   }
 
   // optional IndustryCertification industryCertification = 62;
@@ -12046,10 +12050,11 @@ function _decodeUser(bb: ByteBuffer): User {
         break;
       }
 
-      // optional Image badgeImageList = 21;
+      // repeated Image badgeImageList = 21;
       case 21: {
         let limit = pushTemporaryLength(bb);
-        message.badgeImageList = _decodeImage(bb);
+        let values = message.badgeImageList || (message.badgeImageList = []);
+        values.push(_decodeImage(bb));
         bb.limit = limit;
         break;
       }
@@ -12336,10 +12341,11 @@ function _decodeUser(bb: ByteBuffer): User {
         break;
       }
 
-      // optional Image badgeImageListV2 = 61;
+      // repeated Image badgeImageListV2 = 61;
       case 61: {
         let limit = pushTemporaryLength(bb);
-        message.badgeImageListV2 = _decodeImage(bb);
+        let values = message.badgeImageListV2 || (message.badgeImageListV2 = []);
+        values.push(_decodeImage(bb));
         bb.limit = limit;
         break;
       }
