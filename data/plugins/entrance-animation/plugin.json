@@ -1,0 +1,8 @@
+{
+  "name": "进场动画",
+  "version": "1.0.0",
+  "author": "blivechat",
+  "description": "检测指定用户进入直播间时，通过 OBS 采集页播放对应的视频/图片/GIF。点击管理打开配置后台。",
+  "run": "cd /d ..\\..\\..\\plugins\\entrance-animation && ..\\..\\.venv\\Scripts\\python.exe -u main.py",
+  "enabled": false
+}

@@ -135,7 +135,13 @@ class LiveClientManager:
         # 直接启动吧，这里不用管init_room失败的情况，万一失败了会在on_client_stopped里删除掉这个客户端
         live_client.start()
 
-        logger.info('room=%s live client created, %d live clients', room_key, len(self._live_clients))
+        logger.info('room=%s live client created (%s), %d live clients',
+                    room_key, type(live_client).__name__, len(self._live_clients))
+        if isinstance(live_client, OpenLiveClient):
+            logger.info(
+                'room=%s entrance events enabled via LIVE_OPEN_PLATFORM_LIVE_ROOM_ENTER',
+                room_key,
+            )
 
         services.plugin.broadcast_cmd_data(
             sdk_models.Command.ADD_ROOM, {}, make_plugin_msg_extra_from_live_client(live_client)
@@ -612,6 +618,55 @@ class LiveMsgHandler(blivedm.BaseHandler):
             sdk_models.Command.ADD_GIFT, data, make_plugin_msg_extra_from_live_client(client)
         )
 
+    @staticmethod
+    def _broadcast_entrance_to_plugins(client: LiveClientType, data: dict) -> None:
+        room = client_room_manager.get_room(client.room_key)
+        if room is None:
+            logger.warning(
+                'room=%s entrance dropped: client room not found, uid=%s username=%s',
+                client.room_key, data.get('uid', ''), data.get('username', ''),
+            )
+            return
+        logger.info(
+            'room=%s broadcasting entrance to plugins: uid=%s username=%s room_id=%s',
+            client.room_key, data.get('uid', ''), data.get('username', ''), client.room_id,
+        )
+        # 进场事件只广播给插件，不发给 blivechat 自身聊天页
+        services.plugin.broadcast_cmd_data(
+            sdk_models.Command.ADD_INTERACT, data, make_plugin_msg_extra_from_live_client(client)
+        )
+
+    def _on_interact_word_v2(self, client: WebLiveClient, message: dm_web_models.InteractWordV2Message):
+        # 只处理“进入直播间”，其他互动（关注、分享、点赞等）忽略
+        if message.msg_type != 1:
+            logger.debug(
+                'room=%s interact_word_v2 skipped: uid=%s username=%s msg_type=%d',
+                client.room_key, message.uid, message.username, message.msg_type,
+            )
+            return
+        logger.info(
+            'room=%s user entrance detected: uid=%s username=%s',
+            client.room_key, message.uid, message.username,
+        )
+        utils.async_io.create_task_with_ref(self.__on_interact_word_v2(client, message))
+
+    async def __on_interact_word_v2(self, client: WebLiveClient, message: dm_web_models.InteractWordV2Message):
+        uid = str(message.uid) if message.uid != 0 else message.username
+        # 先异步取头像再获取房间，因为返回时房间可能已经不存在了
+        avatar_url = message.face
+        if avatar_url == '':
+            avatar_url = await services.avatar.get_avatar_url(message.uid, message.username)
+        else:
+            avatar_url = services.avatar.process_avatar_url(avatar_url)
+
+        self._broadcast_entrance_to_plugins(client, {
+            'uid': uid,
+            'username': message.username,
+            'avatarUrl': avatar_url,
+            'timestamp': message.timestamp,
+            'msgType': message.msg_type,
+        })
+
     def _on_user_toast_v2(self, client: WebLiveClient, message: dm_web_models.UserToastV2Message):
         # 官方的评论栏不会显示2的消息
         if message.source == 2:
@@ -908,3 +963,16 @@ class LiveMsgHandler(blivedm.BaseHandler):
         services.plugin.broadcast_cmd_data(
             sdk_models.Command.DEL_SUPER_CHAT, data, make_plugin_msg_extra_from_live_client(client)
         )
+
+    def _on_open_live_enter_room(self, client: OpenLiveClient, message: dm_open_models.RoomEnterMessage):
+        logger.info(
+            'room=%s user entrance detected (OpenLive): open_id=%s username=%s',
+            client.room_key, message.open_id, message.uname,
+        )
+        self._broadcast_entrance_to_plugins(client, {
+            'uid': message.open_id,
+            'username': message.uname,
+            'avatarUrl': services.avatar.process_avatar_url(message.uface),
+            'timestamp': message.timestamp,
+            'msgType': 1,
+        })

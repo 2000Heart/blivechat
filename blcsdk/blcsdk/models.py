@@ -21,6 +21,7 @@ __all__ = (
     'AddSuperChatMsg',
     'DelSuperChatMsg',
     'UpdateTranslationMsg',
+    'AddInteractMsg',
 )
 
 
@@ -81,6 +82,7 @@ class Command(enum.IntEnum):
     ADD_SUPER_CHAT = 53
     DEL_SUPER_CHAT = 54
     UPDATE_TRANSLATION = 55
+    ADD_INTERACT = 56
 
 
 @dataclasses.dataclass
@@ -442,4 +444,36 @@ class UpdateTranslationMsg:
         return cls(
             id=data[0],
             translation=data[1],
+        )
+
+
+@dataclasses.dataclass
+class AddInteractMsg:
+    """
+    进入直播间等互动消息
+
+    房间 ID 模式：来自 INTERACT_WORD_V2，uid 为数字 UID。
+    身份码（开放平台）模式：来自 LIVE_OPEN_PLATFORM_LIVE_ROOM_ENTER，uid 为 open_id。
+    均需开启「通过服务器转发消息」，由后端转发给插件。
+    """
+
+    uid: str = ''
+    """用户Open ID或ID"""
+    username: str = ''
+    """用户名"""
+    avatar_url: str = ''
+    """用户头像URL"""
+    timestamp: int = 0
+    """时间戳（秒）"""
+    msg_type: int = 1
+    """互动类型，1=进入直播间"""
+
+    @classmethod
+    def from_command(cls, data: dict):
+        return cls(
+            uid=str(data.get('uid', '')),
+            username=data.get('username', ''),
+            avatar_url=data.get('avatarUrl', ''),
+            timestamp=data.get('timestamp', 0),
+            msg_type=data.get('msgType', 1),
         )

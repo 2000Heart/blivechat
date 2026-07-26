@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>进场动画 · 管理后台</title>
+  <link rel="stylesheet" href="/assets/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>进场动画 · 管理后台</h1>
+    <div class="obs-url">
+      <label>OBS 采集地址</label>
+      <input id="overlayUrl" type="text" readonly>
+      <button id="copyOverlay" class="btn">复制</button>
+      <a id="openOverlay" class="btn ghost" target="_blank">预览</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>全局设置</h2>
+      <div class="form-grid">
+        <label class="switch-row">
+          <input type="checkbox" id="globalEnabled">
+          <span>启用进场动画</span>
+        </label>
+        <div class="field">
+          <label>显示位置</label>
+          <select id="globalPosition">
+            <option value="center">居中</option>
+            <option value="top">顶部</option>
+            <option value="bottom">底部</option>
+            <option value="left">左侧</option>
+            <option value="right">右侧</option>
+            <option value="fullscreen">全屏</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>最大尺寸(px)</label>
+          <input type="number" id="globalSize" min="80" step="10">
+        </div>
+        <div class="field">
+          <label>默认冷却(秒)</label>
+          <input type="number" id="globalCooldown" min="0" step="10">
+        </div>
+      </div>
+      <button id="saveGlobal" class="btn primary">保存全局设置</button>
+    </section>
+
+    <section class="card">
+      <h2>动画素材</h2>
+      <form id="uploadForm" class="upload-form">
+        <div class="field">
+          <label>素材名称</label>
+          <input type="text" id="animName" placeholder="例如：老板进场">
+        </div>
+        <div class="field">
+          <label>文件 (mp4/webm/png/jpg/webp/gif)</label>
+          <input type="file" id="animFile" accept=".mp4,.webm,.mov,.png,.jpg,.jpeg,.webp,.gif" required>
+        </div>
+        <div class="field">
+          <label>图片/GIF时长(秒)</label>
+          <input type="number" id="animDuration" min="1" step="0.5" value="5">
+        </div>
+        <div class="field">
+          <label>视频音量(0-100)</label>
+          <input type="number" id="animVolume" min="0" max="100" step="5" value="80">
+        </div>
+        <button type="submit" class="btn primary">上传素材</button>
+      </form>
+      <div id="animList" class="anim-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>用户配置</h2>
+      <p class="hint">身份码连接时请填写开放平台 <code>open_id</code>（非数字 UID），可从 blivechat 日志 <code>user entrance detected (OpenLive): open_id=...</code> 获取。</p>
+      <form id="userForm" class="user-form">
+        <div class="field">
+          <label>用户标识</label>
+          <input type="text" id="userUid" placeholder="用户 UID 或 open_id（身份码模式）" required>
+        </div>
+        <div class="field">
+          <label>备注名</label>
+          <input type="text" id="userName" placeholder="备注（可选）">
+        </div>
+        <div class="field">
+          <label>绑定动画</label>
+          <select id="userAnimation"></select>
+        </div>
+        <div class="field">
+          <label>冷却(秒，0=用全局)</label>
+          <input type="number" id="userCooldown" min="0" step="10" value="0">
+        </div>
+        <label class="switch-row">
+          <input type="checkbox" id="userEnabled" checked>
+          <span>启用</span>
+        </label>
+        <button type="submit" class="btn primary">保存用户</button>
+        <button type="button" id="userReset" class="btn ghost">清空</button>
+      </form>
+      <table class="user-table">
+        <thead>
+          <tr><th>用户标识</th><th>备注名</th><th>绑定动画</th><th>冷却</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="/assets/admin.js"></script>
+</body>
+</html>

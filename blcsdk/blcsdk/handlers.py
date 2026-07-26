@@ -55,6 +55,7 @@ class BaseHandler(HandlerInterface):
         models.Command.ADD_SUPER_CHAT: _make_msg_callback('_on_add_super_chat', models.AddSuperChatMsg),
         models.Command.DEL_SUPER_CHAT: _make_msg_callback('_on_del_super_chat', models.DelSuperChatMsg),
         models.Command.UPDATE_TRANSLATION: _make_msg_callback('_on_update_translation', models.UpdateTranslationMsg),
+        models.Command.ADD_INTERACT: _make_msg_callback('_on_add_interact', models.AddInteractMsg),
     }
     """cmd -> 处理回调"""
 
@@ -97,3 +98,6 @@ class BaseHandler(HandlerInterface):
         self, client: cli.BlcPluginClient, message: models.UpdateTranslationMsg, extra: models.ExtraData
     ):
         """更新翻译"""
+
+    def _on_add_interact(self, client: cli.BlcPluginClient, message: models.AddInteractMsg, extra: models.ExtraData):
+        """用户进入直播间等互动消息"""

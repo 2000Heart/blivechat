@@ -59,7 +59,7 @@ for extra in ('LICENSE', 'README.md'):
     if os.path.isfile(p):
         DATAS.append((p, '.'))
 
-PYTHONPATH = [ROOT, os.path.join(ROOT, 'blivedm')]
+PYTHONPATH = [ROOT, os.path.join(ROOT, 'blivedm'), os.path.join(ROOT, 'blcsdk')]
 
 try:
     from PyInstaller.utils.hooks import collect_submodules
@@ -88,6 +88,12 @@ _extra_hidden = [
     'pure_protobuf.message',
     'pure_protobuf.annotations',
     'brotli',
+    'blcsdk',
+    'blcsdk.api',
+    'blcsdk.client',
+    'blcsdk.exc',
+    'blcsdk.handlers',
+    'blcsdk.models',
 ]
 
 hiddenimports = list(dict.fromkeys(_hidden + _extra_hidden))

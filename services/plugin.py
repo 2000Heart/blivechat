@@ -93,8 +93,24 @@ def get_plugin_by_token(token):
 
 def broadcast_cmd_data(cmd, data, extra: Optional[dict] = None):
     body = api.plugin.make_message_body(cmd, data, extra)
+    sent_count = 0
+    enabled_not_connected: List[str] = []
     for plugin in _plugins.values():
+        had_client = plugin._client is not None
         plugin.send_body_no_raise(body)
+        if had_client:
+            sent_count += 1
+        elif plugin.enabled and cmd == sdk_models.Command.ADD_INTERACT:
+            enabled_not_connected.append(plugin.id)
+
+    if cmd == sdk_models.Command.ADD_INTERACT:
+        extra_info = ''
+        if enabled_not_connected:
+            extra_info = f', enabled but disconnected: {enabled_not_connected}'
+        logger.info(
+            'ADD_INTERACT sent to %d plugin client(s), uid=%s username=%s%s',
+            sent_count, data.get('uid', ''), data.get('username', ''), extra_info,
+        )
 
 
 @dataclasses.dataclass
