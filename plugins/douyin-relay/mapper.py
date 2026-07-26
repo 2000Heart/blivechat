@@ -126,6 +126,19 @@ def _gift_count(raw: Any) -> int:
     return max(1, n)
 
 
+def _gift_repeat_ended(gift: Optional[Dict[str, Any]]) -> bool:
+    """抖音连击：过程帧无/0 repeatEnd，结束帧为非 0。只保留结束帧避免数量被前端累加翻倍。"""
+    if not isinstance(gift, dict):
+        return False
+    raw = gift.get('repeatEnd', gift.get('repeat_end'))
+    if raw is None:
+        return False
+    try:
+        return int(raw) != 0
+    except (TypeError, ValueError):
+        return bool(raw)
+
+
 def _gift_id_numeric(raw: Any) -> int:
     """抖礼物 id 可能很长，压缩为 31 位整数供前端使用。"""
     if raw is None:
@@ -179,18 +192,44 @@ def _as_optional_non_negative_int(raw: Any) -> Optional[int]:
     return v
 
 
+def _pick_membership_fields(
+    msg: Dict[str, Any],
+    user: Optional[Dict[str, Any]],
+) -> tuple[Optional[str], Optional[str]]:
+    """优先从 CastUser，再回落到消息根字段。"""
+    sources: List[Dict[str, Any]] = []
+    if isinstance(user, dict):
+        sources.append(user)
+    sources.append(msg)
+    mtype: Optional[str] = None
+    mname: Optional[str] = None
+    for src in sources:
+        if mtype is None:
+            mtype = _as_optional_non_empty_str(src.get('membership_type', src.get('membershipType')))
+        if mname is None:
+            mname = _as_optional_non_empty_str(src.get('membership_name', src.get('membershipName')))
+    return mtype, mname
+
+
+def _is_star_guard(membership_type: Optional[str], membership_name: Optional[str]) -> bool:
+    t = (membership_type or '').strip().lower()
+    n = (membership_name or '').strip()
+    if t == 'star_guard':
+        return True
+    if '星守护' in n:
+        return True
+    return False
+
+
 def _base_douyin_platform_meta(msg: Dict[str, Any], user: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     medal_level, medal_name = _medal_from_user(user if isinstance(user, dict) else None)
+    membership_type, membership_name = _pick_membership_fields(msg, user)
     return {
         'platform': 'douyin',
         'room_id': str(msg.get('roomId') or '').strip(),
         'room_num': str(msg.get('roomNum') or '').strip(),
-        'membership_type': _as_optional_non_empty_str(
-            msg.get('membership_type', msg.get('membershipType'))
-        ),
-        'membership_name': _as_optional_non_empty_str(
-            msg.get('membership_name', msg.get('membershipName'))
-        ),
+        'membership_type': membership_type,
+        'membership_name': membership_name,
         'fans_badge_level': _as_optional_non_negative_int(medal_level),
         'fans_badge_name': _as_optional_non_empty_str(medal_name),
     }
@@ -383,10 +422,8 @@ def _unified_event_to_inject_item(
     # blcsdk当前无平台扩展字段，这里通过稳定前缀传递来源平台，前端据此分流样式。
     raw_uid = str(actor.get('id') or '')
     uid = f'douyin:{raw_uid}' if raw_uid else 'douyin:'
-    # 复用 guard_level 作为抖音会员强度提示：0=无，1=会员，2=星守护
-    guard_level = 0
-    if membership_name or membership_type:
-        guard_level = 2 if ('star' in membership_type or 'guard' in membership_type or 'xing' in membership_type) else 1
+    # 仅星守护映射为舰长同级 privilege（GuardLevel.LV1=3）；其它抖音身份不插队。
+    guard_level = 3 if _is_star_guard(membership_type, membership_name) else 0
     identity_ext = {
         'platform': 'douyin',
         'platform_meta': {
@@ -523,6 +560,11 @@ def map_dy_payload(
         }
 
     if method == GIFT and include_gift:
+        gift = msg.get('gift') if isinstance(msg.get('gift'), dict) else None
+        # 连击过程帧与结束帧都会带相同累计数量；前端 mergeGift 对 num 做累加。
+        # 只转发 repeatEnd 结束帧，保证「送 1 个」只注入一次最终数量。
+        if not _gift_repeat_ended(gift):
+            return None
         event = _to_unified_gift_event(msg)
         return _unified_event_to_inject_item(
             event,
