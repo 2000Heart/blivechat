@@ -243,6 +243,13 @@ async def _on_protocol_payload(kind: str, payload: Any) -> None:
         if mapped is None:
             continue
         mapped_count += 1
+        if int(mapped.get('guard_level') or 0) == 3:
+            logger.info(
+                'star_guard mapped kind=%s uid=%s name=%s',
+                str(mapped.get('kind', '')),
+                str(mapped.get('uid', '')),
+                str(mapped.get('author_name', '')),
+            )
         if str(mapped.get('kind') or '') == 'gift':
             gift_mapped_count += 1
             logger.info(
