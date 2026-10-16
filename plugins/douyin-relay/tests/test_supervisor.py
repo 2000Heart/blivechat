@@ -76,6 +76,40 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(sup.phase, 'need_login')
         self.assertEqual(sup.on_login(phase='done', cookie='y' * 200), [{'cmd': 'probe_live', 'roomNum': '1'}])
 
+    def test_disconnect_ignores_inflight_probe_connect_and_auth(self):
+        sup = LiveSupervisor(auto_refresh=False, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=True)
+        self.assertEqual(sup.user_disconnect(), [{'cmd': 'disconnect'}])
+        self.assertEqual(sup.on_probe(ok=True, living=True, error=''), [])
+        self.assertNotEqual(sup.phase, 'connecting')
+        self.assertEqual(sup.on_probe(ok=False, living=False, error='auth'), [])
+
+        silent = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        silent.start(room_id='1', has_cookie=True)
+        silent.on_login(phase='done', cookie='x' * 200)
+        silent.user_disconnect()
+        self.assertEqual(silent.on_probe(ok=False, living=False, error='auth'), [])
+        self.assertEqual(silent.on_cast_status(state='auth_failed'), [])
+        self.assertEqual(silent.on_cast_status(state='closed'), [])
+
+    def test_tick_emits_due_connect_without_scheduling_next(self):
+        now = [0.0]
+        sup = LiveSupervisor(interval_seconds=180, auto_refresh=False, now=lambda: now[0])
+        sup.start(room_id='1', has_cookie=True)
+        sup.on_probe(ok=True, living=True, error='')
+        sup.on_cast_status(state='connected')
+        self.assertEqual(sup.on_cast_status(state='closed'), [])
+        now[0] = 2
+        self.assertEqual(sup.tick(), [{'cmd': 'connect', 'roomNum': '1'}])
+        self.assertEqual(sup.tick(), [])
+        now[0] = 7
+        self.assertEqual(sup.tick(), [])
+        self.assertEqual(sup.on_cast_status(state='closed'), [])
+        now[0] = 11
+        self.assertEqual(sup.tick(), [])
+        now[0] = 12
+        self.assertEqual(sup.tick(), [{'cmd': 'connect', 'roomNum': '1'}])
+
     def test_user_disconnect_stops_probe_until_connect(self):
         now = [0.0]
         sup = LiveSupervisor(interval_seconds=180, auto_refresh=False, now=lambda: now[0])

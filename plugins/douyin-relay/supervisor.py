@@ -72,6 +72,8 @@ class LiveSupervisor:
 
     def on_probe(self, ok, living, error=''):
         del ok
+        if self._held and (error == 'auth' or living):
+            return []
         if error == 'auth':
             return self._begin_auth_recovery()
         if living:
@@ -93,22 +95,26 @@ class LiveSupervisor:
             self._arm_probe()
             return []
         if state == 'closed':
+            if self._held:
+                return []
             self._schedule_connect('reconnecting')
+            self._advance_backoff()
             return []
         if state == 'auth_failed':
+            if self._held:
+                return []
             return self._begin_auth_recovery()
         return []
 
     def tick(self):
         if self._held or self._due_at is None or self._now() < self._due_at:
             return []
-        if self._due_kind == 'probe_live':
-            self._arm_probe()
+        kind = self._due_kind
+        self._clear_due()
+        if kind == 'probe_live':
             return [self._probe_cmd()]
-        if self._due_kind == 'connect':
-            if self._backoff_index < len(_BACKOFF_SECONDS) - 1:
-                self._backoff_index += 1
-            self._schedule_connect('connecting')
+        if kind == 'connect':
+            self._phase = 'connecting'
             return [self._connect_cmd()]
         return []
 
@@ -160,6 +166,10 @@ class LiveSupervisor:
         index = min(self._backoff_index, len(_BACKOFF_SECONDS) - 1)
         self._due_at = self._now() + _BACKOFF_SECONDS[index]
         self._due_kind = 'connect'
+
+    def _advance_backoff(self):
+        if self._backoff_index < len(_BACKOFF_SECONDS) - 1:
+            self._backoff_index += 1
 
     def _begin_auth_recovery(self):
         self._clear_due()
