@@ -88,6 +88,66 @@ def _dycast_preview_url(cfg: config.AppConfig) -> str:
     return f'http://{host}:{cfg.sidecar_port}/'
 
 
+def _login_hint_text(status: Dict[str, Any]) -> str:
+    phase = str(status.get('login_phase') or '')
+    mode = str(status.get('login_mode') or '')
+    try:
+        cookie_length = int(status.get('login_cookie_length') or 0)
+    except (TypeError, ValueError):
+        cookie_length = 0
+    message = str(status.get('login_message') or '')
+    if phase == 'running' and mode == 'silent':
+        return '静默续期中'
+    if phase == 'running' and mode == 'interactive':
+        return '请在弹出的浏览器中登录抖音'
+    if phase == 'done':
+        return f'已更新（{cookie_length} 字符）'
+    if phase == 'need_login':
+        return f'需要重新登录。{message}'
+    if phase == 'cancelled':
+        return '已取消'
+    if phase == 'error':
+        return f'登录失败。{message}'
+    return '未开始'
+
+
+def _login_cancel_enabled(status: Dict[str, Any]) -> bool:
+    return (
+        str(status.get('login_phase') or '') == 'running'
+        and str(status.get('login_mode') or '') == 'interactive'
+    )
+
+
+def _login_updated_at(status: Dict[str, Any]) -> Any:
+    if 'updatedAt' in status:
+        return status.get('updatedAt')
+    sidecar_status = status.get('sidecar_status')
+    if isinstance(sidecar_status, dict) and 'updatedAt' in sidecar_status:
+        return sidecar_status.get('updatedAt')
+    return None
+
+
+def _maybe_finish_login(status: Dict[str, Any], handled_updated_at: Any) -> tuple:
+    """On done + new updatedAt: login_finish, then reload cookie into the input.
+
+    Returns (new_handled_updated_at, cookie_or_None). cookie is set only when
+    finish returned ok and not pending. Does not call the save-config handler.
+    """
+    if str(status.get('login_phase') or '') != 'done':
+        return handled_updated_at, None
+    updated_at = _login_updated_at(status)
+    if updated_at is None or updated_at == handled_updated_at:
+        return handled_updated_at, None
+    ret = _run_action('sidecar', {'op': 'login_finish'})
+    if ret.get('pending'):
+        return handled_updated_at, None
+    cookie = None
+    if ret.get('ok'):
+        config.reload()
+        cookie = str(config.get_config().douyin_cookie or '')
+    return updated_at, cookie
+
+
 def open_plugin_admin_ui() -> None:
     """
     在插件 asyncio 线程上打开 Tk（macOS 上子线程跑 Tk 常卡死或无窗口），
@@ -217,9 +277,28 @@ async def _open_plugin_admin_window_async() -> None:
             parent=root,
         )
 
+    def on_login_douyin():
+        ret = _run_action('sidecar', {'op': 'login_start', 'mode': 'interactive'})
+        if ret.get('ok') is False:
+            messagebox.showerror('执行失败', str(ret.get('error') or ret), parent=root)
+
+    def on_cancel_login():
+        ret = _run_action('sidecar', {'op': 'login_cancel'})
+        if ret.get('ok') is False:
+            messagebox.showerror('执行失败', str(ret.get('error') or ret), parent=root)
+
     ttk.Button(cookie_tool, text='打开抖音直播', command=on_open_douyin_live).pack(side=tk.LEFT)
+    ttk.Button(cookie_tool, text='登录抖音', command=on_login_douyin).pack(side=tk.LEFT, padx=(8, 0))
+    btn_cancel_login = ttk.Button(cookie_tool, text='取消登录', command=on_cancel_login)
+    btn_cancel_login.pack(side=tk.LEFT, padx=(8, 0))
+    btn_cancel_login.state(['disabled'])
     ttk.Button(cookie_tool, text='如何获取 Cookie…', command=on_show_cookie_help).pack(side=tk.LEFT, padx=(8, 0))
     ttk.Button(cookie_tool, text='复制小书签链接', command=on_copy_bookmarklet_only).pack(side=tk.LEFT, padx=(8, 0))
+
+    login_hint_var = tk.StringVar(value='未开始')
+    ttk.Label(frm, textvariable=login_hint_var, wraplength=480, justify=tk.LEFT).pack(
+        anchor=tk.W, padx=12, pady=(0, 4)
+    )
 
     cookie_var = tk.StringVar(value=str(cfg.douyin_cookie or ''))
     cookie_entry = ttk.Entry(frm, textvariable=cookie_var)
@@ -238,11 +317,22 @@ async def _open_plugin_admin_window_async() -> None:
     ttk.Checkbutton(row_include, text='进入直播间', variable=include_member_var).pack(side=tk.LEFT)
     ttk.Checkbutton(row_include, text='关注主播', variable=include_social_var).pack(side=tk.LEFT, padx=(16, 0))
 
+    _handled_login_updated_at = None
+
     def render_status() -> None:
+        nonlocal _handled_login_updated_at
         status = _collect_status()
         text = json.dumps(status, ensure_ascii=False, sort_keys=True)
         if text != status_var.get():
             status_var.set(text)
+        login_hint_var.set(_login_hint_text(status))
+        if _login_cancel_enabled(status):
+            btn_cancel_login.state(['!disabled'])
+        else:
+            btn_cancel_login.state(['disabled'])
+        _handled_login_updated_at, cookie = _maybe_finish_login(status, _handled_login_updated_at)
+        if cookie is not None:
+            cookie_var.set(cookie)
         root.after(1500, render_status)
 
     render_status()
@@ -499,6 +589,7 @@ def _run_qt_admin_ui() -> None:
         opDone = Signal(str)
         opFailed = Signal(str)
         saveDone = Signal(bool, str)
+        loginCookieReady = Signal(str)
 
     class HelpDialog(QDialog):
         def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -533,12 +624,14 @@ def _run_qt_admin_ui() -> None:
             self._last_status = ''
             self._refreshing = False
             self._refresh_lock = threading.Lock()
+            self._handled_login_updated_at = None
             self._init_ui()
             self._bridge.statusChanged.connect(self.request_status_refresh)
             self._bridge.statusTextReady.connect(self.on_status_text_ready)
             self._bridge.opDone.connect(self.on_op_done)
             self._bridge.opFailed.connect(self.on_op_failed)
             self._bridge.saveDone.connect(self.on_save_done)
+            self._bridge.loginCookieReady.connect(self.on_login_cookie_ready)
             self._timer = QTimer(self)
             self._timer.setInterval(2000)
             self._timer.timeout.connect(self.request_status_refresh)
@@ -600,14 +693,25 @@ def _run_qt_admin_ui() -> None:
             sidecar_layout = QVBoxLayout(sidecar_box)
             tool_row = QHBoxLayout()
             btn_live = QPushButton('打开抖音直播', sidecar_box)
+            btn_login = QPushButton('登录抖音', sidecar_box)
+            btn_cancel_login = QPushButton('取消登录', sidecar_box)
+            btn_cancel_login.setEnabled(False)
             btn_help = QPushButton('如何获取 Cookie...', sidecar_box)
             btn_bm = QPushButton('复制小书签链接', sidecar_box)
             tool_row.addWidget(btn_live)
+            tool_row.addWidget(btn_login)
+            tool_row.addWidget(btn_cancel_login)
             tool_row.addWidget(btn_help)
             tool_row.addWidget(btn_bm)
             tool_row.addStretch(1)
             sidecar_layout.addLayout(tool_row)
+            self.btn_cancel_login = btn_cancel_login
+            self.login_hint = QLabel('未开始', sidecar_box)
+            self.login_hint.setWordWrap(True)
+            sidecar_layout.addWidget(self.login_hint)
             btn_live.clicked.connect(self.on_open_douyin_live)
+            btn_login.clicked.connect(self.on_login_douyin)
+            btn_cancel_login.clicked.connect(self.on_cancel_login)
             btn_help.clicked.connect(self.on_show_cookie_help)
             btn_bm.clicked.connect(self.on_copy_bookmarklet_only)
 
@@ -676,10 +780,39 @@ def _run_qt_admin_ui() -> None:
 
         @Slot(str)
         def on_status_text_ready(self, text: str) -> None:
-            if text == self._last_status:
+            if text != self._last_status:
+                self._last_status = text
+                self.status_text.setPlainText(text)
+            try:
+                status = json.loads(text) if text else {}
+            except Exception:
+                status = {}
+            if not isinstance(status, dict):
+                status = {}
+            self.login_hint.setText(_login_hint_text(status))
+            self.btn_cancel_login.setEnabled(_login_cancel_enabled(status))
+            self._maybe_handle_login_done(status)
+
+        def _maybe_handle_login_done(self, status: Dict[str, Any]) -> None:
+            if str(status.get('login_phase') or '') != 'done':
                 return
-            self._last_status = text
-            self.status_text.setPlainText(text)
+            updated_at = _login_updated_at(status)
+            if updated_at is None or updated_at == self._handled_login_updated_at:
+                return
+            self._handled_login_updated_at = updated_at
+
+            def _worker() -> None:
+                new_handled, cookie = _maybe_finish_login(status, None)
+                if cookie is not None:
+                    self._bridge.loginCookieReady.emit(cookie)
+                elif new_handled is None and self._handled_login_updated_at == updated_at:
+                    self._handled_login_updated_at = None
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        @Slot(str)
+        def on_login_cookie_ready(self, cookie: str) -> None:
+            self.cookie_input.setPlainText(cookie)
 
         @Slot(str)
         def on_op_done(self, msg: str) -> None:
@@ -716,6 +849,28 @@ def _run_qt_admin_ui() -> None:
         def on_copy_bookmarklet_only(self) -> None:
             QApplication.clipboard().setText(douyin_cookie_help.bookmarklet_href())
             self.statusBar().showMessage('小书签链接已复制到剪贴板', 3000)
+
+        def on_login_douyin(self) -> None:
+            def _worker() -> None:
+                ret = _run_action('sidecar', {'op': 'login_start', 'mode': 'interactive'})
+                if ret.get('ok') is False:
+                    self._bridge.opFailed.emit(str(ret.get('error') or ret))
+                else:
+                    notify_status_changed()
+                    self._bridge.opDone.emit('已开始登录抖音')
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        def on_cancel_login(self) -> None:
+            def _worker() -> None:
+                ret = _run_action('sidecar', {'op': 'login_cancel'})
+                if ret.get('ok') is False:
+                    self._bridge.opFailed.emit(str(ret.get('error') or ret))
+                else:
+                    notify_status_changed()
+                    self._bridge.opDone.emit('已取消登录')
+
+            threading.Thread(target=_worker, daemon=True).start()
 
         def on_open_config(self) -> None:
             p = _config_file_path()
