@@ -190,6 +190,40 @@ class CookieRefreshStartupTests(unittest.TestCase):
             [("connect", "9527", self.relay_ws, "old_cookie=1")],
         )
 
+    def test_login_start_error_falls_back_to_disk_cookie(self):
+        class _FailStartClient(_FakeBridgeClient):
+            def login_start(self, mode):
+                self.calls.append(("start", mode))
+                raise RuntimeError("HTTP 500 /__api/dycast/login/start")
+
+        client = _FailStartClient({"phase": "idle"})
+        cfg = _cfg(douyin_cookie="old_cookie=1")
+
+        with mock.patch.object(self.mod.config, "write_douyin_cookie_atomic", return_value=True) as write_mock:
+            asyncio.run(self.mod.refresh_cookie_then_connect(client, cfg, self.relay_ws))
+
+        write_mock.assert_not_called()
+        ops = [c[0] if isinstance(c, tuple) else c for c in client.calls]
+        self.assertIn("connect", ops)
+        connect = next(c for c in client.calls if isinstance(c, tuple) and c[0] == "connect")
+        self.assertEqual(connect[1], "9527")
+        self.assertEqual(connect[3], "old_cookie=1")
+
+    def test_done_short_cookie_skips_write_uses_disk_cookie(self):
+        client = _FakeBridgeClient(
+            {"phase": "done", "cookieLength": 10, "mode": "silent", "message": ""},
+            cookie="short",
+        )
+        cfg = _cfg(douyin_cookie="old_cookie=1")
+
+        with mock.patch.object(self.mod.config, "write_douyin_cookie_atomic", return_value=True) as write_mock:
+            asyncio.run(self.mod.refresh_cookie_then_connect(client, cfg, self.relay_ws))
+
+        write_mock.assert_not_called()
+        self.assertIn("consume", client.calls)
+        connect = next(c for c in client.calls if isinstance(c, tuple) and c[0] == "connect")
+        self.assertEqual(connect[3], "old_cookie=1")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -280,37 +280,45 @@ def redact_secrets(value):
 
 async def refresh_cookie_then_connect(client, cfg, relay_ws_url: str) -> None:
     cookie_headers = str(getattr(cfg, 'douyin_cookie', '') or '')
+    phase = ''
     if bool(getattr(cfg, 'cookie_auto_refresh', False)):
-        client.login_start('silent')
-        timeout = int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0)
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + max(0, timeout)
-        phase = ''
-        cookie_length = 0
-        while True:
-            status = client.login_status() or {}
-            if isinstance(status, dict):
-                phase = str(status.get('phase') or '')
-                try:
-                    cookie_length = int(status.get('cookieLength') or 0)
-                except (TypeError, ValueError):
-                    cookie_length = 0
-            logger.info('douyin cookie refresh phase=%s cookieLength=%s', phase, cookie_length)
-            if phase in ('done', 'need_login', 'error', 'cancelled'):
-                break
-            if loop.time() >= deadline:
-                break
-            await asyncio.sleep(1)
-        if phase == 'done':
-            consumed = client.login_consume() or {}
-            new_cookie = str(consumed.get('cookie') or '') if isinstance(consumed, dict) else ''
-            config.write_douyin_cookie_atomic(new_cookie)
-            cookie_headers = new_cookie
+        try:
+            client.login_start('silent')
+            timeout = int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0)
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + max(0, timeout)
+            cookie_length = 0
+            while True:
+                status = client.login_status() or {}
+                if isinstance(status, dict):
+                    phase = str(status.get('phase') or '')
+                    try:
+                        cookie_length = int(status.get('cookieLength') or 0)
+                    except (TypeError, ValueError):
+                        cookie_length = 0
+                logger.info('douyin cookie refresh phase=%s cookieLength=%s', phase, cookie_length)
+                if phase in ('done', 'need_login', 'error', 'cancelled'):
+                    break
+                if loop.time() >= deadline:
+                    break
+                await asyncio.sleep(1)
+            if phase == 'done':
+                consumed = client.login_consume() or {}
+                new_cookie = str(consumed.get('cookie') or '') if isinstance(consumed, dict) else ''
+                if len(new_cookie) >= 200:
+                    config.write_douyin_cookie_atomic(new_cookie)
+                    cookie_headers = new_cookie
+        except Exception as e:
+            logger.error('douyin cookie refresh failed phase=%s error=%s', phase, e)
+            cookie_headers = str(getattr(cfg, 'douyin_cookie', '') or '')
     room_id = (getattr(cfg, 'douyin_room_id', '') or '').strip()
     if not room_id:
         return
     if bool(getattr(cfg, 'cookie_auto_refresh', False)):
-        client.disconnect()
+        try:
+            client.disconnect()
+        except Exception as e:
+            logger.error('douyin cookie refresh disconnect failed phase=%s error=%s', phase, e)
     client.connect(room_num=room_id, relay_ws_url=relay_ws_url, raw_headers=cookie_headers)
 
 
@@ -370,10 +378,10 @@ def get_runtime_status() -> Dict[str, Any]:
 
 def _apply_sidecar_runtime_config() -> Dict[str, Any]:
     if _sidecar is None:
-        return {'ok': False, 'error': 'sidecar manager is not running'}
+        return redact_secrets({'ok': False, 'error': 'sidecar manager is not running'})
     cfg = config.get_config()
     if cfg.relay_backend != 'sidecar':
-        return {'ok': True, 'applied': False, 'reason': 'relay_backend is not sidecar'}
+        return redact_secrets({'ok': True, 'applied': False, 'reason': 'relay_backend is not sidecar'})
 
     room = (cfg.douyin_room_id or '').strip()
     raw_headers = str(cfg.douyin_cookie or '')
@@ -384,22 +392,22 @@ def _apply_sidecar_runtime_config() -> Dict[str, Any]:
     disconnect_ret = client.disconnect()
     if room == '':
         _notify_admin_status_changed()
-        return {
+        return redact_secrets({
             'ok': True,
             'applied': True,
             'disconnected': bool(disconnect_ret.get('ok', False)),
             'connected': False,
             'reason': 'empty room_id',
-        }
+        })
     connect_ret = client.connect(room_num=room, relay_ws_url=relay_ws, raw_headers=raw_headers)
     _notify_admin_status_changed()
-    return {
+    return redact_secrets({
         'ok': bool(connect_ret.get('ok', False)),
         'applied': True,
         'disconnected': bool(disconnect_ret.get('ok', False)),
         'connected': bool(connect_ret.get('ok', False)),
         'connect_ret': connect_ret,
-    }
+    })
 
 
 def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -434,7 +442,7 @@ def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         _notify_admin_status_changed()
         return {'ok': True, 'scheduled': True}
     if op == 'apply_config':
-        return _apply_sidecar_runtime_config()
+        return redact_secrets(_apply_sidecar_runtime_config())
     if op == 'login_start':
         mode = str(payload.get('mode') or '').strip().lower()
         if mode != 'interactive':
@@ -452,7 +460,7 @@ def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         if len(cookie) < 200:
             return {'ok': False, 'error': 'cookie_too_short'}
         config.write_douyin_cookie_atomic(cookie)
-        return _apply_sidecar_runtime_config()
+        return redact_secrets(_apply_sidecar_runtime_config())
     return {'ok': False, 'error': f'unsupported op: {op}'}
 
 

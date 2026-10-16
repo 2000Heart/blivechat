@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import pathlib
 import sys
 import types
@@ -129,6 +130,52 @@ class RuntimeConfigApplyTests(unittest.TestCase):
                 ("connect", "9527", "ws://127.0.0.1:18765/", "cookie=v2"),
             ],
         )
+
+    def test_redact_secrets_strips_raw_headers_and_cookie_keys(self):
+        mod = _load_main_module()
+        out = mod.redact_secrets(
+            {
+                "ok": True,
+                "rawHeaders": "secret=1",
+                "connect_ret": {"ok": True, "cookie": "abc", "phase": "done"},
+                "nested": {"douyin_cookie": "old", "room": "9527"},
+            }
+        )
+        self.assertEqual(
+            out,
+            {
+                "ok": True,
+                "connect_ret": {"ok": True, "phase": "done"},
+                "nested": {"room": "9527"},
+            },
+        )
+
+    def test_apply_config_redacts_connect_ret_secrets(self):
+        mod = _load_main_module()
+
+        class _SecretClient(_FakeBridgeClient):
+            def connect(self, room_num, relay_ws_url, raw_headers=""):
+                self.calls.append(("connect", room_num, relay_ws_url, raw_headers))
+                return {"ok": True, "rawHeaders": "secret=1", "cookie": "abc"}
+
+        client = _SecretClient()
+        mod._sidecar = _FakeSidecar(client)
+        mod.config.get_config = lambda: types.SimpleNamespace(
+            relay_backend="sidecar",
+            douyin_room_id="9527",
+            douyin_cookie="cookie=v2",
+        )
+        mod.config.get_dycast_relay_ws_url = lambda: "ws://127.0.0.1:18765/"
+
+        ret = mod.handle_admin_action("sidecar", {"op": "apply_config"})
+
+        self.assertTrue(ret.get("ok"))
+        dumped = json.dumps(ret)
+        self.assertNotIn("rawHeaders", dumped)
+        self.assertNotIn("secret=1", dumped)
+        connect_ret = ret.get("connect_ret") or {}
+        self.assertNotIn("cookie", connect_ret)
+        self.assertNotIn("rawHeaders", connect_ret)
 
 
 if __name__ == "__main__":
