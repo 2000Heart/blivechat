@@ -62,6 +62,7 @@ export function classifyDirectRequest(input: {
 }): 'ok' | 'auth' | 'probe_fail' {
   if (input.kind === 'user') return 'ok'
   if (input.kind === 'im_fetch') {
+    if (input.finalUrl.includes('/passport/') || input.finalUrl.includes('/login')) return 'auth'
     if (!input.sentCookie || (input.httpStatus !== 401 && input.httpStatus !== 403)) return 'ok'
     return classifyUpstream({
       httpStatus: input.httpStatus,
@@ -151,25 +152,31 @@ export async function probeLivePage(
   const url = `https://live.douyin.com/${roomNum}`
   const jar = parseCookieHeader(cookieHeader)
 
-  const doFetch = async (): Promise<Response> => {
+  const doFetch = async (): Promise<{ response: Response; sentCookie: boolean }> => {
     const headers = new Headers()
     const cookie = jarToCookieHeader(jar)
-    if (cookie) {
+    const sentCookie = cookie.length > 0
+    if (sentCookie) {
       headers.set('cookie', cookie)
     }
-    return fetchImpl(url, { headers })
+    return { response: await fetchImpl(url, { headers }), sentCookie }
   }
 
-  let response = await doFetch()
-  let html = await response.text()
-  let finalUrl = response.url || url
+  const classify = (response: Response, html: string, sentCookie: boolean) =>
+    classifyDirectRequest({
+      kind: 'live_page',
+      httpStatus: response.status,
+      finalUrl: response.url || url,
+      html,
+      sentCookie,
+    })
 
-  let classification = classifyUpstream({
-    httpStatus: response.status,
-    finalUrl,
-    html,
-  })
-  if (classification === 'auth') {
+  let fetched = await doFetch()
+  let response = fetched.response
+  let sentCookie = fetched.sentCookie
+  let html = await response.text()
+
+  if (classify(response, html, sentCookie) === 'auth') {
     return { ok: false, living: false, roomStatus: 'unknown', error: 'auth' }
   }
 
@@ -184,16 +191,12 @@ export async function probeLivePage(
   }
 
   mergeSetCookies(jar, response.headers.getSetCookie())
-  response = await doFetch()
+  fetched = await doFetch()
+  response = fetched.response
+  sentCookie = fetched.sentCookie
   html = await response.text()
-  finalUrl = response.url || url
 
-  classification = classifyUpstream({
-    httpStatus: response.status,
-    finalUrl,
-    html,
-  })
-  if (classification === 'auth') {
+  if (classify(response, html, sentCookie) === 'auth') {
     return { ok: false, living: false, roomStatus: 'unknown', error: 'auth' }
   }
 

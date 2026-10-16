@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict'
+import { spawn } from 'node:child_process'
+import fs from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { HeadlessRouter } from './headless-router.ts'
 
 test('login_start while running is busy and does not launch again', () => {
@@ -110,4 +114,36 @@ test('error plus close becomes one status', async () => {
   await new Promise((r) => setTimeout(r, 0))
   const statuses = lines.map((line) => JSON.parse(line)).filter((row) => row.type === 'status')
   assert.equal(statuses.length, 1)
+})
+
+test('CLog.debug stays off stdout when headless redirects console first', async () => {
+  const sidecarDir = path.dirname(fileURLToPath(import.meta.url))
+  const dycastDir = path.resolve(sidecarDir, '../..')
+  const headlessSrc = fs.readFileSync(path.join(sidecarDir, 'headless.ts'), 'utf8')
+  const redirectAt = headlessSrc.indexOf('redirectHeadlessConsole()')
+  const mainImportAt = headlessSrc.search(/import\(\s*['"]\.\/headless-main\.ts['"]\s*\)/)
+  assert.ok(redirectAt >= 0)
+  assert.ok(mainImportAt > redirectAt)
+  assert.doesNotMatch(headlessSrc, /from\s+['"][^'"]*(?:request|logUtil|dycast)[^'"]*['"]/)
+
+  const child = spawn(process.execPath, [
+    path.join(dycastDir, 'node_modules/tsx/dist/cli.mjs'),
+    '--tsconfig', 'tsconfig.sidecar.json',
+    path.join(sidecarDir, 'headless-stdout-probe.ts'),
+  ], { cwd: dycastDir })
+  let stdout = ''
+  let stderr = ''
+  child.stdout.setEncoding('utf8')
+  child.stderr.setEncoding('utf8')
+  child.stdout.on('data', (chunk) => { stdout += chunk })
+  child.stderr.on('data', (chunk) => { stderr += chunk })
+  const code = await new Promise<number>((resolve, reject) => {
+    child.on('error', reject)
+    child.on('exit', (status) => resolve(status ?? 1))
+  })
+  assert.equal(code, 0, stderr)
+  assert.equal(stdout, 'STDOUT_OK\n')
+  assert.equal(stdout.includes('CLOG_DEBUG_MARKER'), false)
+  assert.equal(stderr.includes('CLOG_DEBUG_MARKER'), true)
+  assert.equal(stderr.includes('console.error replaced'), false)
 })

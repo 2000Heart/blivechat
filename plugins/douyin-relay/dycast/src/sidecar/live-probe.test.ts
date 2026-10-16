@@ -58,6 +58,29 @@ test('second request sends set-cookie from the first response', async () => {
   assert.match(seen[0], /sessionid=s/)
 })
 
+test('probe 401 or 403 without a sent cookie is not auth', async () => {
+  const seen: Array<string | null> = []
+  const fetchImpl = async (_input: unknown, init?: { headers?: Headers }) => {
+    seen.push(init?.headers?.get('cookie') ?? null)
+    return new Response('<html></html>', { status: seen.length === 1 ? 401 : 403 })
+  }
+  const result = await probeLivePage('1', '', fetchImpl as typeof fetch)
+  assert.equal(seen.every((cookie) => cookie == null), true)
+  assert.equal(result.ok, false)
+  assert.equal(result.living, false)
+  assert.equal(result.roomStatus, 'unknown')
+  assert.equal(result.error, 'probe_fail')
+})
+
+test('probe 401 with the cookie it sent is auth', async () => {
+  const fetchImpl = async (_input: unknown, init?: { headers?: Headers }) => {
+    assert.match(init?.headers?.get('cookie') || '', /sessionid=s/)
+    return new Response('', { status: 401 })
+  }
+  const result = await probeLivePage('8', 'sessionid=s', fetchImpl as typeof fetch)
+  assert.equal(result.error, 'auth')
+})
+
 test('probe does not request im fetch', async () => {
   const urls: string[] = []
   const fetchImpl = async (input: unknown) => {
@@ -101,6 +124,15 @@ test('live page login uses the same three signals, and only with a cookie for 40
   }), 'auth')
   assert.equal(classifyDirectRequest({
     kind: 'im_fetch', httpStatus: 401, finalUrl: 'https://live.douyin.com/webcast/im/fetch/', html: '登录', sentCookie: false,
+  }), 'ok')
+  assert.equal(classifyDirectRequest({
+    kind: 'im_fetch', httpStatus: 200, finalUrl: 'https://www.douyin.com/passport/web/login', html: '', sentCookie: true,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'im_fetch', httpStatus: 200, finalUrl: 'https://live.douyin.com/login', html: '', sentCookie: false,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'im_fetch', httpStatus: 200, finalUrl: 'https://live.douyin.com/webcast/im/fetch/', html: '', sentCookie: true,
   }), 'ok')
 
   assert.equal(classifyDirectRequest({
