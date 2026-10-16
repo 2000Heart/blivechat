@@ -28,25 +28,45 @@ export function setUpstreamOrigin(origin: string | null): void {
   upstreamOrigin = next;
 }
 
+export function clearUpstreamJar(): void {
+  upstreamJar.clear();
+}
+
+function callerCookieNames(callerCookie: string): Set<string> {
+  const names = new Set<string>();
+  for (const part of callerCookie.split(';')) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf('=');
+    if (eq > 0) names.add(trimmed.slice(0, eq));
+  }
+  return names;
+}
+
 function currentCookieHeader(): string {
-  const setCookies = [...upstreamJar.entries()].map(([key, value]) => `${key}=${value}`);
-  return mergeCookieHeader(String((globalThis as { __dy_cookie?: string }).__dy_cookie || ''), setCookies);
+  const caller = String((globalThis as { __dy_cookie?: string }).__dy_cookie || '');
+  const owned = callerCookieNames(caller);
+  const extras = [...upstreamJar.entries()]
+    .filter(([key]) => !owned.has(key))
+    .map(([key, value]) => `${key}=${value}`);
+  return mergeCookieHeader(caller, extras);
 }
 
 export function upstreamCookieHeader(): string {
   return currentCookieHeader();
 }
 
+export function absorbUpstreamSetCookie(raw: string): void {
+  const pair = raw.split(';')[0]?.trim();
+  if (!pair) return;
+  const eq = pair.indexOf('=');
+  if (eq <= 0) return;
+  upstreamJar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+}
+
 function rememberSetCookies(res: Response): void {
   const headers = res.headers as Headers & { getSetCookie?: () => string[] };
   const list = typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
-  for (const raw of list) {
-    const pair = raw.split(';')[0]?.trim();
-    if (!pair) continue;
-    const eq = pair.indexOf('=');
-    if (eq <= 0) continue;
-    upstreamJar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
-  }
+  for (const raw of list) absorbUpstreamSetCookie(raw);
 }
 
 function resolveRequestUrl(input: string): string {

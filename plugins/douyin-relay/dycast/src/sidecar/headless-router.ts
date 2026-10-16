@@ -314,6 +314,7 @@ export class HeadlessRouter {
       import('../core/request.ts'),
     ])
     if (!this.owns(generation)) return
+    requestMod.clearUpstreamJar()
     requestMod.setUpstreamOrigin(LIVE_DOUYIN_ORIGIN)
     ;(globalThis as { __dy_cookie?: string }).__dy_cookie = this.pendingCookie
     ensureCastRuntime()
@@ -352,6 +353,9 @@ export class HeadlessRouter {
     const cast = this.activeCast
     this.activeCast = null
     if (cast) cast.close(1000, 'disconnect')
+    void import('../core/request.ts')
+      .then((requestMod) => requestMod.clearUpstreamJar())
+      .catch(() => undefined)
     this.emitResult(id, { ok: true, error: '' })
     this.writeLine({ type: 'status', state: 'disconnected', id })
   }
