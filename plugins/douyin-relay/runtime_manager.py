@@ -7,7 +7,7 @@ import os
 import shlex
 import subprocess
 import signal
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
 from dycast_bridge_client import DycastBridgeClient
@@ -31,6 +31,7 @@ class SidecarRuntimeConfig:
     node_exe: str
     node_cmd: str
     dycast_path: str
+    env_extra: Dict[str, str] = field(default_factory=dict)
 
 
 class DycastRuntimeManager:
@@ -62,11 +63,13 @@ class DycastRuntimeManager:
             port=self._cfg.port,
             node=_quote_exec_for_shell(self._cfg.node_exe),
         )
+        env = os.environ.copy()
+        env.update(self._cfg.env_extra)
         kw: Dict[str, Any] = {
             'cwd': self._cfg.dycast_path,
             'stdout': asyncio.subprocess.PIPE,
             'stderr': asyncio.subprocess.STDOUT,
-            'env': os.environ.copy(),
+            'env': env,
         }
         if os.name != 'nt':
             kw['start_new_session'] = True

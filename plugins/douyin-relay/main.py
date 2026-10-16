@@ -151,26 +151,16 @@ async def init():
                     node_exe=node_exe,
                     node_cmd=cfg.sidecar_node_cmd,
                     dycast_path=dycast_path,
+                    env_extra={
+                        'DYCAST_LOGIN_PROFILE_DIR': config.resolve_douyin_browser_profile_dir(cfg),
+                        'DYCAST_LOGIN_TIMEOUT_SECONDS': str(cfg.cookie_login_timeout_seconds),
+                        'DYCAST_SILENT_TIMEOUT_SECONDS': str(cfg.cookie_silent_timeout_seconds),
+                    },
                 )
             )
             await _sidecar.start()
             relay_ws = config.get_dycast_relay_ws_url()
-            room_id = (cfg.douyin_room_id or '').strip()
-            if room_id:
-                _sidecar.bridge_client().connect(
-                    room_num=room_id,
-                    relay_ws_url=relay_ws,
-                    raw_headers=cfg.douyin_cookie,
-                )
-                await blcsdk.log(
-                    f'抖音中继 sidecar 已启动并下发连接: room={room_id} relay={relay_ws}',
-                    logging.INFO,
-                )
-            else:
-                await blcsdk.log(
-                    '抖音中继 sidecar 已启动（未配置 douyin_room_id，等待管理页手动连接）',
-                    logging.WARNING,
-                )
+            await refresh_cookie_then_connect(_sidecar.bridge_client(), cfg, relay_ws)
             await blcsdk.log(
                 f'sidecar 运行地址: http://{cfg.sidecar_host}:{cfg.sidecar_port}',
                 logging.INFO,
@@ -276,6 +266,54 @@ async def _on_protocol_payload(kind: str, payload: Any) -> None:
         _notify_admin_status_changed()
 
 
+def redact_secrets(value):
+    if isinstance(value, dict):
+        return {
+            k: redact_secrets(v)
+            for k, v in value.items()
+            if k not in ('cookie', 'rawHeaders', 'douyin_cookie')
+        }
+    if isinstance(value, list):
+        return [redact_secrets(item) for item in value]
+    return value
+
+
+async def refresh_cookie_then_connect(client, cfg, relay_ws_url: str) -> None:
+    cookie_headers = str(getattr(cfg, 'douyin_cookie', '') or '')
+    if bool(getattr(cfg, 'cookie_auto_refresh', False)):
+        client.login_start('silent')
+        timeout = int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + max(0, timeout)
+        phase = ''
+        cookie_length = 0
+        while True:
+            status = client.login_status() or {}
+            if isinstance(status, dict):
+                phase = str(status.get('phase') or '')
+                try:
+                    cookie_length = int(status.get('cookieLength') or 0)
+                except (TypeError, ValueError):
+                    cookie_length = 0
+            logger.info('douyin cookie refresh phase=%s cookieLength=%s', phase, cookie_length)
+            if phase in ('done', 'need_login', 'error', 'cancelled'):
+                break
+            if loop.time() >= deadline:
+                break
+            await asyncio.sleep(1)
+        if phase == 'done':
+            consumed = client.login_consume() or {}
+            new_cookie = str(consumed.get('cookie') or '') if isinstance(consumed, dict) else ''
+            config.write_douyin_cookie_atomic(new_cookie)
+            cookie_headers = new_cookie
+    room_id = (getattr(cfg, 'douyin_room_id', '') or '').strip()
+    if not room_id:
+        return
+    if bool(getattr(cfg, 'cookie_auto_refresh', False)):
+        client.disconnect()
+    client.connect(room_num=room_id, relay_ws_url=relay_ws_url, raw_headers=cookie_headers)
+
+
 def get_runtime_status() -> Dict[str, Any]:
     cfg = config.get_config()
     injector_metrics: Dict[str, Any] = {}
@@ -289,9 +327,28 @@ def get_runtime_status() -> Dict[str, Any]:
             sidecar_state = _sidecar.bridge_client().status()
         except Exception as e:
             sidecar_state = {'ok': False, 'error': str(e)}
+        try:
+            login_state = _sidecar.bridge_client().login_status()
+            if isinstance(sidecar_state, dict) and isinstance(login_state, dict):
+                sidecar_state = {**sidecar_state, **login_state}
+        except Exception:
+            pass
+    sidecar_state = redact_secrets(sidecar_state)
     sidecar_engine = {}
+    login_phase = ''
+    login_mode = ''
+    login_cookie_length = 0
+    login_message = ''
     if isinstance(sidecar_state, dict):
         sidecar_engine = sidecar_state.get('engine', {}) if isinstance(sidecar_state.get('engine', {}), dict) else {}
+        login_phase = str(sidecar_state.get('phase') or '')
+        mode_val = sidecar_state.get('mode')
+        login_mode = '' if mode_val is None else str(mode_val)
+        try:
+            login_cookie_length = int(sidecar_state.get('cookieLength') or 0)
+        except (TypeError, ValueError):
+            login_cookie_length = 0
+        login_message = str(sidecar_state.get('message') or '')
     return {
         'current_mode': cfg.mode,
         'relay_backend': cfg.relay_backend,
@@ -304,6 +361,10 @@ def get_runtime_status() -> Dict[str, Any]:
         'sidecar_relay_connected': bool(sidecar_engine.get('relayConnected', False)),
         'sidecar_runtime': sidecar_snapshot,
         'sidecar_status': sidecar_state,
+        'login_phase': login_phase,
+        'login_mode': login_mode,
+        'login_cookie_length': login_cookie_length,
+        'login_message': login_message,
     }
 
 
@@ -373,6 +434,24 @@ def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         _notify_admin_status_changed()
         return {'ok': True, 'scheduled': True}
     if op == 'apply_config':
+        return _apply_sidecar_runtime_config()
+    if op == 'login_start':
+        mode = str(payload.get('mode') or '').strip().lower()
+        if mode != 'interactive':
+            return {'ok': False, 'error': 'interactive only'}
+        return _sidecar.bridge_client().login_start('interactive')
+    if op == 'login_cancel':
+        return _sidecar.bridge_client().login_cancel()
+    if op == 'login_finish':
+        st = _sidecar.bridge_client().login_status() or {}
+        phase = str(st.get('phase') or '') if isinstance(st, dict) else ''
+        if phase != 'done':
+            return {'ok': True, 'pending': True, 'phase': phase}
+        consumed = _sidecar.bridge_client().login_consume() or {}
+        cookie = str(consumed.get('cookie') or '') if isinstance(consumed, dict) else ''
+        if len(cookie) < 200:
+            return {'ok': False, 'error': 'cookie_too_short'}
+        config.write_douyin_cookie_atomic(cookie)
         return _apply_sidecar_runtime_config()
     return {'ok': False, 'error': f'unsupported op: {op}'}
 

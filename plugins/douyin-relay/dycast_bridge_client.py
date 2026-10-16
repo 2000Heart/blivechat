@@ -26,6 +26,18 @@ class DycastBridgeClient:
     def disconnect(self) -> Dict[str, Any]:
         return self._request_json('POST', '/__api/dycast/control/disconnect', {})
 
+    def login_start(self, mode: str) -> Dict[str, Any]:
+        return self._request_json('POST', '/__api/dycast/login/start', {'mode': mode})
+
+    def login_status(self) -> Dict[str, Any]:
+        return self._request_json('GET', '/__api/dycast/login/status')
+
+    def login_consume(self) -> Dict[str, Any]:
+        return self._request_json('POST', '/__api/dycast/login/consume', {})
+
+    def login_cancel(self) -> Dict[str, Any]:
+        return self._request_json('POST', '/__api/dycast/login/cancel', {})
+
     def _request_json(self, method: str, path: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         data = None
         headers = {'Accept': 'application/json'}
@@ -38,7 +50,6 @@ class DycastBridgeClient:
                 raw = resp.read().decode('utf-8', errors='replace')
                 return json.loads(raw) if raw else {}
         except urllib.error.HTTPError as e:
-            body = e.read().decode('utf-8', errors='replace')
-            raise RuntimeError(f'HTTP {e.code} {path}: {body}') from e
+            raise RuntimeError(f'HTTP {e.code} {path}') from e
         except Exception as e:
             raise RuntimeError(f'Request failed {method} {path}: {e}') from e
