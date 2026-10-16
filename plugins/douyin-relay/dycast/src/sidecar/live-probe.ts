@@ -37,3 +37,114 @@ export function classifyUpstream(input: {
 
   return 'probe_fail'
 }
+
+function parseCookieHeader(cookieHeader: string): Map<string, string> {
+  const jar = new Map<string, string>()
+  if (!cookieHeader.trim()) {
+    return jar
+  }
+  for (const part of cookieHeader.split(';')) {
+    const trimmed = part.trim()
+    if (!trimmed) {
+      continue
+    }
+    const eq = trimmed.indexOf('=')
+    if (eq === -1) {
+      continue
+    }
+    jar.set(trimmed.slice(0, eq), trimmed.slice(eq + 1))
+  }
+  return jar
+}
+
+function mergeSetCookies(jar: Map<string, string>, setCookies: string[]): void {
+  for (const raw of setCookies) {
+    const pair = raw.split(';')[0]?.trim()
+    if (!pair) {
+      continue
+    }
+    const eq = pair.indexOf('=')
+    if (eq === -1) {
+      continue
+    }
+    jar.set(pair.slice(0, eq), pair.slice(eq + 1))
+  }
+}
+
+function jarToCookieHeader(jar: Map<string, string>): string {
+  return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
+}
+
+export type ProbeLivePageResult = {
+  ok: boolean
+  living: boolean
+  roomStatus: number | 'unknown'
+  error: string
+}
+
+export async function probeLivePage(
+  roomNum: string,
+  cookieHeader: string,
+  fetchImpl: typeof fetch,
+): Promise<ProbeLivePageResult> {
+  const url = `https://live.douyin.com/${roomNum}`
+  const jar = parseCookieHeader(cookieHeader)
+
+  const doFetch = async (): Promise<Response> => {
+    const headers = new Headers()
+    const cookie = jarToCookieHeader(jar)
+    if (cookie) {
+      headers.set('cookie', cookie)
+    }
+    return fetchImpl(url, { headers })
+  }
+
+  let response = await doFetch()
+  let html = await response.text()
+  let finalUrl = response.url || url
+
+  let classification = classifyUpstream({
+    httpStatus: response.status,
+    finalUrl,
+    html,
+  })
+  if (classification === 'auth') {
+    return { ok: false, living: false, roomStatus: 'unknown', error: 'auth' }
+  }
+
+  let status = extractRoomStatus(html)
+  if (status !== null) {
+    return {
+      ok: true,
+      living: isLivingStatus(status),
+      roomStatus: status,
+      error: '',
+    }
+  }
+
+  mergeSetCookies(jar, response.headers.getSetCookie())
+  response = await doFetch()
+  html = await response.text()
+  finalUrl = response.url || url
+
+  classification = classifyUpstream({
+    httpStatus: response.status,
+    finalUrl,
+    html,
+  })
+  if (classification === 'auth') {
+    return { ok: false, living: false, roomStatus: 'unknown', error: 'auth' }
+  }
+
+  status = extractRoomStatus(html)
+  if (status !== null) {
+    return {
+      ok: true,
+      living: isLivingStatus(status),
+      roomStatus: status,
+      error: '',
+    }
+  }
+
+  return { ok: false, living: false, roomStatus: 'unknown', error: 'probe_fail' }
+}
