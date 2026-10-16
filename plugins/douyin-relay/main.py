@@ -280,6 +280,14 @@ def _room_and_disk():
     return room, disk
 
 
+def _cancel_pending_login_wait() -> None:
+    global _login_wait_task
+    wait_task = _login_wait_task
+    _login_wait_task = None
+    if wait_task is not None and not wait_task.done():
+        wait_task.cancel()
+
+
 def _schedule_login_wait() -> None:
     global _login_wait_task
     try:
@@ -653,6 +661,7 @@ def _admin_login_start() -> Dict[str, Any]:
     global _login_settled, _consume_id, _login_cancel_requested
     if _engine is None:
         return {'ok': False, 'error': 'engine_not_ready'}
+    _cancel_pending_login_wait()
     _login_settled = False
     _consume_id = None
     _login_cancel_requested = False
@@ -685,13 +694,11 @@ def _admin_login_cancel() -> Dict[str, Any]:
 
 
 async def _restart_engine() -> None:
-    global _login_wait_task
     if shut_down_event is not None and shut_down_event.is_set():
         return
     wait_task = _login_wait_task
-    _login_wait_task = None
+    _cancel_pending_login_wait()
     if wait_task is not None and not wait_task.done():
-        wait_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await wait_task
     engine = _engine
