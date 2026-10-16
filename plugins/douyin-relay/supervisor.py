@@ -160,6 +160,7 @@ class LiveSupervisor:
 
     def change_room(self, room_id):
         self._held = False
+        self._progress_epoch += 1
         self._clear_due()
         self._backoff_index = 0
         self._room_id = '' if room_id is None else str(room_id).strip()

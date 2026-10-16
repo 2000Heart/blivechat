@@ -176,6 +176,26 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(sup.on_login(phase='error', cookie=''), [])
         self.assertNotEqual(sup.phase, 'need_login')
 
+    def test_late_startup_login_after_change_room_empty_stays_idle(self):
+        sup = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=False)
+        sup.change_room('')
+        self.assertEqual(sup.phase, 'idle')
+        self.assertEqual(sup.on_login(phase='done', cookie='x' * 200), [])
+        self.assertEqual(sup.phase, 'idle')
+
+    def test_late_startup_login_after_change_room_keeps_probe_schedule(self):
+        now = [0.0]
+        sup = LiveSupervisor(interval_seconds=180, auto_refresh=True, now=lambda: now[0])
+        sup.start(room_id='1', has_cookie=False)
+        sup.change_room('9')
+        self.assertEqual(sup.on_probe(ok=True, living=False, error=''), [])
+        self.assertEqual(sup.phase, 'waiting_live')
+        self.assertEqual(sup.on_login(phase='error', cookie=''), [])
+        self.assertNotEqual(sup.phase, 'need_login')
+        now[0] = 180
+        self.assertEqual(sup.tick(), [{'cmd': 'probe_live', 'roomNum': '9'}])
+
     def test_offline_probe_while_held_stays_disconnected(self):
         sup = LiveSupervisor(auto_refresh=False, now=lambda: 0.0)
         sup.start(room_id='1', has_cookie=True)
