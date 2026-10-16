@@ -1,5 +1,6 @@
 import asyncio
 import json
+import pathlib
 import unittest
 
 from aiohttp.test_utils import TestClient, TestServer
@@ -78,3 +79,12 @@ class WebAdminTest(unittest.IsolatedAsyncioTestCase):
                 self.assertNotIn("sessionid=secret", json.dumps(body))
 
         asyncio.run(run())
+
+
+class PluginSurfaceTest(unittest.TestCase):
+    def test_plugin_package_has_no_relay_or_bookmark(self):
+        root = pathlib.Path(__file__).resolve().parents[1]
+        text = "\n".join(p.read_text(encoding="utf-8") for p in root.glob("*.py"))
+        self.assertNotIn("relay_server", text)
+        self.assertNotIn("bookmarklet", text)
+        self.assertNotIn("admin_ui", text)

@@ -1,6 +1,6 @@
 # 抖音弹幕中继（douyin-relay）
 
-将内置在插件目录下的 [dycast](https://github.com/skmcj/dycast) 通过 WebSocket 转发的弹幕注入到 blivechat，与 B 站弹幕同屏显示（前端模板如 `liquid-glass` 无需修改）。
+把插件目录里的 [dycast](https://github.com/skmcj/dycast) 以 headless 进程拉起，将抖音弹幕注入 blivechat，与 B 站弹幕同屏显示（前端模板如 `liquid-glass` 无需修改）。
 
 ## 安装位置
 
@@ -37,54 +37,51 @@ python -m PyInstaller -y plugins/douyin-relay/douyin-relay.spec
 
 将 `dist/douyin-relay.zip` 解压到 `data/plugins/douyin-relay/` 即可。
 
+## 准备 headless
+
+在 `dycast/` 安装依赖：
+
+```bash
+cd plugins/douyin-relay/dycast
+npm install
+```
+
+插件用 `tsx` 和 `tsconfig.sidecar.json` 启动 headless，工作目录是 `dycast/`：
+
+```text
+node ./node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.sidecar.json src/sidecar/headless.ts
+```
+
+`[relay]` 里的 `sidecar_node_exe` 可填 Node 绝对路径。留空或写成 `node` 时，先尝试 `dycast/.node` 下的便携 Node，再回退系统 `node`。
+
 ## 配置
 
 1. 将 `data/config.example.ini` 复制为 `data/config.ini`（与示例同目录）。
-2. 按需修改 `[relay]` 配置：
-   - `mode=relay`：监听 dycast 的 WebSocket 转发。
-   - relay 模式下使用 `listen_host`、`listen_port`、`ws_path`。
-   - sidecar 自动连接可选 `douyin_room_id` 与 `douyin_cookie`。
-3. relay 默认监听：`ws://127.0.0.1:18765/`（路径为 `/` 时，dycast 填写 `ws://127.0.0.1:18765` 或 `ws://127.0.0.1:18765/` 均可）。
+2. 在 `[relay]` 中填写 `douyin_room_id`。Cookie 可先留空，登录成功后由管理页写入。
+3. 管理页只监听回环地址。在插件列表点 **管理**，打开 `http://127.0.0.1:18771/admin`（端口以 `admin_port` 为准）。
 
-### 如何填写 `douyin_cookie`（已登录浏览器）
+### 如何填写 Cookie
 
-在 blivechat 插件列表打开本插件 **管理**，在「抖音请求头或 Cookie」上方有三个快捷入口：
+在 blivechat 插件列表打开本插件 **管理**，浏览器进入 `http://127.0.0.1:18771/admin`：
 
-- **打开抖音直播**：在默认浏览器打开 `https://live.douyin.com/` 便于登录。
-- **如何获取 Cookie…**：分步说明（含小书签与开发者工具 Network 复制完整 Cookie 两种方式）。
-- **复制小书签链接**：新建浏览器书签并将网址设为剪贴板内容，在 **live.douyin.com 已登录页面** 点击该书签，可把页面脚本可见的 Cookie 写入剪贴板；若礼物等接口仍缺权限，请按说明用 Network 复制带 HttpOnly 的完整 `Cookie` 请求头。
+- 首次没有有效 Cookie 时点 **登录抖音**，在弹出的浏览器窗口中完成登录。成功后 Cookie 写入配置；已填写房间号时会按新 Cookie 连接。
+- 也可以把 Cookie 粘贴进管理页后保存。保存后以粘贴内容为准。
+- `cookie_auto_refresh=true`（默认）时，插件启动后会用已保存的浏览器 profile 静默续期，不必先打开管理页。静默失败后再点 **登录抖音**。
+- `cookie_auto_refresh=false` 只关闭启动时的静默续期。管理页登录和手动粘贴仍然可用。
+- 提示找不到浏览器时，设置环境变量 **`CHROME_PATH`**，指向本机 Chrome / Chromium / Edge。
 
 Cookie 等同账号登录态，请勿泄露或提交到公开仓库。
 
-#### 浏览器登录
-
-除上述手动复制外，管理页还提供 **「登录抖音」**：首次无有效 Cookie 时请点击该按钮，在弹出的浏览器窗口中完成抖音登录；成功后 Cookie 会自动写入配置并填入输入框，已配置房间号的 sidecar 会随之重连。
-
-插件启动后（sidecar 模式且 `[relay]` 中 `cookie_auto_refresh=true`，默认开启）会先尝试 **静默续期**：在后台用已保存的浏览器 profile 刷新 Cookie，无需打开管理页；续期成功后再连接房间。若静默失败（日志出现 `need_login` 等），请再次点击 **「登录抖音」** 完成交互登录。
-
-手动在输入框粘贴 Cookie 并 **保存配置** 仍然有效；保存后以你粘贴的内容为准，不会被静默续期覆盖，除非你再次使用浏览器登录或静默续期成功写入新 Cookie。
-
-若启动登录流程时提示找不到浏览器，请在运行环境中设置 **`CHROME_PATH`** 指向本机 Chrome / Chromium / Edge 可执行文件。在 `data/config.ini` 的 `[relay]` 段设置 **`cookie_auto_refresh=false`** 时**仅关闭启动时的静默续期**；管理页 **「登录抖音」** 与手动粘贴 Cookie 仍可用，静默失败也不会自动打开浏览器，需自行点击 **「登录抖音」**。
-
 ## 使用步骤
 
-1. 启动 blivechat，在插件管理中启用 **抖音弹幕中继**（首次需在 `data/plugins/douyin-relay/plugin.json` 中把 `enabled` 改为 `true`，或通过管理界面开启）。
-2. relay 模式：
-   - 在插件列表中点击本插件的 **管理**，在弹出窗口中复制 **WebSocket 地址**（与 `data/config.ini` 中 `[relay]` 的监听配置一致）。
-   - 确认日志出现：`抖音中继已启动，请在 dycast 填写 ws://...`。
-   - 使用插件目录下的 `dycast/`（sidecar 默认从这里启动）连接房间后，在 **WS地址** 填入该 URL 并点击 **转发**。
-3. 打开 blivechat 房间页与 OBS 浏览器源，应能看到带 `[抖音]` 前缀的弹幕。
-
-## 数据格式说明
-
-与 dycast 行为一致：
-
-- 转发连接建立后，会先推送一条 **直播间信息 JSON 对象**（仅记录日志，不注入）。
-- 之后每条为 **弹幕消息数组** 的 JSON 序列化结果。
+1. 在 `plugins/douyin-relay/dycast/` 执行 `npm install`。
+2. 启动 blivechat，在插件管理中启用 **抖音弹幕中继**（首次需在 `data/plugins/douyin-relay/plugin.json` 中把 `enabled` 改为 `true`，或通过管理界面开启）。
+3. 在插件列表点击 **管理**，打开 `http://127.0.0.1:18771/admin`，填写房间号并完成登录。
+4. 打开 blivechat 房间页与 OBS 浏览器源，应能看到带 `[抖音]` 前缀的弹幕。
 
 ## 数据契约
 
-插件内部新增统一事件契约 `UnifiedEvent`（见 `contract.py`），用于冻结字段与空值语义，再转换为现有 injector 消费结构。
+插件内部使用统一事件契约 `UnifiedEvent`（见 `contract.py`），用于冻结字段与空值语义，再转换为 injector 消费结构。
 
 - 必填字段：
   - `event_id`：事件唯一 ID。优先使用上游消息 `id`，缺失时基于 `uid + ts + text (+ room)` 生成稳定回退值，降低同文案消息碰撞概率。
@@ -113,18 +110,17 @@ Cookie 等同账号登录态，请勿泄露或提交到公开仓库。
 
 ## 依赖
 
-推荐直接安装插件依赖清单（避免漏装）：
-
 ```bash
 python -m pip install -r plugins/douyin-relay/requirements.txt
 ```
 
-其中管理界面依赖 `PySide6`（已替换原 tkinter 管理窗口）。若缺少该依赖，插件核心转发仍可运行，但插件「管理」窗口无法打开。
+管理页是本机网页，地址为 `http://127.0.0.1:18771/admin`。
 
 ## 故障排查
 
-- 无法连接：检查防火墙、`listen_host` 是否应用 `0.0.0.0`（仅当 dycast 与 blivechat 不同机时需要）。
-- 无弹幕：确认 dycast 已连接房间且转发状态为已连接；查看 `log/douyin-relay.log`。
+- 管理页打不开：确认插件进程已启动，浏览器地址为 `http://127.0.0.1:18771/admin`（端口与 `admin_port` 一致）。
+- 无弹幕：确认房间号已保存、登录已完成，并查看 `log/douyin-relay.log`。
+- headless 起不来：确认已在 `dycast/` 执行 `npm install`，且 Node 能加载 `tsx` 与 `tsconfig.sidecar.json`。
 - SDK 版本不兼容：使用与当前 blivechat 匹配的源码运行插件。
 
 ## 本地可执行验证命令
@@ -132,72 +128,33 @@ python -m pip install -r plugins/douyin-relay/requirements.txt
 在 `blivechat` 仓库根目录执行：
 
 ```bash
-# 1) Python 侧：插件关键文件语法/可运行性（编译）检查
 python3 -m compileall -q plugins/douyin-relay
 python3 -m py_compile plugins/douyin-relay/*.py
-
-# 2) 前端侧：lint + 最小构建检查
-cd frontend
-npm run lint
-npm run build
 ```
 
-说明：
-- `py_compile` 通过代表关键文件语法正确，可被解释器加载。
-- `npm run build` 通过代表前端产物可正常打包；若仅出现体积类 warning，一般不阻断 relay 功能验收。
+在 `plugins/douyin-relay/dycast` 执行：
 
-## 端到端验收清单
+```bash
+node --experimental-strip-types --test src/sidecar/live-probe.test.ts src/sidecar/headless-router.test.ts src/sidecar/cookie-login-session.test.ts src/sidecar/cookie-login-rules.test.ts src/sidecar/cookie-login-browser.test.ts
+node ./node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.sidecar.json src/sidecar/import-check.ts
+```
 
-### relay 模式（最小验收）
+## 验收清单
 
-1. 在 `plugins/douyin-relay/data/config.ini` 设置：
-   - `[relay] mode=relay`
-   - 按需配置 `listen_host`、`listen_port`、`ws_path`（默认 `ws://127.0.0.1:18765/`）。
-2. 启动 blivechat 并启用插件，在管理页复制 WebSocket 地址。
-3. dycast 连接抖音房间后，将该地址填入 dycast 的 WS 地址并点击转发。
-4. 插件日志出现 `Douyin relay WebSocket listening ...` 与 `dycast forwarder connected`。
-5. 抖音侧发送聊天消息，确认房间页/OBS 浏览器源出现 `[抖音]` 前缀弹幕。
-6. 手动断开再重连 dycast 转发，确认插件不崩溃且消息恢复。
-
-## 管理界面（PySide6）冒烟清单
-
-### macOS
-
-1. 启动 blivechat 并打开插件「管理」，确认窗口可打开且重复点击不会创建多个窗口。
-2. 点击「复制」后确认剪贴板内容为 relay 地址。
-3. 在窗口内修改房间号/Cookie 并点「保存配置」，确认状态栏出现成功提示。
-4. 点击 Sidecar 连接/断开/重启，确认按钮可触发动作且状态区 2 秒内刷新。
-5. 关闭管理窗口后确认插件进程仍在运行，消息转发不中断。
-
-### Windows
-
-1. 使用打包产物启动插件并打开「管理」，确认窗口正常渲染（无 Qt 插件缺失报错）。
-2. 点击「打开配置文件所在目录」可定位到配置文件。
-3. 执行一次 Sidecar 连接与断开，确认状态区能及时变化。
-4. 重复打开/关闭管理窗口 3 次，确认仅单实例且无崩溃。
+1. 在 `plugins/douyin-relay/dycast/` 执行 `npm install`。
+2. 启动 blivechat 并启用插件。
+3. 点击 **管理**，确认浏览器打开 `http://127.0.0.1:18771/admin`。
+4. 在管理页登录并保存房间号后，房间页或 OBS 浏览器源出现 `[抖音]` 前缀弹幕。
+5. 再次点击 **管理**，仍打开同一地址，插件进程保持运行。
 
 ## 回归检查清单（B 站链路不退化）
 
-1. 不启用本插件时，B 站弹幕展示与历史版本一致（基线冒烟）。
-2. 启用本插件后，B 站弹幕仍持续到达、顺序正常、无明显延迟抖动。
-3. 在 relay 模式下，B 站弹幕样式、过滤逻辑、OBS 输出不被破坏。
-4. 反复启停本插件后，B 站房间连接与消息消费无异常中断。
-5. 查看主程序与插件日志，确认无持续报错、无异常重启风暴。
-
-## 回滚预案（sidecar 快速切回 legacy relay）
-
-目标：当 sidecar 模式出现异常时，快速恢复到已验证的 legacy relay 链路。
-
-1. 修改 `plugins/douyin-relay/data/config.ini`：
-   - 保持 `mode=relay`，将 `relay_backend=sidecar` 改为 `relay_backend=legacy`。
-   - 恢复/确认 `listen_host`、`listen_port`、`ws_path` 为可用值（建议默认 `127.0.0.1:18765`、`/`）。
-2. 在插件管理中禁用再启用「抖音弹幕中继」，确保新配置生效。
-3. 在 dycast 重新填入插件管理页展示的 WS 地址并启动转发。
-4. 观察 `log/douyin-relay.log`，确认监听与连接日志出现且弹幕恢复。
-5. 若仍异常，临时禁用本插件以保障 B 站主链路稳定，待问题定位后再恢复。
+1. 不启用本插件时，B 站弹幕展示与历史版本一致。
+2. 启用本插件后，B 站弹幕仍持续到达、顺序正常。
+3. 反复启停本插件后，B 站房间连接与消息消费无异常中断。
+4. 查看主程序与插件日志，确认无持续报错、无异常重启风暴。
 
 ## 已知限制与风险提示
 
-- relay 模式依赖 dycast 可用性；dycast 未连接房间或未开启转发时不会有抖音消息输入。
-- 前端构建存在体积与目标环境 `async/await` warning，当前不阻断构建，但建议后续专项治理兼容性与包体积。
-- 插件与主进程通过子进程通信，若运行环境权限/防火墙限制端口监听，可能导致 relay 建链失败。
+- 抖音消息依赖 `dycast/` headless 与本机 Node。未安装依赖或房间未开播时不会有抖音消息。
+- 管理页只接受回环地址。插件与主进程通过子进程通信，权限或防火墙限制本机回环时管理页无法打开。

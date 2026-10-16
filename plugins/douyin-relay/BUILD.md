@@ -12,8 +12,9 @@
    python -m pip install -r blcsdk/requirements.txt
    ```
 
-3. 若分发包需要**内置 sidecar**（无需用户安装 dycast 源码）：
-   - 在 `plugins/douyin-relay/dycast/` 下先安装前端依赖（至少要有 `node_modules`）；
+3. 若分发包需要**内置 headless**（无需用户再装一份 dycast 源码）：
+   - 在 `plugins/douyin-relay/dycast/` 执行 `npm install`；
+   - headless 由 `tsx` 按 `tsconfig.sidecar.json` 启动：`node ./node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.sidecar.json src/sidecar/headless.ts`；
    - 可选：将便携 Node 放到 `plugins/douyin-relay/dycast/.node/`，支持：
      - Windows：`.node/win-x64/node.exe`（或 `.node/win-arm64/node.exe`）
      - macOS：`.node/darwin-arm64/bin/node`（或 `.node/darwin-x64/bin/node`）
@@ -59,19 +60,17 @@ chmod +x build.sh   # 仅首次
 - 目录：`dist/douyin-relay/`（含 `douyin-relay.exe`、`plugin.json`、`data/`、`log/`、`_internal/` 等）。
 - 压缩包：`dist/douyin-relay.zip`（由 spec 末尾的 `zipfile` 步骤生成，便于分发）。
 
-### PySide6 管理界面说明
+### 管理页
 
-- 管理界面已切换为 PySide6（浅色 Fluent 风格），采用独立 UI 线程，不再依赖 tkinter。
-- 若运行时缺少 PySide6，插件主流程仍可运行，但「管理」窗口无法打开；请先安装 `PySide6` 后重试。
+点插件「管理」会在浏览器打开 `http://127.0.0.1:18771/admin`（端口以配置里的 `admin_port` 为准）。
 
 将 **整个目录** 或 **解压后的 zip 内容** 放到 `data/plugins/douyin-relay/`，勿只复制单个 exe（缺少 `_internal/` 会导致无法启动）。
 
-### sidecar 内置运行说明
+### headless 运行说明
 
-- 默认配置已改为：
-  - `sidecar_node_exe = node`
-  - `sidecar_node_cmd = {node} ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port {port}`
-- 运行时会优先探测：
+- 先在 `dycast/` 执行 `npm install`。
+- 运行时使用 `tsx` 与 `tsconfig.sidecar.json` 启动 `src/sidecar/headless.ts`。
+- `sidecar_node_exe` 默认为 `node`。运行时会优先探测：
   - Windows：`dycast/.node/node.exe`、`dycast/node/node.exe`
   - Unix：`dycast/.node/bin/node`、`dycast/node/bin/node`
 - 若未找到内置 Node，则回退系统 `node`。
