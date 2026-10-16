@@ -40,7 +40,9 @@ export function judgeDouyinLogin(input: {
     return { ok: false, reason: 'login_url' }
   }
 
-  const hasSession = input.cookies.some((c) => SESSION_COOKIE_NAMES.has(c.name))
+  const hasSession = input.cookies.some(
+    (c) => SESSION_COOKIE_NAMES.has(c.name) && c.domain.includes('douyin.com'),
+  )
   if (!hasSession) {
     return { ok: false, reason: 'missing_session_cookie' }
   }

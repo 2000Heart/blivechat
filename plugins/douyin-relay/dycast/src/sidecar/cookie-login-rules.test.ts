@@ -41,4 +41,15 @@ test('short cookie string fails', () => {
     mode: 'interactive',
   })
   assert.equal(result.ok, false)
+  assert.equal(result.reason, 'cookie_too_short')
+})
+
+test('long douyin cookies without session name fail', () => {
+  const result = judgeDouyinLogin({
+    cookies: [filler, { name: 'other', value: 'y'.repeat(220), domain: 'live.douyin.com' }],
+    url: 'https://live.douyin.com/123',
+    mode: 'interactive',
+  })
+  assert.equal(result.ok, false)
+  assert.equal(result.reason, 'missing_session_cookie')
 })
