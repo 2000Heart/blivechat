@@ -171,7 +171,10 @@ def resolve_douyin_browser_profile_dir(cfg: AppConfig) -> str:
 
 def write_douyin_cookie_atomic(cookie: str, path: Optional[str] = None) -> bool:
     try:
-        cfg_path = path if path is not None else _preferred_config_path()
+        if path is None:
+            cfg_path = ensure_config_ini_exists()
+        else:
+            cfg_path = path
         cp = configparser.ConfigParser(interpolation=None)
         cp.read(cfg_path, encoding='utf-8-sig')
         if not cp.has_section('relay'):
