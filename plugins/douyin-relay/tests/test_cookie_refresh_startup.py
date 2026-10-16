@@ -255,6 +255,36 @@ class CookieRefreshStartupTests(unittest.TestCase):
         write_mock.assert_not_called()
         self.assertIn("login_consume", [item["cmd"] for item in engine.sent])
 
+    def test_bootstrap_silent_wait_interactive_before_deadline_no_cancel(self):
+        async def run():
+            engine = _ScriptEngine(self.mod, hang=True)
+            cfg = _cfg(
+                cookie_silent_timeout_seconds=1,
+                douyin_cookie="",
+                douyin_room_id="9527",
+                cookie_auto_refresh=True,
+            )
+            supervisor = LiveSupervisor(
+                interval_seconds=cfg.live_probe_interval_seconds,
+                auto_refresh=cfg.cookie_auto_refresh,
+                now=lambda: 0.0,
+            )
+            with mock.patch.object(self.mod.config, "get_config", return_value=cfg):
+                bootstrap = asyncio.create_task(self.mod.bootstrap_live(engine, supervisor))
+                await asyncio.sleep(0.05)
+                ret = self.mod.handle_admin_action("login_start", {})
+                self.assertTrue(ret["ok"])
+                await asyncio.sleep(1.2)
+                await bootstrap
+            cmds = [item["cmd"] for item in engine.sent]
+            self.assertNotIn("login_cancel", cmds)
+            starts = [item for item in engine.sent if item["cmd"] == "login_start"]
+            self.assertEqual(len(starts), 2)
+            self.assertEqual(starts[0]["mode"], "silent")
+            self.assertEqual(starts[1]["mode"], "interactive")
+
+        asyncio.run(run())
+
     def test_interactive_login_start_cancels_pending_silent_timeout(self):
         async def run():
             engine = _ScriptEngine(self.mod, hang=True)

@@ -300,6 +300,17 @@ def _schedule_login_wait() -> None:
     _login_wait_task = loop.create_task(_wait_silent_login(_engine, cfg))
 
 
+async def _await_login_wait_task(wait_task: Optional[asyncio.Task]) -> None:
+    if wait_task is None or wait_task.done():
+        return
+    try:
+        await wait_task
+    except asyncio.CancelledError:
+        if wait_task.done() and wait_task.cancelled():
+            return
+        raise
+
+
 def _login_start_accepted(ret) -> bool:
     return isinstance(ret, dict) and bool(ret.get('ok'))
 
@@ -515,7 +526,8 @@ async def bootstrap_live(engine, supervisor) -> None:
         except Exception:
             logger.error('douyin engine send failed cmd=%s', name)
     if started_login and not _login_settled:
-        await _wait_silent_login(engine, cfg)
+        _schedule_login_wait()
+        await _await_login_wait_task(_login_wait_task)
 
 
 async def _supervisor_tick_loop() -> None:
@@ -698,9 +710,7 @@ async def _restart_engine() -> None:
         return
     wait_task = _login_wait_task
     _cancel_pending_login_wait()
-    if wait_task is not None and not wait_task.done():
-        with contextlib.suppress(asyncio.CancelledError):
-            await wait_task
+    await _await_login_wait_task(wait_task)
     engine = _engine
     supervisor = _supervisor
     if engine is None or supervisor is None:
