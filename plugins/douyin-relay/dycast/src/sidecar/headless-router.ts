@@ -12,7 +12,7 @@ import { probeLivePage, type ProbeLivePageResult } from './live-probe.ts'
 type ConnectOptions = { maxReconnectCount?: number; strictIm?: boolean }
 
 type ConnectHooks = {
-  fail: (status: string) => void
+  fail: (status: string, detail?: unknown) => void
 }
 
 type ProbeFn = (roomNum: string, rawHeaders: string) => Promise<ProbeLivePageResult>
@@ -286,9 +286,18 @@ export class HeadlessRouter {
     this.pendingCookie = rawHeaders ?? ''
     const options: ConnectOptions = { maxReconnectCount: 0, strictIm: true }
     const hooks: ConnectHooks = {
-      fail: (status: string) => {
-        if (status === 'close') this.noteConnectFailure(generation, { signal: 'close' })
-        else this.noteConnectFailure(generation, { signal: 'error' })
+      fail: (status: string, detail?: unknown) => {
+        if (status === 'close') {
+          this.noteConnectFailure(generation, {
+            signal: 'close',
+            ...(typeof detail === 'number' ? { code: detail } : {}),
+          })
+          return
+        }
+        this.noteConnectFailure(generation, {
+          signal: 'error',
+          ...(detail !== undefined ? { error: detail } : {}),
+        })
       },
     }
     const run = this.connectCastFn

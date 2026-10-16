@@ -38,6 +38,61 @@ export function classifyUpstream(input: {
   return 'probe_fail'
 }
 
+export type DirectRequestKind = 'live_page' | 'im_fetch' | 'user'
+
+export function directRequestKind(url: string): DirectRequestKind | 'other' {
+  let pathname = url
+  try {
+    pathname = new URL(url, 'https://live.douyin.com').pathname
+  } catch {
+    return 'other'
+  }
+  if (pathname.includes('/webcast/im/fetch')) return 'im_fetch'
+  if (pathname.includes('/webcast/user')) return 'user'
+  if (/^\/[^/]+\/?$/.test(pathname)) return 'live_page'
+  return 'other'
+}
+
+export function classifyDirectRequest(input: {
+  kind: DirectRequestKind
+  httpStatus: number
+  finalUrl: string
+  html: string
+  sentCookie: boolean
+}): 'ok' | 'auth' | 'probe_fail' {
+  if (input.kind === 'user') return 'ok'
+  if (input.kind === 'im_fetch') {
+    if (!input.sentCookie || (input.httpStatus !== 401 && input.httpStatus !== 403)) return 'ok'
+    return classifyUpstream({
+      httpStatus: input.httpStatus,
+      finalUrl: input.finalUrl,
+      html: input.html,
+    })
+  }
+  const httpStatus =
+    !input.sentCookie && (input.httpStatus === 401 || input.httpStatus === 403) ? 200 : input.httpStatus
+  return classifyUpstream({
+    httpStatus,
+    finalUrl: input.finalUrl,
+    html: input.html,
+  })
+}
+
+export function danmakuWebSocketUrl(
+  pushServer: string | null | undefined,
+  browserOrigin: string | null,
+): string | null {
+  const server = String(pushServer || '').trim()
+  if (server) {
+    const host = server.replace(/^wss?:\/\//i, '').replace(/\/+$/, '')
+    if (host) return `wss://${host}/webcast/im/push/v2/`
+  }
+  if (browserOrigin) {
+    return `${browserOrigin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`
+  }
+  return null
+}
+
 function parseCookieHeader(cookieHeader: string): Map<string, string> {
   const jar = new Map<string, string>()
   if (!cookieHeader.trim()) {
@@ -73,6 +128,12 @@ function mergeSetCookies(jar: Map<string, string>, setCookies: string[]): void {
 
 function jarToCookieHeader(jar: Map<string, string>): string {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ')
+}
+
+export function mergeCookieHeader(callerCookie: string, setCookieLines: string[]): string {
+  const jar = parseCookieHeader(callerCookie)
+  mergeSetCookies(jar, setCookieLines)
+  return jarToCookieHeader(jar)
 }
 
 export type ProbeLivePageResult = {

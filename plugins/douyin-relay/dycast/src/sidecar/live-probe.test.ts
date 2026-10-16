@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  classifyDirectRequest,
   classifyUpstream,
+  danmakuWebSocketUrl,
+  directRequestKind,
   extractRoomStatus,
   isLivingStatus,
+  mergeCookieHeader,
   probeLivePage,
 } from './live-probe.ts'
 
@@ -65,4 +69,69 @@ test('probe does not request im fetch', async () => {
   assert.equal(result.roomStatus, 4)
   assert.equal(urls.some((u) => u.includes('/webcast/im/fetch')), false)
   assert.equal(urls[0], 'https://live.douyin.com/9')
+})
+
+test('live page login uses the same three signals, and only with a cookie for 401', () => {
+  assert.equal(directRequestKind('https://live.douyin.com/123'), 'live_page')
+  assert.equal(directRequestKind('https://live.douyin.com/webcast/im/fetch/?room_id=1'), 'im_fetch')
+  assert.equal(directRequestKind('https://live.douyin.com/webcast/user/'), 'user')
+  assert.equal(directRequestKind('https://live.douyin.com/webcast/user/me/'), 'user')
+
+  assert.equal(classifyDirectRequest({
+    kind: 'live_page', httpStatus: 401, finalUrl: 'https://live.douyin.com/1', html: '', sentCookie: true,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'live_page', httpStatus: 403, finalUrl: 'https://live.douyin.com/1', html: '', sentCookie: true,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'live_page', httpStatus: 401, finalUrl: 'https://live.douyin.com/1', html: '', sentCookie: false,
+  }), 'probe_fail')
+  assert.equal(classifyDirectRequest({
+    kind: 'live_page', httpStatus: 200, finalUrl: 'https://www.douyin.com/passport/web/login', html: '<html></html>', sentCookie: false,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'live_page', httpStatus: 200, finalUrl: 'https://live.douyin.com/1', html: '<html>请登录</html>', sentCookie: true,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'live_page', httpStatus: 200, finalUrl: 'https://live.douyin.com/1', html: '{"status":2} 登录', sentCookie: true,
+  }), 'ok')
+
+  assert.equal(classifyDirectRequest({
+    kind: 'im_fetch', httpStatus: 403, finalUrl: 'https://live.douyin.com/webcast/im/fetch/', html: '', sentCookie: true,
+  }), 'auth')
+  assert.equal(classifyDirectRequest({
+    kind: 'im_fetch', httpStatus: 401, finalUrl: 'https://live.douyin.com/webcast/im/fetch/', html: '登录', sentCookie: false,
+  }), 'ok')
+
+  assert.equal(classifyDirectRequest({
+    kind: 'user', httpStatus: 401, finalUrl: 'https://live.douyin.com/webcast/user/', html: '', sentCookie: true,
+  }), 'ok')
+  assert.equal(classifyDirectRequest({
+    kind: 'user', httpStatus: 403, finalUrl: 'https://www.douyin.com/passport/web/login', html: '登录', sentCookie: true,
+  }), 'ok')
+})
+
+test('empty push server does not become the vite socket', () => {
+  assert.equal(danmakuWebSocketUrl('', null), null)
+  assert.equal(danmakuWebSocketUrl('   ', null), null)
+  assert.equal(danmakuWebSocketUrl(undefined, null), null)
+  assert.equal(
+    danmakuWebSocketUrl('webcast5-ws-web-lf.douyin.com', null),
+    'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/',
+  )
+  assert.equal(
+    danmakuWebSocketUrl('wss://webcast100-ws-web-lq.douyin.com/', null),
+    'wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/',
+  )
+  assert.equal(
+    danmakuWebSocketUrl('', 'http://localhost:5173'),
+    'ws://localhost:5173/socket/webcast/im/push/v2/',
+  )
+})
+
+test('handshake cookie merges caller cookie with set-cookie', () => {
+  const header = mergeCookieHeader('sessionid=s', ['__ac_nonce=abc; Path=/'])
+  assert.match(header, /sessionid=s/)
+  assert.match(header, /__ac_nonce=abc/)
+  assert.equal(header.includes('Path='), false)
 })

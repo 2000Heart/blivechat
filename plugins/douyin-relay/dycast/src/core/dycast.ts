@@ -25,7 +25,8 @@ import type {
   User
 } from './model';
 import { pickStarGuardMembership } from './membership';
-import { fetchUser, getImInfo, getLiveInfo } from './request';
+import { fetchUser, getImInfo, getLiveInfo, upstreamCookieHeader } from './request';
+import { danmakuWebSocketUrl } from '../sidecar/live-probe.ts';
 import { getSignature } from './signature';
 // import { logUserCast } from '@/utils/debugUtil';
 
@@ -318,16 +319,9 @@ enum PayloadType {
   Msg = 'msg'
 }
 
-function resolveBaseOrigin(): string {
-  const g = globalThis as any;
-  const origin = typeof g?.location?.origin === 'string' ? g.location.origin : 'http://127.0.0.1:5173';
-  return origin;
-}
-
 /** API */
 // wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/  => version: 1.0.14-beta.0
 // wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/  => version: 1.0.15
-const BASE_URL = `${resolveBaseOrigin().replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`;
 
 /** SDK 版本 */
 export const VERSION = '1.0.15';
@@ -550,7 +544,15 @@ export class DyCast {
   private _connect(opts: DyCastOptions) {
     // 连接前的初始化
     this.options = opts;
-    this.url = this._getSocketUrl(opts);
+    let socketUrl: string;
+    try {
+      socketUrl = this._getSocketUrl(opts);
+    } catch {
+      this.emitter.emit('close', DyCastCloseCode.CONNECTING_ERROR, 'empty_push_server');
+      this._afterClose();
+      return;
+    }
+    this.url = socketUrl;
     try {
       const wsUrl = new URL(this.url);
       CLog.debug('DyCast connect target', {
@@ -578,7 +580,7 @@ export class DyCast {
       const WSAny = WebSocket as any;
       const isNodeRuntime = typeof (globalThis as any)?.process?.versions?.node === 'string';
       if (isNodeRuntime) {
-        const rawCookie = String((globalThis as any).__dy_cookie || '').trim();
+        const rawCookie = upstreamCookieHeader().trim();
         this.ws = new WSAny(this.url, [], {
           followRedirects: true,
           perMessageDeflate: false,
@@ -1184,13 +1186,11 @@ export class DyCast {
    */
   private _getSocketUrl(opts: DyCastOptions) {
     const fullOpt = Object.assign({}, defaultOpts, opts);
-    let baseUrl = BASE_URL;
-    const pushServer = String(fullOpt.push_server || '').trim();
-    if (pushServer) {
-      const host = pushServer.replace(/^wss?:\/\//i, '').replace(/\/+$/, '');
-      if (host) {
-        baseUrl = `wss://${host}/webcast/im/push/v2/`;
-      }
+    const origin = (globalThis as { location?: { origin?: string } }).location?.origin;
+    const browserOrigin = typeof origin === 'string' && origin ? origin : null;
+    const baseUrl = danmakuWebSocketUrl(fullOpt.push_server, browserOrigin);
+    if (!baseUrl) {
+      throw new Error('empty_push_server');
     }
     return `${baseUrl}?${this._mergeOptions(fullOpt)}`;
   }

@@ -4,6 +4,7 @@ import { decodeResponse } from './model';
 import { getMsToken } from './signature';
 import { makeUrlParams, parseLiveHtml } from './util';
 import { CLog } from '@/utils/logUtil';
+import { classifyDirectRequest, directRequestKind, mergeCookieHeader } from '../sidecar/live-probe.ts';
 
 let upstreamOrigin: string | null = null;
 const upstreamJar = new Map<string, string>();
@@ -27,21 +28,13 @@ export function setUpstreamOrigin(origin: string | null): void {
   upstreamOrigin = next;
 }
 
-function parseCookiePairs(header: string, into: Map<string, string>): void {
-  if (!header.trim()) return;
-  for (const part of header.split(';')) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const eq = trimmed.indexOf('=');
-    if (eq <= 0) continue;
-    into.set(trimmed.slice(0, eq).trim(), trimmed.slice(eq + 1).trim());
-  }
+function currentCookieHeader(): string {
+  const setCookies = [...upstreamJar.entries()].map(([key, value]) => `${key}=${value}`);
+  return mergeCookieHeader(String((globalThis as { __dy_cookie?: string }).__dy_cookie || ''), setCookies);
 }
 
-function currentCookieHeader(): string {
-  const merged = new Map(upstreamJar);
-  parseCookiePairs(String((globalThis as { __dy_cookie?: string }).__dy_cookie || ''), merged);
-  return [...merged.entries()].map(([key, value]) => `${key}=${value}`).join('; ');
+export function upstreamCookieHeader(): string {
+  return currentCookieHeader();
 }
 
 function rememberSetCookies(res: Response): void {
@@ -70,6 +63,20 @@ function resolveRequestUrl(input: string): string {
   return new URL(input, 'http://127.0.0.1:5173').toString();
 }
 
+async function rejectUpstreamAuth(url: string, res: Response, sentCookie: boolean): Promise<void> {
+  const kind = directRequestKind(url);
+  if (kind !== 'live_page' && kind !== 'im_fetch' && kind !== 'user') return;
+  const html = kind === 'live_page' ? await res.clone().text() : '';
+  const verdict = classifyDirectRequest({
+    kind,
+    httpStatus: res.status,
+    finalUrl: res.url || url,
+    html,
+    sentCookie,
+  });
+  if (verdict === 'auth') throw new UpstreamAuthError(res.status || 401);
+}
+
 async function fetchUpstream(input: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers);
   if (upstreamOrigin) {
@@ -78,11 +85,11 @@ async function fetchUpstream(input: string, init?: RequestInit): Promise<Respons
     if (!headers.has('user-agent')) headers.set('user-agent', UPSTREAM_USER_AGENT);
     if (!headers.has('referer')) headers.set('referer', 'https://live.douyin.com/');
   }
-  const res = await fetch(resolveRequestUrl(input), { ...init, headers });
+  const sentCookie = Boolean(headers.get('cookie')?.trim());
+  const resolved = resolveRequestUrl(input);
+  const res = await fetch(resolved, { ...init, headers });
   if (upstreamOrigin) rememberSetCookies(res);
-  if (res.status === 401 || res.status === 403) {
-    throw new UpstreamAuthError(res.status);
-  }
+  await rejectUpstreamAuth(resolved, res, sentCookie);
   return res;
 }
 

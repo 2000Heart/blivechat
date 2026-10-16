@@ -76,6 +76,26 @@ test('connect passes maxReconnectCount 0 and strictIm', async () => {
   assert.equal(opts?.strictIm, true)
 })
 
+test('auth failure stays auth_failed when close code is 4002', async () => {
+  const lines: string[] = []
+  const router = new HeadlessRouter({
+    write: (line) => lines.push(line),
+    launch: async () => { throw new Error('unused') },
+    connectCast: async (_room, _opts, hooks) => {
+      const err = new Error('auth')
+      err.name = 'UpstreamAuthError'
+      hooks.fail('close', 4002)
+      hooks.fail('error', err)
+    },
+  })
+  router.handle(JSON.stringify({ id: 'c', cmd: 'connect', roomNum: '1', rawHeaders: 'sessionid=s' }))
+  await new Promise((r) => setTimeout(r, 0))
+  const statuses = lines.map((line) => JSON.parse(line)).filter((row) => row.type === 'status')
+  assert.equal(statuses.length, 1)
+  assert.equal(statuses[0].state, 'auth_failed')
+  assert.equal(statuses[0].code, undefined)
+})
+
 test('error plus close becomes one status', async () => {
   const lines: string[] = []
   const router = new HeadlessRouter({
