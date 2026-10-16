@@ -86,6 +86,10 @@ class AppConfig:
         self.sidecar_node_cmd = '{node} ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port {port}'
         self.douyin_room_id = ''
         self.douyin_cookie = ''
+        self.cookie_auto_refresh = True
+        self.douyin_browser_profile_dir = 'data/douyin-browser-profile'
+        self.cookie_login_timeout_seconds = 300
+        self.cookie_silent_timeout_seconds = 30
         self.content_prefix = '[抖音]'
         self.include_gift = True
         self.native_gift = True
@@ -119,6 +123,16 @@ class AppConfig:
             self.sidecar_node_cmd = sec.get('sidecar_node_cmd', self.sidecar_node_cmd)
             self.douyin_room_id = sec.get('douyin_room_id', self.douyin_room_id)
             self.douyin_cookie = sec.get('douyin_cookie', self.douyin_cookie)
+            self.cookie_auto_refresh = sec.getboolean('cookie_auto_refresh', self.cookie_auto_refresh)
+            self.douyin_browser_profile_dir = sec.get(
+                'douyin_browser_profile_dir', self.douyin_browser_profile_dir
+            )
+            self.cookie_login_timeout_seconds = sec.getint(
+                'cookie_login_timeout_seconds', self.cookie_login_timeout_seconds
+            )
+            self.cookie_silent_timeout_seconds = sec.getint(
+                'cookie_silent_timeout_seconds', self.cookie_silent_timeout_seconds
+            )
             self.content_prefix = sec.get('content_prefix', self.content_prefix)
             self.include_gift = sec.getboolean('include_gift', self.include_gift)
             self.native_gift = sec.getboolean('native_gift', self.native_gift)
@@ -143,6 +157,36 @@ class AppConfig:
 
 def _preferred_config_path() -> str:
     return os.path.join(DATA_PATH, 'config.ini')
+
+
+def resolve_douyin_browser_profile_dir(cfg: AppConfig) -> str:
+    d = cfg.douyin_browser_profile_dir
+    if os.path.isabs(d):
+        resolved = d
+    else:
+        resolved = os.path.join(BASE_PATH, d)
+    os.makedirs(resolved, exist_ok=True)
+    return resolved
+
+
+def write_douyin_cookie_atomic(cookie: str, path: Optional[str] = None) -> bool:
+    try:
+        cfg_path = path if path is not None else _preferred_config_path()
+        cp = configparser.ConfigParser(interpolation=None)
+        cp.read(cfg_path, encoding='utf-8-sig')
+        if not cp.has_section('relay'):
+            cp.add_section('relay')
+        cp['relay']['douyin_cookie'] = cookie
+        tmp_path = cfg_path + '.tmp'
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            cp.write(f)
+        os.replace(tmp_path, cfg_path)
+    except Exception:
+        logger.exception('Failed to write douyin cookie atomically')
+        return False
+    if path is not None:
+        return True
+    return reload()
 
 
 def ensure_config_ini_exists() -> str:
