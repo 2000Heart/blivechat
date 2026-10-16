@@ -128,12 +128,17 @@ def _login_updated_at(status: Dict[str, Any]) -> Any:
 
 
 def _maybe_finish_login(status: Dict[str, Any], handled_updated_at: Any) -> tuple:
-    """On done + new updatedAt: login_finish, then reload cookie into the input.
+    """On interactive done + new updatedAt: login_finish, then reload cookie.
 
-    Returns (new_handled_updated_at, cookie_or_None). cookie is set only when
-    finish returned ok and not pending. Does not call the save-config handler.
+    Returns (new_handled_updated_at, cookie_or_None). Silent done is not
+    consumed. cookie is set when finish is not pending and error is not
+    cookie_too_short — including ok=false after the cookie was written.
+    Does not call the save-config handler.
     """
-    if str(status.get('login_phase') or '') != 'done':
+    if (
+        str(status.get('login_phase') or '') != 'done'
+        or str(status.get('login_mode') or '') != 'interactive'
+    ):
         return handled_updated_at, None
     updated_at = _login_updated_at(status)
     if updated_at is None or updated_at == handled_updated_at:
@@ -142,7 +147,7 @@ def _maybe_finish_login(status: Dict[str, Any], handled_updated_at: Any) -> tupl
     if ret.get('pending'):
         return handled_updated_at, None
     cookie = None
-    if ret.get('ok'):
+    if ret.get('error') != 'cookie_too_short':
         config.reload()
         cookie = str(config.get_config().douyin_cookie or '')
     return updated_at, cookie
@@ -794,7 +799,10 @@ def _run_qt_admin_ui() -> None:
             self._maybe_handle_login_done(status)
 
         def _maybe_handle_login_done(self, status: Dict[str, Any]) -> None:
-            if str(status.get('login_phase') or '') != 'done':
+            if (
+                str(status.get('login_phase') or '') != 'done'
+                or str(status.get('login_mode') or '') != 'interactive'
+            ):
                 return
             updated_at = _login_updated_at(status)
             if updated_at is None or updated_at == self._handled_login_updated_at:
