@@ -422,6 +422,8 @@ export class DyCast {
   private reconnectCount: number;
   /** 最大重连尝试次数 */
   private maxReconnectCount: number;
+  /** strict 时 getImInfo 失败直接抛出 */
+  private strictIm: boolean;
   // 是否需要重连
   private shouldReconnect: boolean;
   // 正在重连中
@@ -430,7 +432,7 @@ export class DyCast {
   // 订阅者
   private emitter: Emitter<DyCastEvent>;
 
-  constructor(roomNum: string) {
+  constructor(roomNum: string, opts?: { maxReconnectCount?: number; strictIm?: boolean }) {
     // 初始化
     this.roomNum = roomNum;
     this.state = !1;
@@ -446,7 +448,8 @@ export class DyCast {
     // 当前重连次数
     this.reconnectCount = 0;
     // 最大重连次数（sidecar 场景下提高容错，避免短暂抖动直接掉线）
-    this.maxReconnectCount = 20;
+    this.maxReconnectCount = opts?.maxReconnectCount ?? 20;
+    this.strictIm = opts?.strictIm === true;
     // 上一次接收消息时间
     this.lastReceiveTime = Date.now();
     // 当前客户端状态
@@ -711,6 +714,9 @@ export class DyCast {
    * 重连
    */
   private reconnect() {
+    if (this.maxReconnectCount <= 0) {
+      return;
+    }
     // 还未关闭
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.close(DyCastCloseCode.RECONNECTING, '因重连而关闭');
@@ -1213,7 +1219,7 @@ export class DyCast {
       this.info = info;
       this.status = info.status;
       await fetchUser();
-      const res = await getImInfo(info.roomId, info.uniqueId);
+      const res = await getImInfo(info.roomId, info.uniqueId, this.strictIm);
       this.imInfo = res;
     } catch (err) {
       // CLog.error('DyCast LiveInfo Request Error =>', err);
@@ -1233,6 +1239,9 @@ export class DyCast {
         roomId,
         uniqueId
       });
+      if (this.strictIm) {
+        throw new Error('empty_signature');
+      }
     }
     return {
       room_id: roomId,

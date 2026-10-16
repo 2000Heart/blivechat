@@ -5,8 +5,63 @@ import { getMsToken } from './signature';
 import { makeUrlParams, parseLiveHtml } from './util';
 import { CLog } from '@/utils/logUtil';
 
+let upstreamOrigin: string | null = null;
+const upstreamJar = new Map<string, string>();
+
+const UPSTREAM_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 Edg/136.0.0.0';
+
+export class UpstreamAuthError extends Error {
+  readonly status: number;
+
+  constructor(status: number) {
+    super('auth');
+    this.name = 'UpstreamAuthError';
+    this.status = status;
+  }
+}
+
+export function setUpstreamOrigin(origin: string | null): void {
+  const next = origin && origin.trim() ? origin.trim().replace(/\/+$/, '') : null;
+  if (next !== upstreamOrigin) upstreamJar.clear();
+  upstreamOrigin = next;
+}
+
+function parseCookiePairs(header: string, into: Map<string, string>): void {
+  if (!header.trim()) return;
+  for (const part of header.split(';')) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    into.set(trimmed.slice(0, eq).trim(), trimmed.slice(eq + 1).trim());
+  }
+}
+
+function currentCookieHeader(): string {
+  const merged = new Map(upstreamJar);
+  parseCookiePairs(String((globalThis as { __dy_cookie?: string }).__dy_cookie || ''), merged);
+  return [...merged.entries()].map(([key, value]) => `${key}=${value}`).join('; ');
+}
+
+function rememberSetCookies(res: Response): void {
+  const headers = res.headers as Headers & { getSetCookie?: () => string[] };
+  const list = typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : [];
+  for (const raw of list) {
+    const pair = raw.split(';')[0]?.trim();
+    if (!pair) continue;
+    const eq = pair.indexOf('=');
+    if (eq <= 0) continue;
+    upstreamJar.set(pair.slice(0, eq).trim(), pair.slice(eq + 1).trim());
+  }
+}
+
 function resolveRequestUrl(input: string): string {
   if (/^https?:\/\//i.test(input)) return input;
+  if (upstreamOrigin && input.startsWith('/dylive/')) {
+    const stripped = input.slice('/dylive'.length);
+    return new URL(stripped, `${upstreamOrigin}/`).toString();
+  }
   const g = globalThis as any;
   const origin = g?.location?.origin;
   if (typeof origin === 'string' && origin) {
@@ -15,14 +70,31 @@ function resolveRequestUrl(input: string): string {
   return new URL(input, 'http://127.0.0.1:5173').toString();
 }
 
+async function fetchUpstream(input: string, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (upstreamOrigin) {
+    const cookie = currentCookieHeader();
+    if (cookie && !headers.has('cookie')) headers.set('cookie', cookie);
+    if (!headers.has('user-agent')) headers.set('user-agent', UPSTREAM_USER_AGENT);
+    if (!headers.has('referer')) headers.set('referer', 'https://live.douyin.com/');
+  }
+  const res = await fetch(resolveRequestUrl(input), { ...init, headers });
+  if (upstreamOrigin) rememberSetCookies(res);
+  if (res.status === 401 || res.status === 403) {
+    throw new UpstreamAuthError(res.status);
+  }
+  return res;
+}
+
 /**
  * 请求直播间信息
  */
 export const fetchLiveInfo = async function (id: string) {
   try {
-    const html = await fetch(resolveRequestUrl(`/dylive/${id}`)).then(res => res.text());
+    const html = await fetchUpstream(`/dylive/${id}`).then(res => res.text());
     return html;
   } catch (err) {
+    if (err instanceof UpstreamAuthError) return Promise.reject(err);
     return Promise.reject(Error('Fetch Live Info Error'));
   }
 };
@@ -57,7 +129,7 @@ export const getLiveInfo = async function (id: string) {
  */
 export const fetchUser = async function () {
   try {
-    await fetch(resolveRequestUrl(`/dylive/webcast/user/`), {
+    await fetchUpstream(`/dylive/webcast/user/`, {
       method: 'HEAD',
       headers: {
         'X-Secsdk-Csrf-Request': '1',
@@ -65,6 +137,7 @@ export const fetchUser = async function () {
       }
     });
   } catch (err) {
+    if (err instanceof UpstreamAuthError) return Promise.reject(err);
     return Promise.reject(Error('Fetch Webcast User Error'));
   }
 };
@@ -150,14 +223,12 @@ export const fetchImInfo = async function (roomId: string, uniqueId: string) {
       live_pc: roomId,
       a_bogus: aBogus
     });
-    const url = resolveRequestUrl(`/dylive/webcast/im/fetch/?${makeUrlParams(params)}`);
-    // 不清楚接口是否有 referer 验证，需要的话，得在服务器跨域配置处设置，这里配置无效
-    // const headers = {
-    //   Referer: `https://live.douyin.com/${roomNum}`
-    // };
-    const buffer = await fetch(url).then(res => res.arrayBuffer());
+    const buffer = await fetchUpstream(`/dylive/webcast/im/fetch/?${makeUrlParams(params)}`).then(res =>
+      res.arrayBuffer()
+    );
     return buffer;
   } catch (err) {
+    if (err instanceof UpstreamAuthError) return Promise.reject(err);
     return Promise.reject(Error('Fetch Im Info Error'));
   }
 };
@@ -168,7 +239,7 @@ export const fetchImInfo = async function (roomId: string, uniqueId: string) {
  * @param uniqueId
  * @returns
  */
-export const getImInfo = async function (roomId: string, uniqueId: string): Promise<DyImInfo> {
+export const getImInfo = async function (roomId: string, uniqueId: string, strict = false): Promise<DyImInfo> {
   const reqMs = Date.now();
   try {
     const buffer = await fetchImInfo(roomId, uniqueId);
@@ -184,6 +255,10 @@ export const getImInfo = async function (roomId: string, uniqueId: string): Prom
       liveCursor: res.liveCursor
     };
   } catch (err) {
+    if (strict) {
+      if (err instanceof UpstreamAuthError) throw err;
+      throw new Error('im_fetch_failed');
+    }
     const now = Date.now();
     CLog.error('getImInfo fallback cursor/internalExt', {
       roomId,
@@ -232,8 +307,7 @@ export const fetchMeInfo = async function () {
       msToken,
       a_bogus: abogus
     });
-    const url = resolveRequestUrl(`/dylive/webcast/user/me/?${makeUrlParams(params)}`);
-    const res = await fetch(url).then(res => res.json());
+    const res = await fetchUpstream(`/dylive/webcast/user/me/?${makeUrlParams(params)}`).then(res => res.json());
     if (res) return res;
     else return Promise.reject(`Fetch Me Info Fail`);
     if (res && res['status_code'] !== 0) {
