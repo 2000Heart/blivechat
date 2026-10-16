@@ -18,6 +18,7 @@ export type LoginMode = 'interactive' | 'silent'
 type SessionOptions = {
   launch: (mode: LoginMode) => Promise<FakeBrowser>
   now?: () => number
+  sleep?: (ms: number) => Promise<void>
   interactiveTimeoutMs: number
   silentTimeoutMs: number
 }
@@ -34,6 +35,7 @@ type StatusBody = {
 export class CookieLoginSession {
   private readonly launch: SessionOptions['launch']
   private readonly now: () => number
+  private readonly sleep: (ms: number) => Promise<void>
   private readonly interactiveTimeoutMs: number
   private readonly silentTimeoutMs: number
 
@@ -48,6 +50,7 @@ export class CookieLoginSession {
   constructor(opts: SessionOptions) {
     this.launch = opts.launch
     this.now = opts.now ?? Date.now
+    this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))
     this.interactiveTimeoutMs = opts.interactiveTimeoutMs
     this.silentTimeoutMs = opts.silentTimeoutMs
   }
@@ -136,6 +139,7 @@ export class CookieLoginSession {
           this.updatedAt = this.now()
           return
         }
+        await this.sleep(1000)
         continue
       }
 
@@ -146,6 +150,9 @@ export class CookieLoginSession {
 
       while (this.now() - judgedAt < 1000) {
         if (await this.stopIfNeeded(browser, timeoutMs)) return
+        const delta = this.now() - judgedAt
+        if (delta >= 1000) break
+        await this.sleep(Math.min(200, 1000 - delta))
       }
 
       const cookies2 = await browser.cookies()

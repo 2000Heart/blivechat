@@ -76,6 +76,7 @@ test('cancel sets cancelled and closes the browser', async () => {
         closed = true
       },
     }),
+    sleep: async () => {},
     interactiveTimeoutMs: 300_000,
     silentTimeoutMs: 30_000,
   })
@@ -111,7 +112,6 @@ test('interactive success waits 1s via injected clock', async () => {
       url: () => 'https://live.douyin.com/1',
       cookies: async () => {
         cookieCalls += 1
-        if (cookieCalls === 1) now += 1000
         return readyCookies()
       },
       close: async () => {
@@ -119,6 +119,9 @@ test('interactive success waits 1s via injected clock', async () => {
       },
     }),
     now: () => now,
+    sleep: async (ms) => {
+      now += ms
+    },
     interactiveTimeoutMs: 300_000,
     silentTimeoutMs: 30_000,
   })
