@@ -5,6 +5,7 @@ import vm from 'vm';
 import { createRequire } from 'module';
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { RelayCast } from '../core/relay';
+import { resolveBrowserExecutablePath } from './cookie-login-browser';
 interface DyLiveInfo {
   roomNum?: string;
   roomId: string;
@@ -166,21 +167,6 @@ async function getDyCastCtor(origin: string): Promise<RuntimeDyCastCtor> {
   }
   cachedCtor = mod.DyCast as RuntimeDyCastCtor;
   return cachedCtor;
-}
-
-function resolveBrowserExecutablePath(): string | null {
-  const g = globalThis as any;
-  const envPath = String(g?.process?.env?.CHROME_PATH || '').trim();
-  if (envPath && fs.existsSync(envPath)) return envPath;
-  const candidates = [
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-    '/Applications/Chromium.app/Contents/MacOS/Chromium'
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
 }
 
 class BrowserDycastConnector {

@@ -5,6 +5,11 @@
 import type { ClientRequest } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { SidecarEngine, setSidecarModuleLoader } from './src/sidecar/engine';
+import {
+  createCookieLoginSessionFromEnv,
+  isLoopbackAddress
+} from './src/sidecar/cookie-login-browser';
+import type { CookieLoginSession } from './src/sidecar/cookie-login-session';
 
 let pastedCookie = '';
 type ControlAction = 'none' | 'connect' | 'disconnect';
@@ -35,6 +40,23 @@ const controlState: SidecarControlState = {
 const sidecarEngine = new SidecarEngine(400);
 const previewClients = new Map<string, PreviewClient>();
 const sidecarOrigin = 'http://127.0.0.1:5173';
+let cookieLoginSession: CookieLoginSession | null = null;
+
+function getCookieLoginSession(): CookieLoginSession {
+  if (!cookieLoginSession) {
+    cookieLoginSession = createCookieLoginSessionFromEnv();
+  }
+  return cookieLoginSession;
+}
+
+function requestPathname(url: string): string {
+  const q = url.indexOf('?');
+  return q === -1 ? url : url.slice(0, q);
+}
+
+function isLoginMode(mode: unknown): mode is 'interactive' | 'silent' {
+  return mode === 'interactive' || mode === 'silent';
+}
 
 export function setSidecarSsrModuleLoader(loader: ((id: string) => Promise<any>) | null): void {
   setSidecarModuleLoader(loader);
@@ -245,12 +267,57 @@ function handlePreviewSse(req: IncomingMessage, res: ServerResponse): void {
   });
 }
 
+function handleLoginApi(req: IncomingMessage, res: ServerResponse): boolean {
+  const url = requestPathname(req.url || '');
+  const isStart = url === '/__api/dycast/login/start' && req.method === 'POST';
+  const isStatus = url === '/__api/dycast/login/status' && req.method === 'GET';
+  const isConsume = url === '/__api/dycast/login/consume' && req.method === 'POST';
+  const isCancel = url === '/__api/dycast/login/cancel' && req.method === 'POST';
+  if (!isStart && !isStatus && !isConsume && !isCancel) return false;
+
+  if (!isLoopbackAddress(req.socket?.remoteAddress)) {
+    jsonResponse(res, 403, { ok: false, error: 'forbidden' });
+    return true;
+  }
+
+  const session = getCookieLoginSession();
+  if (isStatus) {
+    jsonResponse(res, 200, { ...session.status(false) });
+    return true;
+  }
+  if (isConsume) {
+    const cookie = session.consumeCookie();
+    jsonResponse(res, 200, { ok: true, cookie, cookieLength: cookie.length });
+    return true;
+  }
+  if (isCancel) {
+    session.cancel();
+    jsonResponse(res, 200, { ...session.status(false) });
+    return true;
+  }
+
+  readJsonBody(
+    req,
+    (obj: { mode?: unknown }) => {
+      if (!isLoginMode(obj?.mode)) {
+        jsonResponse(res, 400, { ok: false, error: 'invalid_mode' });
+        return;
+      }
+      const result = session.start(obj.mode);
+      jsonResponse(res, result.status, { ...result.body });
+    },
+    () => jsonResponse(res, 400, { ok: false, error: 'invalid_json' })
+  );
+  return true;
+}
+
 /** Connect 中间件：POST /__api/dycast/upstream-headers */
 export function douyinUpstreamCookieApiMiddleware(
   req: IncomingMessage,
   res: ServerResponse,
   next: () => void
 ): void {
+  if (handleLoginApi(req, res)) return;
   const url = req.url || '';
   if (url.startsWith('/__api/dycast/control/status') && req.method === 'GET') {
     handleControlStatus(res);
