@@ -64,7 +64,7 @@ Cookie 等同账号登录态，请勿泄露或提交到公开仓库。
 
 手动在输入框粘贴 Cookie 并 **保存配置** 仍然有效；保存后以你粘贴的内容为准，不会被静默续期覆盖，除非你再次使用浏览器登录或静默续期成功写入新 Cookie。
 
-若启动登录流程时提示找不到浏览器，请在运行环境中设置 **`CHROME_PATH`** 指向本机 Chrome / Chromium / Edge 可执行文件。不需要浏览器登录与静默续期时，可在 `data/config.ini` 的 `[relay]` 段设置 **`cookie_auto_refresh=false`**。
+若启动登录流程时提示找不到浏览器，请在运行环境中设置 **`CHROME_PATH`** 指向本机 Chrome / Chromium / Edge 可执行文件。在 `data/config.ini` 的 `[relay]` 段设置 **`cookie_auto_refresh=false`** 时**仅关闭启动时的静默续期**；管理页 **「登录抖音」** 与手动粘贴 Cookie 仍可用，静默失败也不会自动打开浏览器，需自行点击 **「登录抖音」**。
 
 ## 使用步骤
 
