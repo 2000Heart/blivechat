@@ -32,6 +32,7 @@ from cachetools import TTLCache
 import config
 import listener
 import mapper
+import web_admin
 from injector import Injector
 from engine_process import EngineProcess
 from supervisor import LiveSupervisor
@@ -52,6 +53,7 @@ _consume_id: Optional[str] = None
 _login_cancel_requested = False
 _tick_task: Optional[asyncio.Task] = None
 _login_wait_task: Optional[asyncio.Task] = None
+_restart_task: Optional[asyncio.Task] = None
 
 
 def _resolve_sidecar_node_exe(cfg: config.AppConfig, dycast_path: str) -> str:
@@ -153,6 +155,7 @@ async def init():
             logger.error('douyin engine bootstrap failed')
         await blcsdk.log('抖音引擎已启动', logging.INFO)
     _tick_task = asyncio.create_task(_supervisor_tick_loop())
+    await _start_web_admin()
 
 
 def _dedup_key(msg: dict) -> str:
@@ -569,11 +572,199 @@ def _engine_is_running() -> bool:
     return bool(isinstance(snap, dict) and snap.get('running'))
 
 
+_SAVE_FIELDS = {
+    'room_id': 'douyin_room_id',
+    'cookie': 'douyin_cookie',
+    'content_prefix': 'content_prefix',
+    'include_gift': 'include_gift',
+    'native_gift': 'native_gift',
+    'include_like': 'include_like',
+    'include_member': 'include_member',
+    'include_social': 'include_social',
+}
+_BOOL_FIELDS = frozenset(('include_gift', 'native_gift', 'include_like', 'include_member', 'include_social'))
+
+
+def _as_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def admin_snapshot() -> Dict[str, Any]:
+    status = get_runtime_status()
+    cookie = ''
+    try:
+        cfg = config.get_config()
+    except Exception:
+        cfg = None
+    if cfg is not None:
+        cookie = str(getattr(cfg, 'douyin_cookie', '') or '')
+        status['room_id'] = str(getattr(cfg, 'douyin_room_id', '') or '').strip()
+        status['content_prefix'] = str(getattr(cfg, 'content_prefix', '') or '')
+        status['include_gift'] = bool(getattr(cfg, 'include_gift', True))
+        status['native_gift'] = bool(getattr(cfg, 'native_gift', True))
+        status['include_like'] = bool(getattr(cfg, 'include_like', False))
+        status['include_member'] = bool(getattr(cfg, 'include_member', True))
+        status['include_social'] = bool(getattr(cfg, 'include_social', True))
+    status['cookie'] = cookie
+    status['messages'] = list(status.get('messages') or [])[-100:]
+    logs = []
+    for line in list(status.get('logs') or [])[-200:]:
+        text = str(line)
+        if cookie and cookie in text:
+            continue
+        logs.append(text)
+    status['logs'] = logs
+    return status
+
+
+def _save_admin_config(payload: Dict[str, Any]) -> Dict[str, Any]:
+    room_changed = False
+    if 'room_id' in payload and payload.get('room_changed') is not False:
+        try:
+            cfg = config.get_config()
+            old_room = str(getattr(cfg, 'douyin_room_id', '') or '').strip()
+        except Exception:
+            old_room = ''
+        room_changed = str(payload.get('room_id') or '').strip() != old_room
+    values: Dict[str, str] = {}
+    for src, dst in _SAVE_FIELDS.items():
+        if src not in payload:
+            continue
+        raw = payload[src]
+        if src in _BOOL_FIELDS:
+            values[dst] = 'true' if _as_bool(raw) else 'false'
+        elif src == 'room_id':
+            values[dst] = '' if raw is None else str(raw).strip()
+        else:
+            values[dst] = '' if raw is None else str(raw)
+    if values and not config.update_relay_config_values(values):
+        return {'ok': False, 'error': 'save_failed'}
+    if room_changed and _engine_is_running() and _supervisor is not None:
+        room = str(payload.get('room_id') or '').strip()
+        _send_commands(_supervisor.change_room(room) or [])
+    return {'ok': True, 'room_changed': room_changed}
+
+
+def _admin_login_start() -> Dict[str, Any]:
+    global _login_settled, _consume_id, _login_cancel_requested
+    if _engine is None:
+        return {'ok': False, 'error': 'engine_not_ready'}
+    _login_settled = False
+    _consume_id = None
+    _login_cancel_requested = False
+    try:
+        ret = _engine.send({'cmd': 'login_start', 'mode': 'interactive'})
+    except Exception:
+        logger.error('douyin engine send failed cmd=%s', 'login_start')
+        return {'ok': False, 'error': 'engine_not_ready'}
+    if not _login_start_accepted(ret):
+        error = 'engine_not_ready'
+        if isinstance(ret, dict) and ret.get('error'):
+            error = str(ret.get('error'))
+        return {'ok': False, 'error': error}
+    return {'ok': True}
+
+
+def _admin_login_cancel() -> Dict[str, Any]:
+    global _login_cancel_requested
+    if _engine is None:
+        return {'ok': False, 'error': 'engine_not_ready'}
+    _login_cancel_requested = True
+    try:
+        ret = _engine.send({'cmd': 'login_cancel'})
+    except Exception:
+        logger.error('douyin engine send failed cmd=%s', 'login_cancel')
+        return {'ok': False, 'error': 'engine_not_ready'}
+    if isinstance(ret, dict) and ret.get('ok') is False:
+        return {'ok': False, 'error': str(ret.get('error') or 'engine_not_ready')}
+    return {'ok': True}
+
+
+async def _restart_engine() -> None:
+    global _login_wait_task
+    if shut_down_event is not None and shut_down_event.is_set():
+        return
+    wait_task = _login_wait_task
+    _login_wait_task = None
+    if wait_task is not None and not wait_task.done():
+        wait_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await wait_task
+    engine = _engine
+    supervisor = _supervisor
+    if engine is None or supervisor is None:
+        return
+    await asyncio.to_thread(engine.stop)
+    if shut_down_event is not None and shut_down_event.is_set():
+        return
+    try:
+        await engine.start()
+    except Exception:
+        logger.error('douyin engine restart failed')
+        return
+    if shut_down_event is not None and shut_down_event.is_set():
+        return
+    try:
+        await bootstrap_live(engine, supervisor)
+    except Exception:
+        logger.error('douyin engine bootstrap failed')
+
+
+def _schedule_restart() -> Dict[str, Any]:
+    global _restart_task
+    if _engine is None or _supervisor is None:
+        return {'ok': False, 'error': 'engine_not_ready'}
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return {'ok': False, 'error': 'engine_not_ready'}
+    if _restart_task is None or _restart_task.done():
+        _restart_task = loop.create_task(_restart_engine())
+    return {'ok': True}
+
+
 def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    del payload
+    if not isinstance(payload, dict):
+        payload = {}
+    if action == 'save_config':
+        return _save_admin_config(payload)
+    if action == 'restart':
+        return _schedule_restart()
     if not _engine_is_running():
         return {'ok': False, 'error': 'engine_not_ready'}
+    if action == 'login_start':
+        return _admin_login_start()
+    if action == 'login_cancel':
+        return _admin_login_cancel()
+    if action == 'connect':
+        if _supervisor is None:
+            return {'ok': False, 'error': 'engine_not_ready'}
+        _send_commands(_supervisor.user_connect() or [])
+        return {'ok': True}
+    if action == 'disconnect':
+        if _supervisor is None:
+            return {'ok': False, 'error': 'engine_not_ready'}
+        _send_commands(_supervisor.user_disconnect() or [])
+        return {'ok': True}
     return {'ok': False, 'error': 'unsupported action: %s' % action}
+
+
+async def _start_web_admin() -> None:
+    try:
+        cfg = config.get_config()
+        host = str(getattr(cfg, 'admin_host', '127.0.0.1') or '127.0.0.1')
+        port = int(getattr(cfg, 'admin_port', 18771) or 18771)
+    except Exception:
+        logger.exception('admin config unavailable')
+        return
+    try:
+        await web_admin.start_admin(host, port, admin_snapshot, handle_admin_action)
+    except Exception:
+        logger.exception('admin server failed')
 
 
 def init_signal_handlers():
@@ -617,9 +808,10 @@ async def run():
 
 
 async def shut_down():
-    global _engine, _injector, _tick_task, _login_wait_task
+    global _engine, _injector, _tick_task, _login_wait_task, _restart_task
+    await web_admin.stop_admin()
     listener.shut_down()
-    for task in (_tick_task, _login_wait_task):
+    for task in (_tick_task, _login_wait_task, _restart_task):
         if task is not None and not task.done():
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

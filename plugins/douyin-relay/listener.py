@@ -5,8 +5,8 @@ from typing import *
 
 import blcsdk
 import blcsdk.models as sdk_models
-import admin_ui
 import config
+import web_admin
 
 logger = logging.getLogger('douyin-relay.' + __name__)
 
@@ -32,6 +32,8 @@ class MsgHandler(blcsdk.BaseHandler):
         self, client: blcsdk.BlcPluginClient, message: sdk_models.OpenPluginAdminUiMsg, extra: sdk_models.ExtraData
     ):
         try:
-            admin_ui.open_plugin_admin_ui()
+            cfg = config.get_config()
+            port = int(getattr(cfg, 'admin_port', 18771) or 18771)
+            web_admin.open_admin_browser(already_running=web_admin.admin_is_running(), port=port)
         except Exception:
             logger.exception('Failed to open plugin admin UI')
