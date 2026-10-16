@@ -1,9 +1,37 @@
 import os
+import shutil
 import tempfile
 import unittest
 from unittest import mock
 
 import config as plugin_config
+
+
+class CookieConfigLoadTests(unittest.TestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+    def _write_temp_ini(self, content: str) -> str:
+        path = os.path.join(self._tmpdir, 'config.ini')
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return path
+
+    def test_new_admin_keys_load_while_legacy_keys_remain(self):
+        path = self._write_temp_ini(
+            '[relay]\nmode = direct\nrelay_backend = legacy\nlisten_port = 1\n'
+            'admin_port = 18771\nlive_probe_interval_seconds = 180\n'
+        )
+        cfg = plugin_config.AppConfig()
+        self.assertTrue(cfg.load(path))
+        self.assertEqual(cfg.relay_backend, 'legacy')
+        self.assertEqual(cfg.listen_port, 1)
+        self.assertEqual(cfg.admin_port, 18771)
+        self.assertEqual(cfg.live_probe_interval_seconds, 180)
+        self.assertEqual(cfg.admin_host, '127.0.0.1')
 
 
 class WriteDouyinCookieTests(unittest.TestCase):

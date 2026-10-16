@@ -78,6 +78,9 @@ class AppConfig:
         self.relay_backend = 'legacy'
         self.listen_host = '127.0.0.1'
         self.listen_port = 18765
+        self.admin_host = '127.0.0.1'
+        self.admin_port = 18771
+        self.live_probe_interval_seconds = 180
         self.ws_path = '/'
         self.sidecar_host = '127.0.0.1'
         self.sidecar_port = 5173
@@ -113,6 +116,11 @@ class AppConfig:
             self.relay_backend = sec.get('relay_backend', self.relay_backend).strip().lower() or self.relay_backend
             self.listen_host = sec.get('listen_host', self.listen_host)
             self.listen_port = sec.getint('listen_port', self.listen_port)
+            self.admin_host = sec.get('admin_host', self.admin_host)
+            self.admin_port = sec.getint('admin_port', self.admin_port)
+            self.live_probe_interval_seconds = sec.getint(
+                'live_probe_interval_seconds', self.live_probe_interval_seconds
+            )
             self.ws_path = sec.get('ws_path', self.ws_path)
             self.sidecar_host = sec.get('sidecar_host', self.sidecar_host)
             self.sidecar_port = sec.getint('sidecar_port', self.sidecar_port)
