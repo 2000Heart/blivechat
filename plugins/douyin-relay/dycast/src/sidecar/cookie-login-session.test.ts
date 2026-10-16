@@ -105,13 +105,16 @@ test('silent login url becomes need_login', async () => {
 
 test('interactive success waits 1s via injected clock', async () => {
   let now = 0
-  let cookieCalls = 0
+  const passingCookieAt: number[] = []
   const session = new CookieLoginSession({
     launch: async () => ({
       goto: async () => {},
       url: () => 'https://live.douyin.com/1',
       cookies: async () => {
-        cookieCalls += 1
+        // cookies() may advance the clock, but not enough to satisfy the 1s gap.
+        // The session must wait after the first successful judge.
+        now += 1
+        passingCookieAt.push(now)
         return readyCookies()
       },
       close: async () => {
@@ -128,9 +131,36 @@ test('interactive success waits 1s via injected clock', async () => {
   session.start('interactive')
   await waitUntilNotRunning(session)
   assert.equal(session.status(false).phase, 'done')
-  assert.equal(cookieCalls >= 2, true)
+  assert.equal(passingCookieAt.length >= 2, true)
+  assert.equal(passingCookieAt[1] - passingCookieAt[0] >= 1000, true)
   const st = session.status(false)
   assert.equal('cookie' in st, false)
   assert.equal(session.consumeCookie().includes('sessionid=abc'), true)
   assert.equal(session.consumeCookie(), '')
+})
+
+test('silent timeout becomes need_login after close while running', async () => {
+  let now = 0
+  const silentTimeoutMs = 5_000
+  const session = new CookieLoginSession({
+    launch: async () => ({
+      goto: async () => {},
+      url: () => 'https://live.douyin.com/1',
+      cookies: async () => shortSessionCookies(),
+      close: async () => {
+        assert.equal(session.status(false).phase, 'running')
+      },
+    }),
+    now: () => now,
+    sleep: async (ms) => {
+      now += ms
+    },
+    interactiveTimeoutMs: 300_000,
+    silentTimeoutMs,
+  })
+  session.start('silent')
+  await waitUntilNotRunning(session)
+  const st = session.status(false)
+  assert.equal(st.phase, 'need_login')
+  assert.equal(st.message, 'timeout')
 })

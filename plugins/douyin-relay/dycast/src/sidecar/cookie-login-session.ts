@@ -124,7 +124,6 @@ export class CookieLoginSession {
     while (true) {
       if (await this.stopIfNeeded(browser, timeoutMs)) return
 
-      const judgedAt = this.now()
       const cookies = await browser.cookies()
       const judged = judgeDouyinLogin({ cookies, url: browser.url(), mode })
 
@@ -148,6 +147,7 @@ export class CookieLoginSession {
         return
       }
 
+      const judgedAt = this.now()
       while (this.now() - judgedAt < 1000) {
         if (await this.stopIfNeeded(browser, timeoutMs)) return
         const delta = this.now() - judgedAt
