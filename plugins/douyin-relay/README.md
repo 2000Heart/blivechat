@@ -56,6 +56,16 @@ python -m PyInstaller -y plugins/douyin-relay/douyin-relay.spec
 
 Cookie 等同账号登录态，请勿泄露或提交到公开仓库。
 
+#### 浏览器登录
+
+除上述手动复制外，管理页还提供 **「登录抖音」**：首次无有效 Cookie 时请点击该按钮，在弹出的浏览器窗口中完成抖音登录；成功后 Cookie 会自动写入配置并填入输入框，已配置房间号的 sidecar 会随之重连。
+
+插件启动后（sidecar 模式且 `[relay]` 中 `cookie_auto_refresh=true`，默认开启）会先尝试 **静默续期**：在后台用已保存的浏览器 profile 刷新 Cookie，无需打开管理页；续期成功后再连接房间。若静默失败（日志出现 `need_login` 等），请再次点击 **「登录抖音」** 完成交互登录。
+
+手动在输入框粘贴 Cookie 并 **保存配置** 仍然有效；保存后以你粘贴的内容为准，不会被静默续期覆盖，除非你再次使用浏览器登录或静默续期成功写入新 Cookie。
+
+若启动登录流程时提示找不到浏览器，请在运行环境中设置 **`CHROME_PATH`** 指向本机 Chrome / Chromium / Edge 可执行文件。不需要浏览器登录与静默续期时，可在 `data/config.ini` 的 `[relay]` 段设置 **`cookie_auto_refresh=false`**。
+
 ## 使用步骤
 
 1. 启动 blivechat，在插件管理中启用 **抖音弹幕中继**（首次需在 `data/plugins/douyin-relay/plugin.json` 中把 `enabled` 改为 `true`，或通过管理界面开启）。
