@@ -156,6 +156,26 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(sup.on_login(phase='need_login', cookie=''), [])
         self.assertEqual(sup.phase, 'disconnected')
 
+
+    def test_startup_login_failure_while_held_blocks_later_silent(self):
+        sup = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=False)
+        sup.user_disconnect()
+        self.assertEqual(sup.on_login(phase='error', cookie=''), [])
+        self.assertEqual(sup.phase, 'disconnected')
+        sup.user_connect()
+        sup.on_probe(ok=True, living=True, error='')
+        sup.on_cast_status(state='connected')
+        self.assertEqual(sup.on_cast_status(state='auth_failed'), [])
+
+    def test_late_startup_login_after_user_connect_does_not_need_login(self):
+        sup = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=False)
+        sup.user_disconnect()
+        sup.user_connect()
+        self.assertEqual(sup.on_login(phase='error', cookie=''), [])
+        self.assertNotEqual(sup.phase, 'need_login')
+
     def test_offline_probe_while_held_stays_disconnected(self):
         sup = LiveSupervisor(auto_refresh=False, now=lambda: 0.0)
         sup.start(room_id='1', has_cookie=True)

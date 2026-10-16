@@ -29,6 +29,9 @@ class LiveSupervisor:
         self._silent_used = False
         self._startup_silent_failed = False
         self._awaiting_startup_login = False
+        self._startup_login_epoch = 0
+        self._progress_epoch = 0
+        self._stale_startup_login_results = 0
 
     @property
     def phase(self):
@@ -42,12 +45,17 @@ class LiveSupervisor:
         self._backoff_index = 0
         self._silent_used = False
         self._startup_silent_failed = False
+        if self._awaiting_startup_login:
+            self._stale_startup_login_results += 1
         self._awaiting_startup_login = False
+        self._startup_login_epoch = 0
+        self._progress_epoch = 0
         self._room_id = '' if room_id is None else str(room_id).strip()
         if self._room_id == '':
             self._phase = 'idle'
             return []
         if self._auto_refresh:
+            self._startup_login_epoch += 1
             self._awaiting_startup_login = True
             self._phase = 'refreshing'
             return [_login_silent()]
@@ -57,14 +65,27 @@ class LiveSupervisor:
         return [self._probe_cmd()]
 
     def on_login(self, phase, cookie=''):
+        if self._stale_startup_login_results > 0:
+            self._stale_startup_login_results -= 1
+            return []
+        startup = self._awaiting_startup_login
+        if startup:
+            self._awaiting_startup_login = False
+            if phase in _STARTUP_SILENT_FAILURES:
+                self._startup_silent_failed = True
+            suppress = self._held or self._progress_epoch >= self._startup_login_epoch
+            if suppress:
+                return []
+            if phase == 'done' and isinstance(cookie, str) and len(cookie) >= _COOKIE_MIN_LEN:
+                self._clear_due()
+                return [self._probe_cmd()]
+            self._phase = 'need_login'
+            self._clear_due()
+            return []
         if self._held:
             return []
         if self._phase == 'connected':
             self._phase = 'refreshing'
-        if self._awaiting_startup_login:
-            self._awaiting_startup_login = False
-            if phase in _STARTUP_SILENT_FAILURES:
-                self._startup_silent_failed = True
         if phase == 'done' and isinstance(cookie, str) and len(cookie) >= _COOKIE_MIN_LEN:
             self._clear_due()
             return [self._probe_cmd()]
@@ -132,6 +153,7 @@ class LiveSupervisor:
 
     def user_connect(self):
         self._held = False
+        self._progress_epoch += 1
         self._clear_due()
         self._backoff_index = 0
         return [_disconnect(), self._probe_cmd()]
