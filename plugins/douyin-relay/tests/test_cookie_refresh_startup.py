@@ -68,13 +68,24 @@ def _cfg(**kwargs):
 
 
 class _ScriptEngine:
-    def __init__(self, mod, terminal_phase="need_login", consume_cookie="", fail_start=False, hang=False):
+    def __init__(
+        self,
+        mod,
+        terminal_phase="need_login",
+        consume_cookie="",
+        fail_start=False,
+        hang=False,
+        reject_start=False,
+        done_after_cancel=False,
+    ):
         self.mod = mod
         self.sent = []
         self.terminal_phase = terminal_phase
         self.consume_cookie = consume_cookie
         self.fail_start = fail_start
         self.hang = hang
+        self.reject_start = reject_start
+        self.done_after_cancel = done_after_cancel
         self.login_phase = ""
         self._n = 0
 
@@ -85,6 +96,13 @@ class _ScriptEngine:
         name = cmd.get("cmd")
         if name == "login_start" and self.fail_start:
             raise RuntimeError("login_start failed")
+        if name == "login_start" and self.reject_start:
+            self._n += 1
+            out = dict(cmd)
+            if not out.get("id"):
+                out["id"] = "id-%d" % self._n
+            self.sent.append(out)
+            return {"ok": False, "error": "engine_not_ready"}
         self._n += 1
         out = dict(cmd)
         if not out.get("id"):
@@ -122,6 +140,31 @@ class _ScriptEngine:
             )
             return {"ok": True, "id": out["id"]}
         if name == "login_cancel":
+            if self.done_after_cancel:
+                cookie = self.consume_cookie or ""
+                self.login_phase = "done"
+                self.mod.handle_engine_event(
+                    {
+                        "type": "login",
+                        "id": out["id"],
+                        "phase": "done",
+                        "mode": "silent",
+                        "cookieLength": len(cookie),
+                        "message": "",
+                    }
+                )
+                self.mod.handle_engine_event(
+                    {
+                        "type": "result",
+                        "id": "login-consume",
+                        "ok": True,
+                        "cookie": cookie,
+                        "cookieLength": len(cookie),
+                        "phase": "idle",
+                        "error": "",
+                    }
+                )
+                return {"ok": True, "id": out["id"]}
             self.login_phase = "cancelled"
             self.mod.handle_engine_event(
                 {
@@ -232,6 +275,61 @@ class CookieRefreshStartupTests(unittest.TestCase):
         self.assertEqual(seen, ["cancelled"])
         self.assertNotIn("connect", [item["cmd"] for item in engine.sent])
         write_mock.assert_not_called()
+
+    def test_silent_timeout_done_after_cancel_stays_cancelled(self):
+        raced = "sessionid=race;" + ("y" * 200)
+        engine = _ScriptEngine(self.mod, hang=True, done_after_cancel=True, consume_cookie=raced)
+        cfg = _cfg(cookie_silent_timeout_seconds=0, douyin_cookie="z" * 200, douyin_room_id="9527")
+        supervisor = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        seen = []
+        original = supervisor.on_login
+
+        def _on_login(phase, cookie=""):
+            seen.append(phase)
+            return original(phase, cookie)
+
+        supervisor.on_login = _on_login
+        with mock.patch.object(self.mod.config, "get_config", return_value=cfg), mock.patch.object(
+            self.mod.config, "write_douyin_cookie_atomic", return_value=True
+        ) as write_mock:
+            asyncio.run(self.mod.bootstrap_live(engine, supervisor))
+        self.assertEqual(seen, ["cancelled"])
+        self.assertNotIn("done", seen)
+        self.assertFalse(supervisor._awaiting_startup_login)
+        self.assertEqual(supervisor.phase, "need_login")
+        self.assertIn("login_cancel", [item["cmd"] for item in engine.sent])
+        self.assertNotIn("connect", [item["cmd"] for item in engine.sent])
+        write_mock.assert_not_called()
+
+    def test_login_start_not_ok_falls_back_to_probe_with_disk_cookie(self):
+        engine = _ScriptEngine(self.mod, reject_start=True)
+        cfg = _cfg(douyin_cookie="f" * 200, douyin_room_id="9527", cookie_silent_timeout_seconds=30)
+        supervisor = LiveSupervisor(
+            interval_seconds=cfg.live_probe_interval_seconds,
+            auto_refresh=cfg.cookie_auto_refresh,
+            now=lambda: 0.0,
+        )
+        seen = []
+        original = supervisor.on_login
+
+        def _on_login(phase, cookie=""):
+            seen.append(phase)
+            return original(phase, cookie)
+
+        supervisor.on_login = _on_login
+
+        async def _bootstrap():
+            await asyncio.wait_for(self.mod.bootstrap_live(engine, supervisor), timeout=1)
+
+        with mock.patch.object(self.mod.config, "get_config", return_value=cfg), mock.patch.object(
+            self.mod.config, "write_douyin_cookie_atomic", return_value=True
+        ) as write_mock:
+            asyncio.run(_bootstrap())
+        write_mock.assert_not_called()
+        self.assertEqual(seen, ["error"])
+        self.assertEqual([item["cmd"] for item in engine.sent], ["login_start", "probe_live"])
+        self.assertNotIn("connect", [item["cmd"] for item in engine.sent])
+        self.assertFalse(supervisor._awaiting_startup_login)
 
 
 if __name__ == "__main__":

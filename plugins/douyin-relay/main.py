@@ -49,6 +49,7 @@ _supervisor: Optional[LiveSupervisor] = None
 _recent_messages: deque = deque(maxlen=_RECENT_LIMIT)
 _login_settled = False
 _consume_id: Optional[str] = None
+_login_cancel_requested = False
 _tick_task: Optional[asyncio.Task] = None
 _login_wait_task: Optional[asyncio.Task] = None
 
@@ -288,8 +289,12 @@ def _schedule_login_wait() -> None:
     _login_wait_task = loop.create_task(_wait_silent_login(_engine, cfg))
 
 
+def _login_start_accepted(ret) -> bool:
+    return isinstance(ret, dict) and bool(ret.get('ok'))
+
+
 def _send_commands(cmds, allow_connect=True) -> None:
-    global _login_settled, _consume_id
+    global _login_settled, _consume_id, _login_cancel_requested
     if not cmds or _engine is None:
         return
     room, _disk = _room_and_disk()
@@ -305,20 +310,28 @@ def _send_commands(cmds, allow_connect=True) -> None:
         if name == 'login_start':
             _login_settled = False
             _consume_id = None
+            _login_cancel_requested = False
             armed = True
         try:
-            _engine.send(dict(cmd))
+            ret = _engine.send(dict(cmd))
         except Exception:
             logger.error('douyin engine send failed cmd=%s', name)
             if name == 'login_start':
                 _complete_login('error', '')
                 armed = False
+            continue
+        if name == 'login_start' and not _login_start_accepted(ret):
+            logger.error('douyin engine send failed cmd=%s', name)
+            _complete_login('error', '')
+            armed = False
     if armed and not _login_settled:
         _schedule_login_wait()
 
 
 def _complete_login(phase: str, cookie: str) -> None:
     global _login_settled
+    if _login_cancel_requested and phase == 'done':
+        return
     if _login_settled:
         return
     _login_settled = True
@@ -344,6 +357,8 @@ def _on_login_event(event: dict) -> None:
     logger.info('douyin cookie refresh phase=%s cookieLength=%s', phase, event.get('cookieLength'))
     if phase in ('', 'running', 'idle'):
         return
+    if _login_cancel_requested and phase == 'done':
+        return
     if phase == 'done':
         _consume_id = 'login-consume'
         if _engine is None:
@@ -360,6 +375,8 @@ def _on_login_event(event: dict) -> None:
 
 def _on_result_event(event: dict) -> None:
     global _consume_id
+    if _login_cancel_requested:
+        return
     raw_cookie = event.get('cookie')
     if isinstance(raw_cookie, str):
         cookie = raw_cookie
@@ -416,28 +433,21 @@ def handle_engine_event(event) -> None:
 
 
 async def _timeout_cancel(engine, cfg) -> None:
+    global _login_cancel_requested
+    _login_cancel_requested = True
     try:
         engine.send({'cmd': 'login_cancel'})
     except Exception:
         logger.error('douyin cookie refresh failed phase=%s error=%s', 'running', 'login_cancel')
-    if _login_settled:
-        return
     loop = asyncio.get_running_loop()
     extra = max(1, int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0))
     deadline = loop.time() + extra
     while (
-        not _login_settled
-        and str(getattr(engine, 'login_phase', '') or '') == 'running'
+        str(getattr(engine, 'login_phase', '') or '') == 'running'
         and loop.time() < deadline
     ):
         await asyncio.sleep(0.05)
     if _login_settled:
-        return
-    phase = str(getattr(engine, 'login_phase', '') or '')
-    if phase == 'done':
-        return
-    if phase in ('need_login', 'error', 'cancelled'):
-        _complete_login(phase, '')
         return
     _complete_login('cancelled', '')
 
@@ -454,11 +464,12 @@ async def _wait_silent_login(engine, cfg) -> None:
 
 
 async def bootstrap_live(engine, supervisor) -> None:
-    global _engine, _supervisor, _login_settled, _consume_id
+    global _engine, _supervisor, _login_settled, _consume_id, _login_cancel_requested
     _engine = engine
     _supervisor = supervisor
     _login_settled = False
     _consume_id = None
+    _login_cancel_requested = False
     cfg = config.get_config()
     room = str(getattr(cfg, 'douyin_room_id', '') or '').strip()
     disk = str(getattr(cfg, 'douyin_cookie', '') or '')
@@ -478,8 +489,12 @@ async def bootstrap_live(engine, supervisor) -> None:
         if name == 'login_start':
             started_login = True
             try:
-                engine.send(dict(cmd))
+                ret = engine.send(dict(cmd))
             except Exception:
+                logger.error('douyin cookie refresh failed phase=%s error=%s', '', 'login_start')
+                _complete_login('error', '')
+                return
+            if not _login_start_accepted(ret):
                 logger.error('douyin cookie refresh failed phase=%s error=%s', '', 'login_start')
                 _complete_login('error', '')
                 return

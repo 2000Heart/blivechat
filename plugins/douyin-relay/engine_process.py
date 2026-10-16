@@ -96,7 +96,7 @@ class EngineProcess:
         try:
             await asyncio.wait_for(self._ready_async.wait(), timeout=20)
         except asyncio.TimeoutError:
-            self._running = False
+            self.stop()
             raise RuntimeError('douyin engine ready timeout')
         if not self.snapshot().get('running'):
             raise RuntimeError('douyin engine exited before ready')

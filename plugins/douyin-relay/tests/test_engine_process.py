@@ -1,6 +1,8 @@
+import asyncio
 import json
 import signal
 import subprocess
+import time
 import types
 import unittest
 from unittest import mock
@@ -189,6 +191,66 @@ class EngineProcessTests(unittest.TestCase):
         with mock.patch("engine_process.os.name", "nt"), mock.patch("engine_process.subprocess.run") as run:
             proc.stop()
         self.assertEqual(run.call_args.args[0], ["taskkill", "/F", "/T", "/PID", "77"])
+
+    def test_ready_timeout_stops_process_and_reader_threads(self):
+        class _Pipe:
+            def __init__(self, proc):
+                self._proc = proc
+
+            def readline(self):
+                while self._proc.poll() is None:
+                    time.sleep(0.01)
+                return ""
+
+        class _Proc:
+            def __init__(self):
+                self.pid = 4242
+                self.stdin = _Stdin()
+                self.stdout = _Pipe(self)
+                self.stderr = _Pipe(self)
+                self._poll = None
+
+            def poll(self):
+                return self._poll
+
+            def wait(self, timeout=None):
+                self._poll = 0
+                return 0
+
+            def terminate(self):
+                self._poll = -15
+
+            def kill(self):
+                self._poll = -9
+
+        created = {}
+
+        def popen(_argv, **_kwargs):
+            created["proc"] = _Proc()
+            return created["proc"]
+
+        async def _raise_timeout(awaitable, timeout):
+            del timeout
+            closer = getattr(awaitable, "close", None)
+            if closer is not None:
+                closer()
+            raise asyncio.TimeoutError
+
+        engine = EngineProcess(on_messages=None, on_event=None, node_exe="node", dycast_path=".", popen=popen)
+        with mock.patch("engine_process.os.name", "posix"), mock.patch(
+            "engine_process.os.getpgid", return_value=4242
+        ), mock.patch("engine_process.os.killpg") as killpg, mock.patch(
+            "engine_process.asyncio.wait_for", _raise_timeout
+        ):
+            with self.assertRaises(RuntimeError) as raised:
+                asyncio.run(engine.start())
+        self.assertIn("ready timeout", str(raised.exception))
+        self.assertFalse(engine.snapshot()["running"])
+        self.assertIsNone(engine._proc)
+        self.assertFalse(engine._stdout_thread.is_alive())
+        self.assertFalse(engine._stderr_thread.is_alive())
+        self.assertEqual(created["proc"].poll(), 0)
+        killpg.assert_called_once_with(4242, signal.SIGTERM)
 
 
 if __name__ == "__main__":
