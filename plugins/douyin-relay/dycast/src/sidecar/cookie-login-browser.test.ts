@@ -29,18 +29,34 @@ function withEnv(name: string, value: string | undefined, fn: () => void) {
   }
 }
 
-test('resolveBrowserExecutablePath uses existing CHROME_PATH only', () => {
+test('resolveBrowserExecutablePath prefers an existing CHROME_PATH', () => {
   withEnv('CHROME_PATH', undefined, () => {
-    assert.equal(resolveBrowserExecutablePath(), null)
+    assert.equal(resolveBrowserExecutablePath([]), null)
   })
   withEnv('CHROME_PATH', path.join(os.tmpdir(), 'dycast-no-such-chrome'), () => {
-    assert.equal(resolveBrowserExecutablePath(), null)
+    assert.equal(resolveBrowserExecutablePath([]), null)
   })
   const tmp = path.join(os.tmpdir(), `dycast-chrome-path-${process.pid}`)
   fs.writeFileSync(tmp, '')
   try {
     withEnv('CHROME_PATH', tmp, () => {
-      assert.equal(resolveBrowserExecutablePath(), tmp)
+      assert.equal(resolveBrowserExecutablePath([]), tmp)
+    })
+  } finally {
+    fs.unlinkSync(tmp)
+  }
+})
+
+test('resolveBrowserExecutablePath uses an existing candidate when CHROME_PATH is unset', () => {
+  const tmp = path.join(os.tmpdir(), `dycast-fake-browser-${process.pid}`)
+  const missing = path.join(os.tmpdir(), `dycast-missing-browser-${process.pid}`)
+  fs.writeFileSync(tmp, '')
+  try {
+    withEnv('CHROME_PATH', undefined, () => {
+      assert.equal(resolveBrowserExecutablePath([missing, tmp]), tmp)
+    })
+    withEnv('CHROME_PATH', missing, () => {
+      assert.equal(resolveBrowserExecutablePath([tmp]), tmp)
     })
   } finally {
     fs.unlinkSync(tmp)

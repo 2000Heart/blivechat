@@ -43,6 +43,7 @@ export class CookieLoginSession {
   private mode: LoginMode | null = null
   private message = ''
   private cookie = ''
+  private cookieLength = 0
   private startedAt = 0
   private updatedAt = 0
   private aborted = false
@@ -65,6 +66,7 @@ export class CookieLoginSession {
     this.phase = 'running'
     this.mode = mode
     this.cookie = ''
+    this.cookieLength = 0
     this.message = ''
     this.aborted = false
     this.startedAt = this.now()
@@ -80,7 +82,7 @@ export class CookieLoginSession {
     const body: StatusBody = {
       phase: this.phase,
       mode: this.mode,
-      cookieLength: this.cookie.length,
+      cookieLength: this.cookieLength,
       message: this.message,
       updatedAt: this.updatedAt,
     }
@@ -166,13 +168,21 @@ export class CookieLoginSession {
 
   private async stopIfNeeded(browser: FakeBrowser, timeoutMs: number): Promise<boolean> {
     if (this.aborted) {
-      await browser.close()
+      try {
+        await browser.close()
+      } catch {
+        // close failure must not block the cancelled phase
+      }
       this.phase = 'cancelled'
       this.updatedAt = this.now()
       return true
     }
     if (this.now() - this.startedAt >= timeoutMs) {
-      await browser.close()
+      try {
+        await browser.close()
+      } catch {
+        // close failure must not block the timeout phase
+      }
       this.message = 'timeout'
       this.phase = 'need_login'
       this.updatedAt = this.now()
@@ -185,6 +195,7 @@ export class CookieLoginSession {
     const serialized = serializeDouyinCookies(cookies)
     await browser.close()
     this.cookie = serialized
+    this.cookieLength = serialized.length
     this.phase = 'done'
     this.updatedAt = this.now()
   }

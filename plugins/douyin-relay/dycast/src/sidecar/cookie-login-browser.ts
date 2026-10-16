@@ -9,9 +9,12 @@ export function isLoopbackAddress(remoteAddress: string | undefined): boolean {
   return remoteAddress !== undefined && LOOPBACK_ADDRESSES.has(remoteAddress)
 }
 
-export function resolveBrowserExecutablePath(): string | null {
+export function resolveBrowserExecutablePath(candidates?: string[]): string | null {
   const envPath = (process.env.CHROME_PATH || '').trim()
   if (envPath && fs.existsSync(envPath)) return envPath
+  for (const candidate of candidates ?? platformBrowserCandidates()) {
+    if (candidate && fs.existsSync(candidate)) return candidate
+  }
   return null
 }
 

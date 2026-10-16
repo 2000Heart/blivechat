@@ -61,7 +61,10 @@ test('success path closes while running then consumeCookie is one-shot', async (
   assert.equal('cookie' in st, false)
   const cookie = session.consumeCookie()
   assert.equal(cookie.includes('sessionid=abc'), true)
+  assert.equal(session.status(false).cookieLength, cookie.length)
+  assert.equal(session.status(true).cookie, '')
   assert.equal(session.consumeCookie(), '')
+  assert.equal(session.status(false).cookieLength, cookie.length)
   assert.equal(session.status(false).phase, 'done')
 })
 
@@ -135,8 +138,11 @@ test('interactive success waits 1s via injected clock', async () => {
   assert.equal(passingCookieAt[1] - passingCookieAt[0] >= 1000, true)
   const st = session.status(false)
   assert.equal('cookie' in st, false)
-  assert.equal(session.consumeCookie().includes('sessionid=abc'), true)
+  const cookie = session.consumeCookie()
+  assert.equal(cookie.includes('sessionid=abc'), true)
+  assert.equal(session.status(false).cookieLength, cookie.length)
   assert.equal(session.consumeCookie(), '')
+  assert.equal(session.status(false).cookieLength, cookie.length)
 })
 
 test('silent timeout becomes need_login after close while running', async () => {
@@ -157,6 +163,51 @@ test('silent timeout becomes need_login after close while running', async () => 
     },
     interactiveTimeoutMs: 300_000,
     silentTimeoutMs,
+  })
+  session.start('silent')
+  await waitUntilNotRunning(session)
+  const st = session.status(false)
+  assert.equal(st.phase, 'need_login')
+  assert.equal(st.message, 'timeout')
+})
+
+test('cancel still sets cancelled when close throws', async () => {
+  const session = new CookieLoginSession({
+    launch: async () => ({
+      goto: async () => {},
+      url: () => 'https://live.douyin.com/1',
+      cookies: async () => shortSessionCookies(),
+      close: async () => {
+        throw new Error('close failed')
+      },
+    }),
+    sleep: async () => {},
+    interactiveTimeoutMs: 300_000,
+    silentTimeoutMs: 30_000,
+  })
+  session.start('silent')
+  session.cancel()
+  await waitUntilNotRunning(session)
+  assert.equal(session.status(false).phase, 'cancelled')
+})
+
+test('timeout still sets need_login when close throws', async () => {
+  let now = 0
+  const session = new CookieLoginSession({
+    launch: async () => ({
+      goto: async () => {},
+      url: () => 'https://live.douyin.com/1',
+      cookies: async () => shortSessionCookies(),
+      close: async () => {
+        throw new Error('close failed')
+      },
+    }),
+    now: () => now,
+    sleep: async (ms) => {
+      now += ms
+    },
+    interactiveTimeoutMs: 300_000,
+    silentTimeoutMs: 5_000,
   })
   session.start('silent')
   await waitUntilNotRunning(session)
