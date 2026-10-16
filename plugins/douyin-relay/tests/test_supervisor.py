@@ -148,3 +148,48 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(sup.on_cast_status(state='closed', error='empty_signature'), [])
         now[0] = 184
         self.assertEqual(sup.tick(), [{'cmd': 'connect', 'roomNum': '1'}])
+
+    def test_login_failure_while_held_stays_disconnected(self):
+        sup = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=False)
+        sup.user_disconnect()
+        self.assertEqual(sup.on_login(phase='need_login', cookie=''), [])
+        self.assertEqual(sup.phase, 'disconnected')
+
+    def test_offline_probe_while_held_stays_disconnected(self):
+        sup = LiveSupervisor(auto_refresh=False, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=True)
+        sup.user_disconnect()
+        self.assertEqual(sup.on_probe(ok=True, living=False, error=''), [])
+        self.assertEqual(sup.phase, 'disconnected')
+
+    def test_live_end_while_held_stays_disconnected(self):
+        sup = LiveSupervisor(auto_refresh=False, now=lambda: 0.0)
+        sup.start(room_id='1', has_cookie=True)
+        sup.on_probe(ok=True, living=True, error='')
+        sup.on_cast_status(state='connected')
+        sup.user_disconnect()
+        self.assertEqual(sup.on_cast_status(state='live_end'), [])
+        self.assertEqual(sup.phase, 'disconnected')
+
+    def test_connected_while_held_stays_disconnected_and_preserves_state(self):
+        now = [0.0]
+        sup = LiveSupervisor(auto_refresh=True, now=lambda: now[0])
+        sup.start(room_id='1', has_cookie=True)
+        sup.on_login(phase='done', cookie='x' * 200)
+        sup.on_probe(ok=True, living=True, error='')
+        sup.on_cast_status(state='connected')
+        sup.on_cast_status(state='auth_failed')
+        sup.on_login(phase='need_login', cookie='')
+        sup.on_cast_status(state='closed')
+        now[0] = 2
+        sup.tick()
+        sup.on_cast_status(state='connected')
+        sup.on_cast_status(state='closed')
+        backoff_before = sup._backoff_index
+        silent_used_before = sup._silent_used
+        sup.user_disconnect()
+        self.assertEqual(sup.on_cast_status(state='connected'), [])
+        self.assertEqual(sup.phase, 'disconnected')
+        self.assertEqual(sup._backoff_index, backoff_before)
+        self.assertEqual(sup._silent_used, silent_used_before)

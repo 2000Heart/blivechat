@@ -57,6 +57,8 @@ class LiveSupervisor:
         return [self._probe_cmd()]
 
     def on_login(self, phase, cookie=''):
+        if self._held:
+            return []
         if self._phase == 'connected':
             self._phase = 'refreshing'
         if self._awaiting_startup_login:
@@ -65,8 +67,6 @@ class LiveSupervisor:
                 self._startup_silent_failed = True
         if phase == 'done' and isinstance(cookie, str) and len(cookie) >= _COOKIE_MIN_LEN:
             self._clear_due()
-            if self._held:
-                return []
             return [self._probe_cmd()]
         self._phase = 'need_login'
         self._clear_due()
@@ -74,7 +74,7 @@ class LiveSupervisor:
 
     def on_probe(self, ok, living, error=''):
         del ok
-        if self._held and (error == 'auth' or living):
+        if self._held:
             return []
         if error == 'auth':
             return self._begin_auth_recovery()
@@ -88,12 +88,16 @@ class LiveSupervisor:
     def on_cast_status(self, state, error=''):
         del error
         if state == 'connected':
+            if self._held:
+                return []
             self._phase = 'connected'
             self._silent_used = False
             self._backoff_index = 0
             self._clear_due()
             return []
         if state == 'live_end':
+            if self._held:
+                return []
             self._arm_probe()
             return []
         if state == 'closed':
@@ -153,18 +157,18 @@ class LiveSupervisor:
         self._due_kind = None
 
     def _arm_probe(self):
-        self._phase = 'waiting_live'
         if self._held:
             self._clear_due()
             return
+        self._phase = 'waiting_live'
         self._due_at = self._now() + self._interval_seconds
         self._due_kind = 'probe_live'
 
     def _schedule_connect(self, phase):
-        self._phase = phase
         if self._held:
             self._clear_due()
             return
+        self._phase = phase
         index = min(self._backoff_index, len(_BACKOFF_SECONDS) - 1)
         self._due_at = self._now() + _BACKOFF_SECONDS[index]
         self._due_kind = 'connect'
