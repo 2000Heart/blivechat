@@ -65,6 +65,8 @@ class LiveSupervisor:
                 self._startup_silent_failed = True
         if phase == 'done' and isinstance(cookie, str) and len(cookie) >= _COOKIE_MIN_LEN:
             self._clear_due()
+            if self._held:
+                return []
             return [self._probe_cmd()]
         self._phase = 'need_login'
         self._clear_due()

@@ -76,6 +76,14 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(sup.phase, 'need_login')
         self.assertEqual(sup.on_login(phase='done', cookie='y' * 200), [{'cmd': 'probe_live', 'roomNum': '1'}])
 
+    def test_disconnect_ignores_inflight_silent_login(self):
+        sup = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)
+        self.assertEqual(sup.start(room_id='1', has_cookie=False)[0]['cmd'], 'login_start')
+        self.assertEqual(sup.user_disconnect(), [{'cmd': 'disconnect'}])
+        self.assertEqual(sup.on_login(phase='done', cookie='x' * 200), [])
+        self.assertEqual(sup.phase, 'disconnected')
+        self.assertEqual(sup.user_connect()[1]['cmd'], 'probe_live')
+
     def test_disconnect_ignores_inflight_probe_connect_and_auth(self):
         sup = LiveSupervisor(auto_refresh=False, now=lambda: 0.0)
         sup.start(room_id='1', has_cookie=True)
