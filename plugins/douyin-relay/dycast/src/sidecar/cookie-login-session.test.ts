@@ -65,7 +65,7 @@ test('success path closes while running then consumeCookie is one-shot', async (
   assert.equal(session.status(true).cookie, '')
   assert.equal(session.consumeCookie(), '')
   assert.equal(session.status(false).cookieLength, cookie.length)
-  assert.equal(session.status(false).phase, 'done')
+  assert.equal(session.status(false).phase, 'idle')
 })
 
 test('cancel sets cancelled and closes the browser', async () => {

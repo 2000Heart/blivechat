@@ -90,9 +90,22 @@ export class CookieLoginSession {
     return body
   }
 
+  /** @internal HeadlessRouter tests: seed session into done with cookie */
+  seedDoneState(cookie: string): void {
+    this.phase = 'done'
+    this.cookie = cookie
+    this.cookieLength = cookie.length
+    this.updatedAt = this.now()
+  }
+
   consumeCookie(): string {
     const value = this.cookie
+    if (!value) {
+      return value
+    }
     this.cookie = ''
+    this.phase = 'idle'
+    this.mode = null
     return value
   }
 
