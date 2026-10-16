@@ -50,43 +50,14 @@ def get_config() -> 'AppConfig':
     return _config
 
 
-def normalized_ws_path(ws_path: str) -> str:
-    p = (ws_path or '/').strip()
-    if not p.startswith('/'):
-        p = '/' + p
-    return p.rstrip('/') or '/'
-
-
-def get_dycast_relay_ws_url() -> str:
-    """
-    供 dycast「WS地址」填写的 WebSocket URL。
-    监听 0.0.0.0 / :: 时同机填写使用 127.0.0.1。
-    """
-    cfg = get_config()
-    host = (cfg.listen_host or '').strip()
-    if host in ('0.0.0.0', '::', ''):
-        host = '127.0.0.1'
-    p = normalized_ws_path(cfg.ws_path)
-    return f'ws://{host}:{cfg.listen_port}{p}'
-
-
 class AppConfig:
     """插件配置（见 data/config.example.ini）"""
 
     def __init__(self):
-        self.mode = 'relay'
-        self.relay_backend = 'legacy'
-        self.listen_host = '127.0.0.1'
-        self.listen_port = 18765
         self.admin_host = '127.0.0.1'
         self.admin_port = 18771
         self.live_probe_interval_seconds = 180
-        self.ws_path = '/'
-        self.sidecar_host = '127.0.0.1'
-        self.sidecar_port = 5173
-        self.sidecar_start_timeout_seconds = 20
         self.sidecar_node_exe = 'node'
-        self.sidecar_node_cmd = '{node} ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port {port}'
         self.douyin_room_id = ''
         self.douyin_cookie = ''
         self.cookie_auto_refresh = True
@@ -112,23 +83,12 @@ class AppConfig:
             if sec is None:
                 logger.warning('No [relay] section in config, using defaults')
                 return True
-            self.mode = sec.get('mode', self.mode).strip().lower() or self.mode
-            self.relay_backend = sec.get('relay_backend', self.relay_backend).strip().lower() or self.relay_backend
-            self.listen_host = sec.get('listen_host', self.listen_host)
-            self.listen_port = sec.getint('listen_port', self.listen_port)
             self.admin_host = sec.get('admin_host', self.admin_host)
             self.admin_port = sec.getint('admin_port', self.admin_port)
             self.live_probe_interval_seconds = sec.getint(
                 'live_probe_interval_seconds', self.live_probe_interval_seconds
             )
-            self.ws_path = sec.get('ws_path', self.ws_path)
-            self.sidecar_host = sec.get('sidecar_host', self.sidecar_host)
-            self.sidecar_port = sec.getint('sidecar_port', self.sidecar_port)
-            self.sidecar_start_timeout_seconds = sec.getint(
-                'sidecar_start_timeout_seconds', self.sidecar_start_timeout_seconds
-            )
             self.sidecar_node_exe = sec.get('sidecar_node_exe', self.sidecar_node_exe)
-            self.sidecar_node_cmd = sec.get('sidecar_node_cmd', self.sidecar_node_cmd)
             self.douyin_room_id = sec.get('douyin_room_id', self.douyin_room_id)
             self.douyin_cookie = sec.get('douyin_cookie', self.douyin_cookie)
             self.cookie_auto_refresh = sec.getboolean('cookie_auto_refresh', self.cookie_auto_refresh)
@@ -151,12 +111,6 @@ class AppConfig:
             self.dedup_max_size = sec.getint('dedup_max_size', self.dedup_max_size)
             self.inject_queue_max = sec.getint('inject_queue_max', self.inject_queue_max)
             self.inject_concurrency = sec.getint('inject_concurrency', self.inject_concurrency)
-            if self.mode != 'relay':
-                logger.warning('Unknown mode=%s, fallback to relay', self.mode)
-                self.mode = 'relay'
-            if self.relay_backend not in ('legacy', 'sidecar', 'native'):
-                logger.warning('Unknown relay_backend=%s, fallback to legacy', self.relay_backend)
-                self.relay_backend = 'legacy'
         except Exception:
             logger.exception('Failed to load config:')
             return False

@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import asyncio
+import contextlib
 import json
 import logging.handlers
 import os
 import signal
 import sys
+import time
+from collections import deque
 from typing import *
 
 def _inject_project_root_for_local_packages() -> None:
@@ -27,29 +30,27 @@ import blcsdk
 from cachetools import TTLCache
 
 import config
-from douyin_protocol import DouyinProtocol
 import listener
 import mapper
-import admin_ui
 from injector import Injector
-from relay_server import DouyinRelayServer
-from runtime_manager import DycastRuntimeManager, SidecarRuntimeConfig
+from engine_process import EngineProcess
+from supervisor import LiveSupervisor
 
 logger = logging.getLogger('douyin-relay')
+
+_COOKIE_MIN_LEN = 200
+_RECENT_LIMIT = 100
 
 shut_down_event: Optional[asyncio.Event] = None
 _dedup: Optional[TTLCache] = None
 _injector: Optional[Injector] = None
-_relay: Optional[DouyinRelayServer] = None
-_protocol: Optional[DouyinProtocol] = None
-_sidecar: Optional[DycastRuntimeManager] = None
-
-
-def _notify_admin_status_changed() -> None:
-    try:
-        admin_ui.notify_status_changed()
-    except Exception:
-        logger.exception('notify admin status changed failed')
+_engine: Optional[EngineProcess] = None
+_supervisor: Optional[LiveSupervisor] = None
+_recent_messages: deque = deque(maxlen=_RECENT_LIMIT)
+_login_settled = False
+_consume_id: Optional[str] = None
+_tick_task: Optional[asyncio.Task] = None
+_login_wait_task: Optional[asyncio.Task] = None
 
 
 def _resolve_sidecar_node_exe(cfg: config.AppConfig, dycast_path: str) -> str:
@@ -114,69 +115,43 @@ async def init():
         raise RuntimeError('SDK version is not compatible')
 
     listener.init()
-    admin_ui.bind_plugin_event_loop(asyncio.get_running_loop())
 
-    global _dedup, _injector, _relay, _protocol, _sidecar
+    global _dedup, _injector, _engine, _supervisor, _tick_task
     cfg = config.get_config()
     _dedup = TTLCache(maxsize=cfg.dedup_max_size, ttl=cfg.dedup_ttl_seconds)
     _injector = Injector(cfg.inject_queue_max, cfg.inject_concurrency)
     await _injector.start()
-    _protocol = DouyinProtocol()
-    admin_ui.set_status_provider(get_runtime_status)
-    admin_ui.set_action_handler(handle_admin_action)
-    _notify_admin_status_changed()
-
-    _relay = DouyinRelayServer(
-        cfg.listen_host,
-        cfg.listen_port,
-        cfg.ws_path,
-        on_text=_on_ws_text,
+    _supervisor = LiveSupervisor(
+        interval_seconds=int(getattr(cfg, 'live_probe_interval_seconds', 180) or 180),
+        auto_refresh=bool(getattr(cfg, 'cookie_auto_refresh', False)),
     )
-    await _relay.start()
-    if cfg.relay_backend == 'sidecar':
-        try:
-            # 优先使用插件内置 dycast（plugins/douyin-relay/dycast）
-            bundled_dycast_path = os.path.join(config.BASE_PATH, 'dycast')
-            # 兼容历史开发目录结构（blivechat 同级 dycast）
-            legacy_dycast_path = os.path.abspath(
-                os.path.join(config.BASE_PATH, '..', '..', '..', 'dycast')
-            )
-            dycast_path = bundled_dycast_path if os.path.isdir(bundled_dycast_path) else legacy_dycast_path
-            node_exe = _resolve_sidecar_node_exe(cfg, dycast_path)
-            _sidecar = DycastRuntimeManager(
-                SidecarRuntimeConfig(
-                    host=cfg.sidecar_host,
-                    port=cfg.sidecar_port,
-                    start_timeout_seconds=cfg.sidecar_start_timeout_seconds,
-                    node_exe=node_exe,
-                    node_cmd=cfg.sidecar_node_cmd,
-                    dycast_path=dycast_path,
-                    env_extra={
-                        'DYCAST_LOGIN_PROFILE_DIR': config.resolve_douyin_browser_profile_dir(cfg),
-                        'DYCAST_LOGIN_TIMEOUT_SECONDS': str(cfg.cookie_login_timeout_seconds),
-                        'DYCAST_SILENT_TIMEOUT_SECONDS': str(cfg.cookie_silent_timeout_seconds),
-                    },
-                )
-            )
-            await _sidecar.start()
-            relay_ws = config.get_dycast_relay_ws_url()
-            await refresh_cookie_then_connect(_sidecar.bridge_client(), cfg, relay_ws)
-            await blcsdk.log(
-                f'sidecar 运行地址: http://{cfg.sidecar_host}:{cfg.sidecar_port}',
-                logging.INFO,
-            )
-            _notify_admin_status_changed()
-        except Exception as e:
-            _sidecar = None
-            await blcsdk.log(
-                f'抖音 sidecar 启动失败: {e}',
-                logging.ERROR,
-            )
+    bundled_dycast_path = os.path.join(config.BASE_PATH, 'dycast')
+    legacy_dycast_path = os.path.abspath(os.path.join(config.BASE_PATH, '..', '..', '..', 'dycast'))
+    dycast_path = bundled_dycast_path if os.path.isdir(bundled_dycast_path) else legacy_dycast_path
+    node_exe = _resolve_sidecar_node_exe(cfg, dycast_path)
+    _engine = EngineProcess(
+        on_messages=_on_engine_messages,
+        on_event=handle_engine_event,
+        node_exe=node_exe,
+        dycast_path=dycast_path,
+        env={
+            'DYCAST_LOGIN_PROFILE_DIR': config.resolve_douyin_browser_profile_dir(cfg),
+            'DYCAST_LOGIN_TIMEOUT_SECONDS': str(cfg.cookie_login_timeout_seconds),
+            'DYCAST_SILENT_TIMEOUT_SECONDS': str(cfg.cookie_silent_timeout_seconds),
+        },
+    )
+    try:
+        await _engine.start()
+    except Exception as e:
+        logger.error('douyin engine start failed error=%s', type(e).__name__)
+        await blcsdk.log('抖音引擎启动失败', logging.ERROR)
     else:
-        await blcsdk.log(
-            f'抖音中继已启动，请在 dycast 填写 ws://{cfg.listen_host}:{cfg.listen_port}{cfg.ws_path}',
-            logging.INFO,
-        )
+        try:
+            await bootstrap_live(_engine, _supervisor)
+        except Exception:
+            logger.error('douyin engine bootstrap failed')
+        await blcsdk.log('抖音引擎已启动', logging.INFO)
+    _tick_task = asyncio.create_task(_supervisor_tick_loop())
 
 
 def _dedup_key(msg: dict) -> str:
@@ -188,23 +163,36 @@ def _dedup_key(msg: dict) -> str:
     return f'{method}:h{hash(blob)}'
 
 
-async def _on_ws_text(raw: str) -> None:
-    assert _protocol is not None
-    kind, payload = _protocol.parse_raw_payload(raw)
-    await _on_protocol_payload(kind, payload)
+def _on_engine_messages(payload) -> None:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    loop.create_task(_handle_messages(payload))
 
 
-async def _on_protocol_payload(kind: str, payload: Any) -> None:
-    if kind == 'unknown' or payload is None:
-        return
-    if kind == 'live_info' and isinstance(payload, dict):
-        title = payload.get('title', '')
-        room = payload.get('roomNum') or payload.get('roomId', '')
-        logger.info('dycast live info: room=%s title=%s', room, title)
-        return
-    if kind != 'messages':
-        return
+def _remember_mapped(mapped: dict) -> None:
+    text = mapped.get('content')
+    if not isinstance(text, str):
+        text = str(mapped.get('text') or '')
+    item = {
+        'time': int(time.time()),
+        'author_name': str(mapped.get('author_name') or ''),
+        'kind': str(mapped.get('kind') or ''),
+        'text': text,
+    }
+    if item['kind'] == 'gift':
+        item['gift_name'] = str(mapped.get('gift_name') or '')
+        try:
+            item['num'] = int(mapped.get('num') or 0)
+        except (TypeError, ValueError):
+            item['num'] = 0
+    _recent_messages.append(item)
 
+
+async def _handle_messages(payload) -> None:
+    if not isinstance(payload, list):
+        return
     cfg = config.get_config()
     assert _dedup is not None and _injector is not None
 
@@ -232,6 +220,7 @@ async def _on_protocol_payload(kind: str, payload: Any) -> None:
         )
         if mapped is None:
             continue
+        _remember_mapped(mapped)
         mapped_count += 1
         if int(mapped.get('guard_level') or 0) == 3:
             logger.info(
@@ -263,7 +252,6 @@ async def _on_protocol_payload(kind: str, payload: Any) -> None:
             int(metrics.get('dropped', 0)),
             int(metrics.get('queue_size', 0)),
         )
-        _notify_admin_status_changed()
 
 
 def redact_secrets(value):
@@ -278,190 +266,299 @@ def redact_secrets(value):
     return value
 
 
-async def refresh_cookie_then_connect(client, cfg, relay_ws_url: str) -> None:
-    cookie_headers = str(getattr(cfg, 'douyin_cookie', '') or '')
-    phase = ''
-    if bool(getattr(cfg, 'cookie_auto_refresh', False)):
-        try:
-            client.login_start('silent')
-            timeout = int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0)
-            loop = asyncio.get_running_loop()
-            deadline = loop.time() + max(0, timeout)
-            cookie_length = 0
-            while True:
-                status = client.login_status() or {}
-                if isinstance(status, dict):
-                    phase = str(status.get('phase') or '')
-                    try:
-                        cookie_length = int(status.get('cookieLength') or 0)
-                    except (TypeError, ValueError):
-                        cookie_length = 0
-                logger.info('douyin cookie refresh phase=%s cookieLength=%s', phase, cookie_length)
-                if phase in ('done', 'need_login', 'error', 'cancelled'):
-                    break
-                if loop.time() >= deadline:
-                    break
-                await asyncio.sleep(1)
-            if phase == 'done':
-                consumed = client.login_consume() or {}
-                new_cookie = str(consumed.get('cookie') or '') if isinstance(consumed, dict) else ''
-                if len(new_cookie) >= 200:
-                    config.write_douyin_cookie_atomic(new_cookie)
-                    cookie_headers = new_cookie
-        except Exception as e:
-            logger.error('douyin cookie refresh failed phase=%s error=%s', phase, e)
-            cookie_headers = str(getattr(cfg, 'douyin_cookie', '') or '')
-    room_id = (getattr(cfg, 'douyin_room_id', '') or '').strip()
-    if not room_id:
+def _room_and_disk():
+    try:
+        cfg = config.get_config()
+    except Exception:
+        return '', ''
+    room = str(getattr(cfg, 'douyin_room_id', '') or '').strip()
+    disk = str(getattr(cfg, 'douyin_cookie', '') or '')
+    return room, disk
+
+
+def _schedule_login_wait() -> None:
+    global _login_wait_task
+    try:
+        loop = asyncio.get_running_loop()
+        cfg = config.get_config()
+    except Exception:
         return
-    if bool(getattr(cfg, 'cookie_auto_refresh', False)):
+    if _login_wait_task is not None and not _login_wait_task.done():
+        return
+    _login_wait_task = loop.create_task(_wait_silent_login(_engine, cfg))
+
+
+def _send_commands(cmds, allow_connect=True) -> None:
+    global _login_settled, _consume_id
+    if not cmds or _engine is None:
+        return
+    room, _disk = _room_and_disk()
+    armed = False
+    for cmd in cmds:
+        if not isinstance(cmd, dict):
+            continue
+        name = str(cmd.get('cmd') or '')
+        if room == '' and name in ('probe_live', 'connect'):
+            continue
+        if name == 'connect' and not allow_connect:
+            continue
+        if name == 'login_start':
+            _login_settled = False
+            _consume_id = None
+            armed = True
         try:
-            client.disconnect()
-        except Exception as e:
-            logger.error('douyin cookie refresh disconnect failed phase=%s error=%s', phase, e)
-    client.connect(room_num=room_id, relay_ws_url=relay_ws_url, raw_headers=cookie_headers)
+            _engine.send(dict(cmd))
+        except Exception:
+            logger.error('douyin engine send failed cmd=%s', name)
+            if name == 'login_start':
+                _complete_login('error', '')
+                armed = False
+    if armed and not _login_settled:
+        _schedule_login_wait()
+
+
+def _complete_login(phase: str, cookie: str) -> None:
+    global _login_settled
+    if _login_settled:
+        return
+    _login_settled = True
+    cmds = []
+    if _supervisor is not None:
+        try:
+            cmds = list(_supervisor.on_login(phase=phase, cookie=cookie) or [])
+        except Exception:
+            logger.error('supervisor on_login failed phase=%s', phase)
+            cmds = []
+    room, disk = _room_and_disk()
+    if phase != 'done' or len(cookie) < _COOKIE_MIN_LEN:
+        has_probe = any(isinstance(item, dict) and item.get('cmd') == 'probe_live' for item in cmds)
+        if len(disk) >= _COOKIE_MIN_LEN and room and not has_probe:
+            cmds.append({'cmd': 'probe_live', 'roomNum': room})
+    cmds = [item for item in cmds if not (isinstance(item, dict) and item.get('cmd') == 'connect')]
+    _send_commands(cmds, allow_connect=False)
+
+
+def _on_login_event(event: dict) -> None:
+    global _consume_id
+    phase = str(event.get('phase') or '')
+    logger.info('douyin cookie refresh phase=%s cookieLength=%s', phase, event.get('cookieLength'))
+    if phase in ('', 'running', 'idle'):
+        return
+    if phase == 'done':
+        _consume_id = 'login-consume'
+        if _engine is None:
+            _complete_login('error', '')
+            return
+        ret = _engine.send({'cmd': 'login_consume', 'id': _consume_id})
+        if _login_settled:
+            return
+        if not isinstance(ret, dict) or not ret.get('ok'):
+            _complete_login('error', '')
+        return
+    _complete_login(phase, '')
+
+
+def _on_result_event(event: dict) -> None:
+    global _consume_id
+    raw_cookie = event.get('cookie')
+    if isinstance(raw_cookie, str):
+        cookie = raw_cookie
+        length = len(cookie)
+    else:
+        cookie = ''
+        length = event.get('cookieLength')
+    logger.info('engine result id=%s ok=%s cookieLength=%s', event.get('id'), bool(event.get('ok')), length)
+    if _consume_id is None or str(event.get('id') or '') != str(_consume_id):
+        return
+    _consume_id = None
+    if len(cookie) >= _COOKIE_MIN_LEN:
+        config.write_douyin_cookie_atomic(cookie)
+    _complete_login('done', cookie)
+
+
+def handle_engine_event(event) -> None:
+    if not isinstance(event, dict):
+        return
+    typ = str(event.get('type') or '')
+    if typ == 'probe':
+        if _supervisor is None:
+            return
+        cmds = _supervisor.on_probe(
+            ok=bool(event.get('ok')),
+            living=bool(event.get('living')),
+            error=str(event.get('error') or ''),
+        )
+        _send_commands(cmds, allow_connect=True)
+        return
+    if typ == 'status':
+        if _supervisor is None:
+            return
+        cmds = _supervisor.on_cast_status(
+            state=str(event.get('state') or ''),
+            error=str(event.get('error') or ''),
+        )
+        _send_commands(cmds, allow_connect=True)
+        return
+    if typ == 'login':
+        _on_login_event(event)
+        return
+    if typ == 'result':
+        _on_result_event(event)
+        return
+    if typ == 'live_info':
+        payload = event.get('payload') if isinstance(event.get('payload'), dict) else event
+        title = ''
+        room = ''
+        if isinstance(payload, dict):
+            title = payload.get('title', '')
+            room = payload.get('roomNum') or payload.get('roomId', '')
+        logger.info('dycast live info: room=%s title=%s', room, title)
+
+
+async def _timeout_cancel(engine, cfg) -> None:
+    try:
+        engine.send({'cmd': 'login_cancel'})
+    except Exception:
+        logger.error('douyin cookie refresh failed phase=%s error=%s', 'running', 'login_cancel')
+    if _login_settled:
+        return
+    loop = asyncio.get_running_loop()
+    extra = max(1, int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0))
+    deadline = loop.time() + extra
+    while (
+        not _login_settled
+        and str(getattr(engine, 'login_phase', '') or '') == 'running'
+        and loop.time() < deadline
+    ):
+        await asyncio.sleep(0.05)
+    if _login_settled:
+        return
+    phase = str(getattr(engine, 'login_phase', '') or '')
+    if phase == 'done':
+        return
+    if phase in ('need_login', 'error', 'cancelled'):
+        _complete_login(phase, '')
+        return
+    _complete_login('cancelled', '')
+
+
+async def _wait_silent_login(engine, cfg) -> None:
+    timeout = int(getattr(cfg, 'cookie_silent_timeout_seconds', 30) or 0)
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + max(0, timeout)
+    while not _login_settled:
+        if loop.time() >= deadline:
+            await _timeout_cancel(engine, cfg)
+            return
+        await asyncio.sleep(0.05)
+
+
+async def bootstrap_live(engine, supervisor) -> None:
+    global _engine, _supervisor, _login_settled, _consume_id
+    _engine = engine
+    _supervisor = supervisor
+    _login_settled = False
+    _consume_id = None
+    cfg = config.get_config()
+    room = str(getattr(cfg, 'douyin_room_id', '') or '').strip()
+    disk = str(getattr(cfg, 'douyin_cookie', '') or '')
+    has_cookie = len(disk) >= _COOKIE_MIN_LEN
+    commands = list(supervisor.start(room_id=room, has_cookie=has_cookie) or [])
+    if bool(getattr(cfg, 'cookie_auto_refresh', False)) and room == '' and not any(
+        isinstance(item, dict) and item.get('cmd') == 'login_start' for item in commands
+    ):
+        commands.insert(0, {'cmd': 'login_start', 'mode': 'silent'})
+    started_login = False
+    for cmd in commands:
+        if not isinstance(cmd, dict):
+            continue
+        name = str(cmd.get('cmd') or '')
+        if room == '' and name in ('probe_live', 'connect'):
+            continue
+        if name == 'login_start':
+            started_login = True
+            try:
+                engine.send(dict(cmd))
+            except Exception:
+                logger.error('douyin cookie refresh failed phase=%s error=%s', '', 'login_start')
+                _complete_login('error', '')
+                return
+            continue
+        try:
+            engine.send(dict(cmd))
+        except Exception:
+            logger.error('douyin engine send failed cmd=%s', name)
+    if started_login and not _login_settled:
+        await _wait_silent_login(engine, cfg)
+
+
+async def _supervisor_tick_loop() -> None:
+    assert shut_down_event is not None
+    while not shut_down_event.is_set():
+        engine = _engine
+        supervisor = _supervisor
+        if engine is not None and supervisor is not None:
+            try:
+                running = bool(engine.snapshot().get('running'))
+            except Exception:
+                running = False
+            if running:
+                try:
+                    cmds = supervisor.tick()
+                except Exception:
+                    logger.error('supervisor tick failed')
+                    cmds = []
+                if cmds:
+                    _send_commands(cmds, allow_connect=True)
+        try:
+            await asyncio.wait_for(shut_down_event.wait(), timeout=0.5)
+        except asyncio.TimeoutError:
+            continue
 
 
 def get_runtime_status() -> Dict[str, Any]:
-    cfg = config.get_config()
     injector_metrics: Dict[str, Any] = {}
     if _injector is not None:
         injector_metrics = _injector.get_metrics()
-    sidecar_snapshot: Dict[str, Any] = {}
-    sidecar_state: Dict[str, Any] = {}
-    if _sidecar is not None:
-        sidecar_snapshot = _sidecar.snapshot()
+    snap: Dict[str, Any] = {'running': False}
+    if _engine is not None:
         try:
-            sidecar_state = _sidecar.bridge_client().status()
-        except Exception as e:
-            sidecar_state = {'ok': False, 'error': str(e)}
-        try:
-            login_state = _sidecar.bridge_client().login_status()
-            if isinstance(sidecar_state, dict) and isinstance(login_state, dict):
-                sidecar_state = {**sidecar_state, **login_state}
+            raw_snap = _engine.snapshot()
+            if isinstance(raw_snap, dict):
+                snap = redact_secrets(raw_snap)
         except Exception:
-            pass
-    sidecar_state = redact_secrets(sidecar_state)
-    sidecar_engine = {}
-    login_phase = ''
-    login_mode = ''
-    login_cookie_length = 0
-    login_message = ''
-    if isinstance(sidecar_state, dict):
-        sidecar_engine = sidecar_state.get('engine', {}) if isinstance(sidecar_state.get('engine', {}), dict) else {}
-        login_phase = str(sidecar_state.get('phase') or '')
-        mode_val = sidecar_state.get('mode')
-        login_mode = '' if mode_val is None else str(mode_val)
-        try:
-            login_cookie_length = int(sidecar_state.get('cookieLength') or 0)
-        except (TypeError, ValueError):
-            login_cookie_length = 0
-        login_message = str(sidecar_state.get('message') or '')
+            snap = {'running': False}
+    phase = _supervisor.phase if _supervisor is not None else 'idle'
+    room, _disk = _room_and_disk()
     return {
-        'current_mode': cfg.mode,
-        'relay_backend': cfg.relay_backend,
-        'state': 'running',
+        'running': bool(snap.get('running', False)),
+        'phase': phase,
+        'state': 'running' if snap.get('running') else 'stopped',
         'sent': int(injector_metrics.get('sent', 0)),
         'dropped': int(injector_metrics.get('dropped', 0)),
         'queue_size': int(injector_metrics.get('queue_size', 0)),
-        'sidecar_engine_state': str(sidecar_engine.get('state', '')),
-        'sidecar_last_message_at': int(sidecar_engine.get('lastMessageAt', 0) or 0),
-        'sidecar_relay_connected': bool(sidecar_engine.get('relayConnected', False)),
-        'sidecar_runtime': sidecar_snapshot,
-        'sidecar_status': sidecar_state,
-        'login_phase': login_phase,
-        'login_mode': login_mode,
-        'login_cookie_length': login_cookie_length,
-        'login_message': login_message,
+        'login_phase': str(snap.get('login_phase') or ''),
+        'room_id': room,
+        'messages': list(_recent_messages),
+        'logs': list(snap.get('logs') or [])[-200:],
     }
 
 
-def _apply_sidecar_runtime_config() -> Dict[str, Any]:
-    if _sidecar is None:
-        return redact_secrets({'ok': False, 'error': 'sidecar manager is not running'})
-    cfg = config.get_config()
-    if cfg.relay_backend != 'sidecar':
-        return redact_secrets({'ok': True, 'applied': False, 'reason': 'relay_backend is not sidecar'})
-
-    room = (cfg.douyin_room_id or '').strip()
-    raw_headers = str(cfg.douyin_cookie or '')
-    relay_ws = config.get_dycast_relay_ws_url()
-    client = _sidecar.bridge_client()
-
-    # 配置更新后统一重新下发，确保 sidecar 使用最新 room/cookie。
-    disconnect_ret = client.disconnect()
-    if room == '':
-        _notify_admin_status_changed()
-        return redact_secrets({
-            'ok': True,
-            'applied': True,
-            'disconnected': bool(disconnect_ret.get('ok', False)),
-            'connected': False,
-            'reason': 'empty room_id',
-        })
-    connect_ret = client.connect(room_num=room, relay_ws_url=relay_ws, raw_headers=raw_headers)
-    _notify_admin_status_changed()
-    return redact_secrets({
-        'ok': bool(connect_ret.get('ok', False)),
-        'applied': True,
-        'disconnected': bool(disconnect_ret.get('ok', False)),
-        'connected': bool(connect_ret.get('ok', False)),
-        'connect_ret': connect_ret,
-    })
+def _engine_is_running() -> bool:
+    if _engine is None:
+        return False
+    try:
+        snap = _engine.snapshot()
+    except Exception:
+        return False
+    return bool(isinstance(snap, dict) and snap.get('running'))
 
 
 def handle_admin_action(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    if action != 'sidecar':
-        return {'ok': False, 'error': f'unsupported action: {action}'}
-    if _sidecar is None:
-        return {'ok': False, 'error': 'sidecar manager is not running'}
-    op = str(payload.get('op') or '').strip().lower()
-    if op == 'status':
-        return {'ok': True, 'data': get_runtime_status()}
-    if op == 'disconnect':
-        ret = _sidecar.bridge_client().disconnect()
-        _notify_admin_status_changed()
-        return ret
-    if op == 'connect':
-        cfg = config.get_config()
-        room = str(payload.get('room_id') or cfg.douyin_room_id or '').strip()
-        raw_headers = str(payload.get('raw_headers') or cfg.douyin_cookie or '')
-        relay_ws = config.get_dycast_relay_ws_url()
-        ret = _sidecar.bridge_client().connect(room_num=room, relay_ws_url=relay_ws, raw_headers=raw_headers)
-        _notify_admin_status_changed()
-        return ret
-    if op == 'restart':
-        # 管理窗口在独立线程时，create_task 必须在插件 asyncio 线程执行
-        def _schedule() -> None:
-            asyncio.create_task(_sidecar.restart())
-
-        try:
-            admin_ui.run_on_plugin_loop(_schedule)
-        except RuntimeError as e:
-            return {'ok': False, 'error': str(e)}
-        _notify_admin_status_changed()
-        return {'ok': True, 'scheduled': True}
-    if op == 'apply_config':
-        return redact_secrets(_apply_sidecar_runtime_config())
-    if op == 'login_start':
-        mode = str(payload.get('mode') or '').strip().lower()
-        if mode != 'interactive':
-            return {'ok': False, 'error': 'interactive only'}
-        return _sidecar.bridge_client().login_start('interactive')
-    if op == 'login_cancel':
-        return _sidecar.bridge_client().login_cancel()
-    if op == 'login_finish':
-        st = _sidecar.bridge_client().login_status() or {}
-        phase = str(st.get('phase') or '') if isinstance(st, dict) else ''
-        if phase != 'done':
-            return {'ok': True, 'pending': True, 'phase': phase}
-        consumed = _sidecar.bridge_client().login_consume() or {}
-        cookie = str(consumed.get('cookie') or '') if isinstance(consumed, dict) else ''
-        if len(cookie) < 200:
-            return {'ok': False, 'error': 'cookie_too_short'}
-        config.write_douyin_cookie_atomic(cookie)
-        return redact_secrets(_apply_sidecar_runtime_config())
-    return {'ok': False, 'error': f'unsupported op: {op}'}
+    del payload
+    if not _engine_is_running():
+        return {'ok': False, 'error': 'engine_not_ready'}
+    return {'ok': False, 'error': 'unsupported action: %s' % action}
 
 
 def init_signal_handlers():
@@ -505,19 +602,22 @@ async def run():
 
 
 async def shut_down():
-    global _relay, _injector, _sidecar
+    global _engine, _injector, _tick_task, _login_wait_task
     listener.shut_down()
-    if _relay is not None:
-        await _relay.stop()
-        _relay = None
+    for task in (_tick_task, _login_wait_task):
+        if task is not None and not task.done():
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+    _tick_task = None
+    _login_wait_task = None
+    if _engine is not None:
+        await asyncio.to_thread(_engine.stop)
+        _engine = None
     if _injector is not None:
         await _injector.stop()
         _injector = None
-    if _sidecar is not None:
-        await _sidecar.stop()
-        _sidecar = None
-    _notify_admin_status_changed()
-    logger.info('runtime status(final): %s', json.dumps(get_runtime_status(), ensure_ascii=False, sort_keys=True))
+    logger.info('runtime status(final): %s', json.dumps(redact_secrets(get_runtime_status()), ensure_ascii=False, sort_keys=True))
     await blcsdk.shut_down()
 
 

@@ -1,9 +1,11 @@
+import asyncio
 import importlib.util
 import json
 import pathlib
 import sys
 import types
 import unittest
+from unittest import mock
 
 
 def _load_main_module():
@@ -14,19 +16,11 @@ def _load_main_module():
         shut_down=lambda: None,
     )
     sys.modules["blcsdk"] = fake_blcsdk
-    fake_cachetools = types.SimpleNamespace(TTLCache=dict)
-    sys.modules["cachetools"] = fake_cachetools
+    sys.modules["cachetools"] = types.SimpleNamespace(TTLCache=dict)
     sys.modules["listener"] = types.SimpleNamespace(init=lambda: None, shut_down=lambda: None)
     sys.modules["mapper"] = types.SimpleNamespace(
-        GIFT="gift",
+        GIFT="WebcastGiftMessage",
         map_dy_payload=lambda *_args, **_kwargs: None,
-    )
-    sys.modules["admin_ui"] = types.SimpleNamespace(
-        notify_status_changed=lambda: None,
-        bind_plugin_event_loop=lambda _loop: None,
-        set_status_provider=lambda _provider: None,
-        set_action_handler=lambda _handler: None,
-        run_on_plugin_loop=lambda fn: fn(),
     )
 
     class _InjectorStub:
@@ -45,40 +39,12 @@ def _load_main_module():
         def get_metrics(self):
             return {}
 
-    class _ProtocolStub:
-        def parse_raw_payload(self, _raw):
-            return "unknown", None
-
-    class _RelayStub:
-        def __init__(self, *_args, **_kwargs):
-            pass
-
-        async def start(self):
-            return None
-
-        async def stop(self):
-            return None
-
-    class _RuntimeManagerStub:
-        def __init__(self, *_args, **_kwargs):
-            pass
-
-    class _RuntimeConfigStub:
-        def __init__(self, **kwargs):
-            self.__dict__.update(kwargs)
-
     sys.modules["injector"] = types.SimpleNamespace(Injector=_InjectorStub)
-    sys.modules["douyin_protocol"] = types.SimpleNamespace(DouyinProtocol=_ProtocolStub)
-    sys.modules["relay_server"] = types.SimpleNamespace(DouyinRelayServer=_RelayStub)
-    sys.modules["runtime_manager"] = types.SimpleNamespace(
-        DycastRuntimeManager=_RuntimeManagerStub,
-        SidecarRuntimeConfig=_RuntimeConfigStub,
-    )
     plugin_dir = pathlib.Path(__file__).resolve().parents[1]
     if str(plugin_dir) not in sys.path:
         sys.path.insert(0, str(plugin_dir))
     spec = importlib.util.spec_from_file_location(
-        "douyin_relay_main",
+        "douyin_relay_main_runtime",
         plugin_dir / "main.py",
     )
     module = importlib.util.module_from_spec(spec)
@@ -87,50 +53,19 @@ def _load_main_module():
     return module
 
 
-class _FakeBridgeClient:
+class _StoppedEngine:
     def __init__(self):
-        self.calls = []
+        self.sent = []
 
-    def disconnect(self):
-        self.calls.append(("disconnect",))
-        return {"ok": True}
+    def snapshot(self):
+        return {"running": False, "login_phase": "", "logs": []}
 
-    def connect(self, room_num, relay_ws_url, raw_headers=""):
-        self.calls.append(("connect", room_num, relay_ws_url, raw_headers))
-        return {"ok": True}
-
-
-class _FakeSidecar:
-    def __init__(self, client):
-        self._client = client
-
-    def bridge_client(self):
-        return self._client
+    def send(self, cmd):
+        self.sent.append(cmd)
+        return {"ok": True, "id": "x"}
 
 
 class RuntimeConfigApplyTests(unittest.TestCase):
-    def test_apply_config_should_reconnect_with_latest_cookie_and_room(self):
-        mod = _load_main_module()
-        client = _FakeBridgeClient()
-        mod._sidecar = _FakeSidecar(client)
-        mod.config.get_config = lambda: types.SimpleNamespace(
-            relay_backend="sidecar",
-            douyin_room_id="9527",
-            douyin_cookie="cookie=v2",
-        )
-        mod.config.get_dycast_relay_ws_url = lambda: "ws://127.0.0.1:18765/"
-
-        ret = mod.handle_admin_action("sidecar", {"op": "apply_config"})
-
-        self.assertTrue(ret.get("ok"))
-        self.assertEqual(
-            client.calls,
-            [
-                ("disconnect",),
-                ("connect", "9527", "ws://127.0.0.1:18765/", "cookie=v2"),
-            ],
-        )
-
     def test_redact_secrets_strips_raw_headers_and_cookie_keys(self):
         mod = _load_main_module()
         out = mod.redact_secrets(
@@ -150,32 +85,97 @@ class RuntimeConfigApplyTests(unittest.TestCase):
             },
         )
 
-    def test_apply_config_redacts_connect_ret_secrets(self):
+    def test_engine_not_ready_omits_cookie_and_does_not_send(self):
         mod = _load_main_module()
+        engine = _StoppedEngine()
+        mod._engine = engine
+        mod.config.get_config = lambda: types.SimpleNamespace(douyin_cookie="sessionid=secret" + ("x" * 200))
+        ret = mod.handle_admin_action("connect", {"cookie": "sessionid=secret", "rawHeaders": "sessionid=secret"})
+        self.assertEqual(ret, {"ok": False, "error": "engine_not_ready"})
+        self.assertEqual(engine.sent, [])
+        self.assertNotIn("sessionid", json.dumps(ret))
+        self.assertNotIn("secret", json.dumps(ret))
 
-        class _SecretClient(_FakeBridgeClient):
-            def connect(self, room_num, relay_ws_url, raw_headers=""):
-                self.calls.append(("connect", room_num, relay_ws_url, raw_headers))
-                return {"ok": True, "rawHeaders": "secret=1", "cookie": "abc"}
+    def test_missing_engine_is_not_ready(self):
+        mod = _load_main_module()
+        mod._engine = None
+        ret = mod.handle_admin_action("login_start", {"cookie": "sessionid=secret"})
+        self.assertEqual(ret, {"ok": False, "error": "engine_not_ready"})
+        self.assertNotIn("sessionid", json.dumps(ret))
 
-        client = _SecretClient()
-        mod._sidecar = _FakeSidecar(client)
+    def test_probe_status_and_login_hit_supervisor_once(self):
+        mod = _load_main_module()
+        supervisor = mock.Mock()
+        supervisor.on_probe.return_value = []
+        supervisor.on_cast_status.return_value = []
+        supervisor.on_login.return_value = []
+        mod._supervisor = supervisor
+        mod._engine = _StoppedEngine()
+        mod._engine.snapshot = lambda: {"running": True, "login_phase": "", "logs": []}
+        mod._login_settled = False
+        mod._consume_id = None
+        mod.config.get_config = lambda: types.SimpleNamespace(douyin_room_id="1", douyin_cookie="")
+        with self.assertLogs("douyin-relay", level="INFO") as captured:
+            mod.handle_engine_event({"type": "probe", "id": "p", "ok": False, "living": False, "error": "auth"})
+            mod.handle_engine_event({"type": "result", "id": "p", "ok": True, "cookie": "sessionid=secret"})
+            mod.handle_engine_event({"type": "status", "id": "c", "state": "closed", "error": "empty_signature"})
+            mod.handle_engine_event({"type": "login", "id": "l", "phase": "need_login", "cookieLength": 0})
+        self.assertEqual(supervisor.on_probe.call_count, 1)
+        self.assertEqual(supervisor.on_cast_status.call_count, 1)
+        self.assertEqual(supervisor.on_login.call_count, 1)
+        self.assertNotIn("sessionid", "\n".join(captured.output))
+
+    def test_mapped_messages_keep_recent_fields(self):
+        mod = _load_main_module()
+        mod._dedup = {}
+
+        class _Injector:
+            async def enqueue(self, _item):
+                return None
+
+            def get_metrics(self):
+                return {}
+
+        mod._injector = _Injector()
+        mod._recent_messages.clear()
+        mod.mapper.map_dy_payload = lambda *_args, **_kwargs: {
+            "kind": "gift",
+            "author_name": "a",
+            "gift_name": "玫瑰",
+            "num": 2,
+        }
         mod.config.get_config = lambda: types.SimpleNamespace(
-            relay_backend="sidecar",
-            douyin_room_id="9527",
-            douyin_cookie="cookie=v2",
+            content_prefix="",
+            include_gift=True,
+            native_gift=True,
+            include_like=False,
+            include_member=True,
+            include_social=True,
+            douyin_room_id="1",
+            douyin_cookie="",
         )
-        mod.config.get_dycast_relay_ws_url = lambda: "ws://127.0.0.1:18765/"
+        asyncio.run(mod._handle_messages([{"method": "WebcastGiftMessage", "id": "g1"}]))
+        item = mod._recent_messages[0]
+        self.assertEqual(item["author_name"], "a")
+        self.assertEqual(item["kind"], "gift")
+        self.assertIn("text", item)
+        self.assertEqual(item["gift_name"], "玫瑰")
+        self.assertEqual(item["num"], 2)
+        self.assertIn("time", item)
 
-        ret = mod.handle_admin_action("sidecar", {"op": "apply_config"})
+        def _text(_item, **_kwargs):
+            return {"kind": "text", "author_name": "b", "content": "hi"}
 
-        self.assertTrue(ret.get("ok"))
-        dumped = json.dumps(ret)
-        self.assertNotIn("rawHeaders", dumped)
-        self.assertNotIn("secret=1", dumped)
-        connect_ret = ret.get("connect_ret") or {}
-        self.assertNotIn("cookie", connect_ret)
-        self.assertNotIn("rawHeaders", connect_ret)
+        mod.mapper.map_dy_payload = _text
+        mod._recent_messages.clear()
+
+        async def _fill():
+            for i in range(101):
+                await mod._handle_messages([{"method": "WebcastChatMessage", "id": str(i)}])
+
+        asyncio.run(_fill())
+        self.assertEqual(len(mod._recent_messages), 100)
+        self.assertEqual(mod._recent_messages[-1]["text"], "hi")
 
 
 if __name__ == "__main__":

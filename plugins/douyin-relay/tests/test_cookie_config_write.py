@@ -20,18 +20,18 @@ class CookieConfigLoadTests(unittest.TestCase):
             f.write(content)
         return path
 
-    def test_new_admin_keys_load_while_legacy_keys_remain(self):
+    def test_admin_keys_load(self):
         path = self._write_temp_ini(
-            '[relay]\nmode = direct\nrelay_backend = legacy\nlisten_port = 1\n'
-            'admin_port = 18771\nlive_probe_interval_seconds = 180\n'
+            '[relay]\nadmin_port = 18771\nlive_probe_interval_seconds = 180\n'
         )
         cfg = plugin_config.AppConfig()
         self.assertTrue(cfg.load(path))
-        self.assertEqual(cfg.relay_backend, 'legacy')
-        self.assertEqual(cfg.listen_port, 1)
         self.assertEqual(cfg.admin_port, 18771)
         self.assertEqual(cfg.live_probe_interval_seconds, 180)
         self.assertEqual(cfg.admin_host, '127.0.0.1')
+        self.assertFalse(hasattr(cfg, 'relay_backend'))
+        self.assertFalse(hasattr(cfg, 'listen_port'))
+        self.assertFalse(hasattr(cfg, 'mode'))
 
 
 class WriteDouyinCookieTests(unittest.TestCase):
@@ -57,7 +57,7 @@ class WriteDouyinCookieTests(unittest.TestCase):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(
                     '[relay]\n'
-                    'relay_backend = sidecar\n'
+                    'admin_port = 18771\n'
                     'douyin_room_id = 9527\n'
                     'douyin_cookie = old\n'
                 )
@@ -74,7 +74,7 @@ class WriteDouyinCookieTests(unittest.TestCase):
             reload_mock.assert_called_once()
             with open(path, encoding='utf-8') as f:
                 text = f.read()
-            self.assertIn('relay_backend = sidecar', text)
+            self.assertIn('admin_port = 18771', text)
             self.assertIn('douyin_room_id = 9527', text)
             self.assertIn('sessionid=abc', text)
 
