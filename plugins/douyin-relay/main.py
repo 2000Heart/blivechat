@@ -255,7 +255,7 @@ async def _handle_messages(payload) -> None:
         mapped_count += 1
         if int(mapped.get('guard_level') or 0) == 3:
             logger.info(
-                'star_guard mapped kind=%s uid=%s name=%s',
+                'priority identity mapped kind=%s uid=%s name=%s',
                 str(mapped.get('kind', '')),
                 str(mapped.get('uid', '')),
                 str(mapped.get('author_name', '')),

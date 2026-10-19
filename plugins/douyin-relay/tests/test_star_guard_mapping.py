@@ -83,9 +83,17 @@ class StarGuardMappingTest(unittest.TestCase):
         self.assertEqual(mapped['guard_level'], 0)
         self.assertEqual(mapped['medal_level'], 12)
 
-    def test_generic_member_not_priority(self):
+    def test_live_member_same_priority_as_star_guard(self):
         mapped = self._map(_chat_msg(membership_type='member', membership_name='会员'))
-        self.assertEqual(mapped['guard_level'], 0)
+        self.assertEqual(mapped['guard_level'], 3)
+
+    def test_live_member_name_alone_same_priority(self):
+        msg = _chat_msg()
+        msg['user']['liveMemberName'] = '会员'
+        mapped = self._map(msg)
+        self.assertEqual(mapped['guard_level'], 3)
+        meta = mapped['identity_ext']['platform_meta']
+        self.assertEqual(meta['live_member_name'], '会员')
 
     def test_star_guard_and_member_are_both_kept(self):
         msg = _chat_msg(membership_type='star_guard', membership_name='星守护')

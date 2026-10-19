@@ -236,6 +236,21 @@ def _is_star_guard(membership_type: Optional[str], membership_name: Optional[str
     return False
 
 
+def _is_live_member(
+    membership_type: Optional[str],
+    membership_name: Optional[str],
+    live_member_name: Optional[str],
+) -> bool:
+    t = (membership_type or '').strip().lower()
+    n = (membership_name or '').strip()
+    live = (live_member_name or '').strip()
+    if t == 'member':
+        return True
+    if '会员' in n or '会员' in live:
+        return True
+    return False
+
+
 def _base_douyin_platform_meta(msg: Dict[str, Any], user: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     medal_level, medal_name = _medal_from_user(user if isinstance(user, dict) else None)
     membership_type, membership_name = _pick_membership_fields(msg, user)
@@ -439,8 +454,11 @@ def _unified_event_to_inject_item(
     # blcsdk当前无平台扩展字段，这里通过稳定前缀传递来源平台，前端据此分流样式。
     raw_uid = str(actor.get('id') or '')
     uid = f'douyin:{raw_uid}' if raw_uid else 'douyin:'
-    # 仅星守护映射为舰长同级 privilege（GuardLevel.LV1=3）；其它抖音身份不插队。
-    guard_level = 3 if _is_star_guard(membership_type, membership_name) else 0
+    # 星守护与直播会员都映射为舰长同级 privilege（GuardLevel.LV1=3）。
+    guard_level = 3 if (
+        _is_star_guard(membership_type, membership_name)
+        or _is_live_member(membership_type, membership_name, live_member_name)
+    ) else 0
     identity_ext = {
         'platform': 'douyin',
         'platform_meta': {
