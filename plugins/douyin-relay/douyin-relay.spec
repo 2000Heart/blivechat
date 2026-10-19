@@ -15,6 +15,7 @@ DATAS = [
     ('LICENSE', '.'),
     ('data/config.example.ini', 'data'),
     ('log/.gitkeep', 'log'),
+    ('web', 'web'),
     # sidecar 运行所需的 dycast 项目（含 node_modules / 可选 .node 便携 Node）
     # Analysis.datas 仅接受 (src, dest) 二元组，这里直接打包整个目录。
     ('dycast', 'dycast'),

@@ -252,6 +252,37 @@ class EngineProcessTests(unittest.TestCase):
         self.assertEqual(created["proc"].poll(), 0)
         killpg.assert_called_once_with(4242, signal.SIGTERM)
 
+    def test_stdout_close_without_ready_does_not_count_as_started(self):
+        class _Pipe:
+            def readline(self):
+                return ""
+
+        class _Proc:
+            def __init__(self):
+                self.pid = 11
+                self.stdin = _Stdin()
+                self.stdout = _Pipe()
+                self.stderr = _Pipe()
+                self._poll = 1
+
+            def poll(self):
+                return self._poll
+
+            def wait(self, timeout=None):
+                return self._poll
+
+            def kill(self):
+                self._poll = -9
+
+        engine = EngineProcess(on_messages=None, on_event=None, node_exe="node", dycast_path=".", popen=lambda *_a, **_k: _Proc())
+        with mock.patch("engine_process.os.name", "nt"), mock.patch("engine_process.subprocess.run"):
+            with self.assertRaises(RuntimeError) as raised:
+                asyncio.run(engine.start())
+        self.assertIn("exited before ready", str(raised.exception))
+        self.assertFalse(engine._ready)
+        self.assertFalse(engine.snapshot()["running"])
+        self.assertEqual(engine.send({"cmd": "login_start"}), {"ok": False, "error": "engine_not_ready"})
+
 
 if __name__ == "__main__":
     unittest.main()

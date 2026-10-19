@@ -88,3 +88,4 @@ class PluginSurfaceTest(unittest.TestCase):
         self.assertNotIn("relay_server", text)
         self.assertNotIn("bookmarklet", text)
         self.assertNotIn("admin_ui", text)
+        self.assertTrue((root / "web" / "admin.html").is_file())

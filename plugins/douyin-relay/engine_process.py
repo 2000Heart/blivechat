@@ -98,8 +98,13 @@ class EngineProcess:
         except asyncio.TimeoutError:
             self.stop()
             raise RuntimeError('douyin engine ready timeout')
-        if not self.snapshot().get('running'):
-            raise RuntimeError('douyin engine exited before ready')
+        if not self._ready or not self.snapshot().get('running'):
+            detail = self.log_lines[-1] if self.log_lines else ''
+            self.stop()
+            message = 'douyin engine exited before ready'
+            if detail:
+                message = '%s: %s' % (message, detail)
+            raise RuntimeError(message)
 
     def stop(self):
         # Process exit only clears running. This method does not call start().
@@ -257,6 +262,9 @@ class EngineProcess:
 
     def _mark_ready(self) -> None:
         self._ready = True
+        self._unblock_start()
+
+    def _unblock_start(self) -> None:
         loop = self._loop
         event = self._ready_async
         if loop is None or event is None:
@@ -289,7 +297,9 @@ class EngineProcess:
                 self.feed_stdout(line)
         finally:
             self._note_process_exit()
-            self._mark_ready()
+            if not self._ready:
+                self._running = False
+            self._unblock_start()
 
     def _read_stderr(self) -> None:
         proc = self._proc

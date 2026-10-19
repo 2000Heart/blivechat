@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import sys
 import webbrowser
 from pathlib import Path
 
@@ -12,7 +13,15 @@ logger = logging.getLogger('douyin-relay.web_admin')
 
 _LOOPBACK_HOSTS = frozenset(('127.0.0.1', '::1'))
 _SECRET_KEYS = frozenset(('cookie', 'rawHeaders', 'douyin_cookie'))
-_HTML_PATH = Path(__file__).resolve().parent / 'web' / 'admin.html'
+
+
+def _bundle_root() -> Path:
+    if getattr(sys, 'frozen', False):
+        return Path(getattr(sys, '_MEIPASS', Path(sys.executable).resolve().parent))
+    return Path(__file__).resolve().parent
+
+
+_HTML_PATH = _bundle_root() / 'web' / 'admin.html'
 
 _runner = None
 
