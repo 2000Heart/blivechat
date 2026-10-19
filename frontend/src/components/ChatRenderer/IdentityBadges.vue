@@ -148,44 +148,46 @@ export default {
 
       const membershipName = pickString(meta.membership_name, meta.membershipName)
       const membershipType = pickString(meta.membership_type, meta.membershipType).toLowerCase()
-      let membershipText = membershipName
-      if (!membershipText && membershipType) {
-        if (membershipType.includes('star') || membershipType.includes('guard') || membershipType.includes('xing')) {
-          membershipText = '星守护'
-        } else {
-          membershipText = '会员'
-        }
-      }
-      if (!membershipText && this.privilegeType > 0) {
-        membershipText = this.privilegeType >= 2 ? '星守护' : '会员'
-      }
-      if (membershipText) {
-        badgeList.push(this.buildBadge('membership', membershipText, 'dy'))
+      const medalNameHint = pickString(
+        this.medalName,
+        meta.fans_badge_name,
+        meta.fansBadgeName,
+        fan.badge_name,
+        fan.badgeName
+      )
+      const isStarGuard = membershipName.includes('星守护')
+        || membershipType.includes('star')
+        || membershipType.includes('xing')
+        || medalNameHint === '星守护'
+        || this.privilegeType > 0
+
+      // 星守护：用「星守护」替换粉丝团位，舰长同级样式，不重复显示会员+粉丝团
+      if (isStarGuard) {
+        const level = pickNumber(meta.fans_badge_level, meta.fansBadgeLevel, fan.level, this.medalLevel)
+        const text = level > 0 ? `星守护 ${level}` : '星守护'
+        badgeList.push(this.buildBadge('membership', text, 'dy', ['badge--star-guard']))
+        return badgeList
       }
 
+      // 普通粉丝团：无专名，只显示「粉丝团」
       const fansBadgeLevel = pickNumber(meta.fans_badge_level, meta.fansBadgeLevel, fan.level, this.medalLevel)
-      const fansBadgeName = pickString(meta.fans_badge_name, meta.fansBadgeName, fan.badge_name, fan.badgeName)
-      let fansBadgeText = ''
-      if (fansBadgeName) {
-        fansBadgeText = `${fansBadgeName}${fansBadgeLevel > 0 ? ` ${fansBadgeLevel}` : ''}`
-      } else if (fansBadgeLevel > 0) {
-        fansBadgeText = `${fansBadgeLevel}`
-      }
-      if (fansBadgeText) {
-        badgeList.push(this.buildBadge('fans', fansBadgeText, 'dy'))
+      if (fansBadgeLevel > 0 || medalNameHint) {
+        const text = fansBadgeLevel > 0 ? `粉丝团 ${fansBadgeLevel}` : '粉丝团'
+        badgeList.push(this.buildBadge('fans', text, 'dy'))
       }
       return badgeList
     }
   },
   methods: {
-    buildBadge(type, text, platform) {
+    buildBadge(type, text, platform, extraClassNames = []) {
       const platformClass = platform === 'bili' ? 'badge--platform-bili' : 'badge--platform-dy'
       return {
         type,
         text,
         classNames: [
           `badge--type-${type}`,
-          platformClass
+          platformClass,
+          ...extraClassNames
         ]
       }
     }
@@ -228,5 +230,12 @@ export default {
 
 .badge--platform-dy.badge--type-fans {
   background: #d46b08;
+}
+
+/* 星守护：与 B 站舰长同色系，略加强对比 */
+.badge--platform-dy.badge--star-guard {
+  background: linear-gradient(135deg, #c05f2f 0%, #e8a87c 100%);
+  box-shadow: 0 0 0 1px rgba(255, 220, 180, 0.35) inset;
+  font-weight: 600;
 }
 </style>

@@ -455,10 +455,18 @@ def _unified_event_to_inject_item(
     raw_uid = str(actor.get('id') or '')
     uid = f'douyin:{raw_uid}' if raw_uid else 'douyin:'
     # 星守护与直播会员都映射为舰长同级 privilege（GuardLevel.LV1=3）。
+    is_star = _is_star_guard(membership_type, membership_name)
     guard_level = 3 if (
-        _is_star_guard(membership_type, membership_name)
+        is_star
         or _is_live_member(membership_type, membership_name, live_member_name)
     ) else 0
+    # 星守护：粉丝团位替换为「星守护」；普通粉丝团无专名，统一「粉丝团」
+    if is_star:
+        medal_name = '星守护'
+        if not medal_level or medal_level <= 0:
+            medal_level = 1
+    elif medal_level and medal_level > 0:
+        medal_name = '粉丝团'
     identity_ext = {
         'platform': 'douyin',
         'platform_meta': {

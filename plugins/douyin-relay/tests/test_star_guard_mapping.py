@@ -70,9 +70,12 @@ class StarGuardMappingTest(unittest.TestCase):
         self.assertIsNotNone(mapped)
         self.assertEqual(mapped['kind'], 'text')
         self.assertEqual(mapped['guard_level'], 3)
+        self.assertEqual(mapped['medal_name'], '星守护')
+        self.assertGreaterEqual(mapped['medal_level'], 1)
         meta = mapped['identity_ext']['platform_meta']
         self.assertEqual(meta['membership_type'], 'star_guard')
         self.assertEqual(meta['membership_name'], '星守护')
+        self.assertEqual(meta['fans_badge_name'], '星守护')
 
     def test_no_membership_guard_level_zero(self):
         mapped = self._map(_chat_msg())
@@ -82,16 +85,19 @@ class StarGuardMappingTest(unittest.TestCase):
         mapped = self._map(_chat_msg())
         self.assertEqual(mapped['guard_level'], 0)
         self.assertEqual(mapped['medal_level'], 12)
+        self.assertEqual(mapped['medal_name'], '粉丝团')
 
     def test_live_member_same_priority_as_star_guard(self):
         mapped = self._map(_chat_msg(membership_type='member', membership_name='会员'))
         self.assertEqual(mapped['guard_level'], 3)
+        self.assertEqual(mapped['medal_name'], '粉丝团')
 
     def test_live_member_name_alone_same_priority(self):
         msg = _chat_msg()
         msg['user']['liveMemberName'] = '会员'
         mapped = self._map(msg)
         self.assertEqual(mapped['guard_level'], 3)
+        self.assertEqual(mapped['medal_name'], '粉丝团')
         meta = mapped['identity_ext']['platform_meta']
         self.assertEqual(meta['live_member_name'], '会员')
 
@@ -103,10 +109,14 @@ class StarGuardMappingTest(unittest.TestCase):
         self.assertEqual(meta['membership_name'], '星守护')
         self.assertEqual(meta['live_member_name'], '会员')
         self.assertEqual(mapped['guard_level'], 3)
+        self.assertEqual(mapped['medal_name'], '星守护')
+        self.assertGreaterEqual(mapped['medal_level'], 1)
+        self.assertEqual(meta['fans_badge_name'], '星守护')
 
     def test_membership_name_星守护_alone(self):
         mapped = self._map(_chat_msg(membership_name='星守护'))
         self.assertEqual(mapped['guard_level'], 3)
+        self.assertEqual(mapped['medal_name'], '星守护')
 
 
 if __name__ == '__main__':

@@ -63,6 +63,12 @@ class Injector:
                     guard_level = max(0, int(item.get('guard_level', 0)))
                 except (TypeError, ValueError):
                     guard_level = 0
+                # 与 B 站舰长一致：有舰队等级时 author_type 用 GUARD，驱动 author-type=member 样式
+                author_type = (
+                    blcsdk.models.AuthorType.GUARD.value
+                    if guard_level > 0
+                    else blcsdk.models.AuthorType.NORMAL.value
+                )
                 if kind == 'gift':
                     gift_name = str(item.get('gift_name', '礼物'))
                     gift_num = int(item.get('num', 1))
@@ -90,17 +96,6 @@ class Injector:
                         medal_name=str((mn or '粉丝团') if medal_level > 0 else ''),
                         identity_ext=item.get('identity_ext', {}),
                     )
-                    # # 调试双线发送：礼物同时以文本弹幕注入，便于定位是礼物渲染还是链路问题
-                    # await blcsdk.send_text(
-                    #     content=f"[礼物文本] {gift_name} x{gift_num}",
-                    #     author_name=item.get('author_name', ''),
-                    #     uid=item.get('uid', ''),
-                    #     avatar_url=item.get('avatar_url', ''),
-                    #     guard_level=guard_level,
-                    #     medal_level=medal_level,
-                    #     medal_name=str(mn or ''),
-                    #     identity_ext=item.get('identity_ext', {}),
-                    # )
                     logger.info('gift dual-send done worker=%d gift=%s num=%d', wid, gift_name, gift_num)
                 else:
                     await blcsdk.send_text(
@@ -108,6 +103,7 @@ class Injector:
                         author_name=item.get('author_name', ''),
                         uid=item.get('uid', ''),
                         avatar_url=item.get('avatar_url', ''),
+                        author_type=author_type,
                         guard_level=guard_level,
                         medal_level=medal_level,
                         medal_name=str((mn or '粉丝团') if medal_level > 0 else ''),
