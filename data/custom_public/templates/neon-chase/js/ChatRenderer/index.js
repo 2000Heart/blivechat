@@ -26,6 +26,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem) {
       :contentParts="getContentParts(msg)"
       :medalLevel="msg.medalLevel"
       :medalName="msg.medalName"
+      :identityExt="msg.identityExt"
     ></text-message>
     <paid-message v-else-if="msg.type === MESSAGE_TYPE_GIFT"
       :time="msg.time"
@@ -38,6 +39,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem) {
       :content="msg.price <= 0 ? '' : getGiftContent(msg)"
       :medalLevel="msg.medalLevel"
       :medalName="msg.medalName"
+      :identityExt="msg.identityExt"
       :giftName="msg.giftName"
       :giftNum="msg.num"
     ></paid-message>
@@ -60,6 +62,7 @@ function(_, constants, TextMessage, PaidMessage, MembershipItem) {
       :content="getContent(msg)"
       :medalLevel="msg.medalLevel"
       :medalName="msg.medalName"
+      :identityExt="msg.identityExt"
     ></paid-message>
     `,
     props: {

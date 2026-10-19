@@ -496,6 +496,7 @@ export default {
         uid: data.uid,
         medalLevel: data.medalLevel,
         medalName: data.medalName,
+        identityExt: data.identityExt || {},
       }
       this.renderer.addMessage(message)
     },
@@ -530,6 +531,7 @@ export default {
         privilegeType: data.privilegeType,
         medalLevel: data.medalLevel,
         medalName: data.medalName,
+        identityExt: data.identityExt || {},
       }
       this.renderer.addMessage(message)
     },

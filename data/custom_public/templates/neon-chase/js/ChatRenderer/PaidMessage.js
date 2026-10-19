@@ -17,7 +17,7 @@ function(constants, ImgShadow, AuthorChip) {
       ></img-shadow>
       <author-chip
         :authorName="authorName" :authorType="authorType" :privilegeType="privilegeType"
-        :medalLevel="medalLevel" :medalName="medalName"
+        :medalLevel="medalLevel" :medalName="medalName" :identityExt="identityExt"
       ></author-chip>
       <span id="timestamp">{{ timeText }}</span>
     </div>
@@ -50,7 +50,8 @@ function(constants, ImgShadow, AuthorChip) {
       medalLevel: Number,
       medalName: String,
       giftName: String,
-      giftNum: Number
+      giftNum: Number,
+      identityExt: Object
     },
     computed: {
       isGift() {

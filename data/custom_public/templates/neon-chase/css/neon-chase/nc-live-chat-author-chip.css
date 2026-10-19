@@ -419,4 +419,18 @@ nc-live-chat-author-chip {
   display: none;
 }
 
+.nc-live-member {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(90deg, #ff3d7f, #ff8ab4);
+  box-shadow: 0 0 14px rgba(255, 61, 127, 0.55);
+}
+
 }

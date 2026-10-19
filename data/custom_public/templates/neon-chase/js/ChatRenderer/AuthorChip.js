@@ -26,6 +26,7 @@ function(constants, AuthorBadge) {
       <author-badge v-if="privilegeType > 0 && (!medalName || medalLevel <= 0)"
         :isAdmin="false" :privilegeType="privilegeType"
       ></author-badge>
+      <span v-if="liveMember" class="nc-live-member">会员</span>
     </span>
   </nc-live-chat-author-chip>
     `,
@@ -38,7 +39,8 @@ function(constants, AuthorBadge) {
       authorType: Number,
       privilegeType: Number,
       medalLevel: Number,
-      medalName: String
+      medalName: String,
+      identityExt: Object,
     },
     data() {
       return {
@@ -48,6 +50,9 @@ function(constants, AuthorBadge) {
     computed: {
       authorTypeText() {
         return constants.AUTHOR_TYPE_TO_TEXT[this.authorType]
+      },
+      liveMember() {
+        return constants.isLiveMember(this.identityExt)
       }
     }
   }

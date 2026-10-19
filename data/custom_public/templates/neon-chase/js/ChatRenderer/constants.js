@@ -26,6 +26,13 @@ function(blcsdk) {
     return GUARD_LEVEL_TO_TEXT_KEY[guardLevel] || ''
   }
 
+  exports.isLiveMember = function(identityExt) {
+    const ext = identityExt || {}
+    const meta = ext.platform_meta || ext.platformMeta || {}
+    const name = String(meta.live_member_name || meta.liveMemberName || '').trim()
+    return name.length > 0
+  }
+
   exports.MESSAGE_TYPE_TEXT = blcsdk.MsgType.TEXT
   exports.MESSAGE_TYPE_GIFT = blcsdk.MsgType.GIFT
   exports.MESSAGE_TYPE_MEMBER = blcsdk.MsgType.MEMBER

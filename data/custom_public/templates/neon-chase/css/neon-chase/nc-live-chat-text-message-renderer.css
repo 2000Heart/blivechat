@@ -185,6 +185,10 @@ nc-live-chat-text-message-renderer {
 .nc-chase.sailor { --nc-dim: rgba(33,150,243,0.06); --nc-c1: #2196F3; --nc-c2: #00E5FF; }
 .nc-chase.sailor .nc-bubble-inner { background: #0d1a24; }
 
+/* 会员（粉） */
+.nc-chase.member { --nc-dim: rgba(255,61,127,0.08); --nc-c1: #FF3D7F; --nc-c2: #FFD0E2; }
+.nc-chase.member .nc-bubble-inner { background: #1a0b12; }
+
 /* 提督（紫） */
 .nc-chase.commander { --nc-dim: rgba(156,39,176,0.06); --nc-c1: #9C27B0; --nc-c2: #E040FB; }
 .nc-chase.commander .nc-bubble-inner { background: #1a0d1f; }

@@ -18,7 +18,7 @@ function(constants, ImgShadow, AuthorChip) {
       <span class="nc-ts">{{ timeText }}</span>
       <author-chip
         :authorName="authorName" :authorType="authorType" :privilegeType="privilegeType"
-        :medalLevel="medalLevel" :medalName="medalName"
+        :medalLevel="medalLevel" :medalName="medalName" :identityExt="identityExt"
       ></author-chip>
     </div>
     <div class="nc-bubble" :class="bubbleClass">
@@ -51,7 +51,8 @@ function(constants, ImgShadow, AuthorChip) {
       contentParts: Array,
       privilegeType: Number,
       medalLevel: Number,
-      medalName: String
+      medalName: String,
+      identityExt: Object
     },
     data() {
       return {
@@ -69,6 +70,9 @@ function(constants, ImgShadow, AuthorChip) {
           case 1: return 'nc-chase-dual gov'
           case 2: return 'nc-chase commander'
           case 3: return 'nc-chase sailor'
+        }
+        if (constants.isLiveMember(this.identityExt)) {
+          return 'nc-chase member'
         }
         // 非大航海才判断基础用户类型
         if (this.authorType === constants.AUTHOR_TYPE_ADMIN) {
