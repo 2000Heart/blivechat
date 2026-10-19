@@ -116,7 +116,7 @@
     <h2>最近弹幕</h2>
     <table>
       <thead>
-        <tr><th>时间</th><th>昵称</th><th>类型</th><th>文本</th></tr>
+        <tr><th>时间</th><th>昵称</th><th>类型</th><th>文本</th><th>其他</th></tr>
       </thead>
       <tbody id="messages"></tbody>
     </table>
@@ -155,6 +155,7 @@
     social: "关注"
   };
   var lastLoginPhase = null;
+  var cookieRevision = null;
   var snapshotReady = false;
 
   function el(id) {
@@ -186,7 +187,14 @@
         var extra = [item.gift_name || "", item.num == null ? "" : "×" + item.num].filter(Boolean).join(" ");
         content = extra ? (extra + (content ? " " + content : "")) : content;
       }
-      [stamp, item.author_name || "", KINDS[item.kind] || item.kind || "", content].forEach(function (cell) {
+      var details = [];
+      if (item.medal_name || item.medal_level) {
+        details.push("粉丝牌 " + [item.medal_name || "", item.medal_level || ""].filter(Boolean).join(" "));
+      }
+      if (item.membership_name) details.push(item.membership_name);
+      if (item.live_member_name) details.push(item.live_member_name);
+      if (item.total_coin) details.push("价值 " + item.total_coin);
+      [stamp, item.author_name || "", KINDS[item.kind] || item.kind || "", content, details.join(" · ")].forEach(function (cell) {
         var td = document.createElement("td");
         td.textContent = cell;
         tr.appendChild(td);
@@ -220,11 +228,15 @@
   }
 
   function noteLogin(phase) {
-    var previous = lastLoginPhase;
     lastLoginPhase = phase || "";
-    if (previous !== "done" && phase === "done") {
+  }
+
+  function noteCookieRevision(data) {
+    var rev = data && data.cookie_revision != null ? data.cookie_revision : 0;
+    if (cookieRevision !== null && rev !== cookieRevision) {
       loadSnapshot(true);
     }
+    cookieRevision = rev;
   }
 
   function postAction(body) {
@@ -273,6 +285,7 @@
 
   loadSnapshot(true).then(function (data) {
     lastLoginPhase = (data && data.login_phase) || "";
+    cookieRevision = data && data.cookie_revision != null ? data.cookie_revision : 0;
     snapshotReady = true;
   });
 
@@ -287,6 +300,7 @@
     renderStatus(data);
     if (snapshotReady) {
       noteLogin(data.login_phase);
+      noteCookieRevision(data);
     }
   };
 })();

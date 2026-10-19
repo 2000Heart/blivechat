@@ -12,6 +12,16 @@ import {
 import type { CookieLoginSession } from './src/sidecar/cookie-login-session';
 
 let pastedCookie = '';
+let socketProxyHost = 'webcast100-ws-web-lq.douyin.com';
+
+export function socketProxyTarget(): string {
+  return `wss://${socketProxyHost}`;
+}
+
+export function setSocketProxyHost(host: string): void {
+  const trimmed = host.trim().replace(/^wss?:\/\//i, '').replace(/\/.*$/, '').replace(/\/+$/, '');
+  if (trimmed) socketProxyHost = trimmed;
+}
 type ControlAction = 'none' | 'connect' | 'disconnect';
 type PreviewClient = { id: string; res: ServerResponse };
 
@@ -96,12 +106,25 @@ export function getPastedCookie(): string {
   return pastedCookie;
 }
 
-function mergeCookieString(existing: string, extra: string): string {
-  const a = existing.trim();
-  const b = extra.trim();
-  if (!b) return a;
-  if (!a) return b;
-  return `${a}; ${b}`;
+function parseCookiePairs(header: string): Map<string, string> {
+  const jar = new Map<string, string>();
+  for (const part of header.split(';')) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    jar.set(trimmed.slice(0, eq), trimmed.slice(eq + 1));
+  }
+  return jar;
+}
+
+/** 登录 Cookie 覆盖页面里同名的 Cookie，页面独有的项保留。 */
+export function replacePageCookie(pageCookie: string, loginCookie: string): string {
+  const jar = parseCookiePairs(pageCookie);
+  for (const [name, value] of parseCookiePairs(loginCookie)) {
+    jar.set(name, value);
+  }
+  return [...jar.entries()].map(([name, value]) => `${name}=${value}`).join('; ');
 }
 
 export function applyPastedCookieToProxyReq(proxyReq: ClientRequest): void {
@@ -109,7 +132,7 @@ export function applyPastedCookieToProxyReq(proxyReq: ClientRequest): void {
   if (!extra) return;
   const prev = proxyReq.getHeader('cookie');
   const prevStr = Array.isArray(prev) ? prev.join('; ') : (prev as string | undefined) || '';
-  proxyReq.setHeader('Cookie', mergeCookieString(prevStr, extra));
+  proxyReq.setHeader('Cookie', replacePageCookie(prevStr, extra));
 }
 
 function handleUpstreamHeadersPost(req: IncomingMessage, res: ServerResponse): void {
@@ -319,6 +342,17 @@ export function douyinUpstreamCookieApiMiddleware(
 ): void {
   if (handleLoginApi(req, res)) return;
   const url = req.url || '';
+  if (url.startsWith('/__api/dycast/socket-host') && req.method === 'POST') {
+    readJsonBody(
+      req,
+      (obj: { host?: unknown }) => {
+        setSocketProxyHost(typeof obj?.host === 'string' ? obj.host : '');
+        jsonResponse(res, 200, { ok: true });
+      },
+      () => jsonResponse(res, 400, { ok: false, error: 'invalid_json' })
+    );
+    return;
+  }
   if (url.startsWith('/__api/dycast/control/status') && req.method === 'GET') {
     handleControlStatus(res);
     return;

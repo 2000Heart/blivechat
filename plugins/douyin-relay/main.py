@@ -51,6 +51,7 @@ _recent_messages: deque = deque(maxlen=_RECENT_LIMIT)
 _login_settled = False
 _consume_id: Optional[str] = None
 _login_cancel_requested = False
+_cookie_revision = 0
 _tick_task: Optional[asyncio.Task] = None
 _login_wait_task: Optional[asyncio.Task] = None
 _restart_task: Optional[asyncio.Task] = None
@@ -185,12 +186,38 @@ def _remember_mapped(mapped: dict) -> None:
         'kind': str(mapped.get('kind') or ''),
         'text': text,
     }
+    uid = str(mapped.get('uid') or '').strip()
+    if uid:
+        item['uid'] = uid
+    medal_name = str(mapped.get('medal_name') or '').strip()
+    if medal_name:
+        item['medal_name'] = medal_name
+    try:
+        medal_level = int(mapped.get('medal_level') or 0)
+    except (TypeError, ValueError):
+        medal_level = 0
+    if medal_level > 0:
+        item['medal_level'] = medal_level
+    identity = mapped.get('identity_ext') if isinstance(mapped.get('identity_ext'), dict) else {}
+    meta = identity.get('platform_meta') if isinstance(identity.get('platform_meta'), dict) else {}
+    membership_name = str(meta.get('membership_name') or '').strip()
+    if membership_name:
+        item['membership_name'] = membership_name
+    live_member_name = str(meta.get('live_member_name') or '').strip()
+    if live_member_name:
+        item['live_member_name'] = live_member_name
     if item['kind'] == 'gift':
         item['gift_name'] = str(mapped.get('gift_name') or '')
         try:
             item['num'] = int(mapped.get('num') or 0)
         except (TypeError, ValueError):
             item['num'] = 0
+        try:
+            total_coin = int(mapped.get('total_coin') or 0)
+        except (TypeError, ValueError):
+            total_coin = 0
+        if total_coin > 0:
+            item['total_coin'] = total_coin
     _recent_messages.append(item)
 
 
@@ -396,7 +423,7 @@ def _on_login_event(event: dict) -> None:
 
 
 def _on_result_event(event: dict) -> None:
-    global _consume_id
+    global _consume_id, _cookie_revision
     if _login_cancel_requested:
         return
     raw_cookie = event.get('cookie')
@@ -410,8 +437,8 @@ def _on_result_event(event: dict) -> None:
     if _consume_id is None or str(event.get('id') or '') != str(_consume_id):
         return
     _consume_id = None
-    if len(cookie) >= _COOKIE_MIN_LEN:
-        config.write_douyin_cookie_atomic(cookie)
+    if len(cookie) >= _COOKIE_MIN_LEN and config.write_douyin_cookie_atomic(cookie):
+        _cookie_revision += 1
     _complete_login('done', cookie)
 
 
@@ -576,6 +603,7 @@ def get_runtime_status() -> Dict[str, Any]:
         'dropped': int(injector_metrics.get('dropped', 0)),
         'queue_size': int(injector_metrics.get('queue_size', 0)),
         'login_phase': str(snap.get('login_phase') or ''),
+        'cookie_revision': _cookie_revision,
         'room_id': room,
         'messages': list(_recent_messages),
         'logs': list(snap.get('logs') or [])[-200:],

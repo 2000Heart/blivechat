@@ -21,6 +21,7 @@ type SessionOptions = {
   sleep?: (ms: number) => Promise<void>
   interactiveTimeoutMs: number
   silentTimeoutMs: number
+  onPhase?: (status: StatusBody) => void
 }
 
 type StatusBody = {
@@ -38,6 +39,7 @@ export class CookieLoginSession {
   private readonly sleep: (ms: number) => Promise<void>
   private readonly interactiveTimeoutMs: number
   private readonly silentTimeoutMs: number
+  private readonly onPhase?: (status: StatusBody) => void
 
   private phase: LoginPhase = 'idle'
   private mode: LoginMode | null = null
@@ -54,6 +56,11 @@ export class CookieLoginSession {
     this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))
     this.interactiveTimeoutMs = opts.interactiveTimeoutMs
     this.silentTimeoutMs = opts.silentTimeoutMs
+    this.onPhase = opts.onPhase
+  }
+
+  private publish(): void {
+    this.onPhase?.(this.status(false))
   }
 
   start(mode: LoginMode): { status: number; body: { phase: LoginPhase; mode: string | null; message: string } } {
@@ -71,6 +78,7 @@ export class CookieLoginSession {
     this.aborted = false
     this.startedAt = this.now()
     this.updatedAt = this.startedAt
+    this.publish()
     void this.run(mode)
     return {
       status: 202,
@@ -106,6 +114,7 @@ export class CookieLoginSession {
     this.cookie = ''
     this.phase = 'idle'
     this.mode = null
+    this.publish()
     return value
   }
 
@@ -131,6 +140,7 @@ export class CookieLoginSession {
       this.message = err instanceof Error ? err.message : String(err)
       this.phase = 'error'
       this.updatedAt = this.now()
+      this.publish()
     }
   }
 
@@ -151,6 +161,7 @@ export class CookieLoginSession {
           this.message = judged.reason
           this.phase = 'need_login'
           this.updatedAt = this.now()
+          this.publish()
           return
         }
         await this.sleep(1000)
@@ -188,6 +199,7 @@ export class CookieLoginSession {
       }
       this.phase = 'cancelled'
       this.updatedAt = this.now()
+      this.publish()
       return true
     }
     if (this.now() - this.startedAt >= timeoutMs) {
@@ -199,6 +211,7 @@ export class CookieLoginSession {
       this.message = 'timeout'
       this.phase = 'need_login'
       this.updatedAt = this.now()
+      this.publish()
       return true
     }
     return false
@@ -211,5 +224,6 @@ export class CookieLoginSession {
     this.cookieLength = serialized.length
     this.phase = 'done'
     this.updatedAt = this.now()
+    this.publish()
   }
 }

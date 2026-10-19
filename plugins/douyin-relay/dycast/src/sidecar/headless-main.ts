@@ -1,11 +1,9 @@
 import readline from 'node:readline'
 import { chromium } from 'playwright-core'
-import { setUpstreamOrigin } from '../core/request.ts'
+import { connectBrowserCast, stopCastVite } from './browser-cast.ts'
 import { resolveBrowserExecutablePath } from './cookie-login-browser.ts'
 import type { FakeBrowser, LoginMode } from './cookie-login-session.ts'
 import { HeadlessRouter } from './headless-router.ts'
-
-setUpstreamOrigin('https://live.douyin.com')
 
 function envTimeoutMs(name: string, defaultSeconds: number): number {
   const raw = process.env[name]
@@ -58,6 +56,11 @@ const router = new HeadlessRouter({
   launch,
   interactiveTimeoutMs: envTimeoutMs('DYCAST_LOGIN_TIMEOUT_SECONDS', 300),
   silentTimeoutMs: envTimeoutMs('DYCAST_SILENT_TIMEOUT_SECONDS', 30),
+  connectCast: (room, _options, hooks, cookie) => connectBrowserCast(room, cookie, hooks),
+})
+
+process.on('exit', () => {
+  stopCastVite()
 })
 
 process.stdout.write(`${JSON.stringify({ type: 'ready' })}\n`)

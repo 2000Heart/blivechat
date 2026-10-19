@@ -79,19 +79,21 @@ export function classifyDirectRequest(input: {
   })
 }
 
+export const DEFAULT_WEBCAST_HOST = 'webcast100-ws-web-lq.douyin.com'
+
 export function danmakuWebSocketUrl(
   pushServer: string | null | undefined,
   browserOrigin: string | null,
 ): string | null {
+  if (browserOrigin) {
+    return `${browserOrigin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`
+  }
   const server = String(pushServer || '').trim()
   if (server) {
     const host = server.replace(/^wss?:\/\//i, '').replace(/\/+$/, '')
     if (host) return `wss://${host}/webcast/im/push/v2/`
   }
-  if (browserOrigin) {
-    return `${browserOrigin.replace(/^http/, 'ws')}/socket/webcast/im/push/v2/`
-  }
-  return null
+  return `wss://${DEFAULT_WEBCAST_HOST}/webcast/im/push/v2/`
 }
 
 function parseCookieHeader(cookieHeader: string): Map<string, string> {

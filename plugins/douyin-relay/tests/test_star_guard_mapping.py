@@ -87,6 +87,15 @@ class StarGuardMappingTest(unittest.TestCase):
         mapped = self._map(_chat_msg(membership_type='member', membership_name='会员'))
         self.assertEqual(mapped['guard_level'], 0)
 
+    def test_star_guard_and_member_are_both_kept(self):
+        msg = _chat_msg(membership_type='star_guard', membership_name='星守护')
+        msg['user']['liveMemberName'] = '会员'
+        mapped = self._map(msg)
+        meta = mapped['identity_ext']['platform_meta']
+        self.assertEqual(meta['membership_name'], '星守护')
+        self.assertEqual(meta['live_member_name'], '会员')
+        self.assertEqual(mapped['guard_level'], 3)
+
     def test_membership_name_星守护_alone(self):
         mapped = self._map(_chat_msg(membership_name='星守护'))
         self.assertEqual(mapped['guard_level'], 3)

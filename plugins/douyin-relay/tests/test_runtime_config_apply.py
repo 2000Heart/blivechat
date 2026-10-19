@@ -143,6 +143,11 @@ class RuntimeConfigApplyTests(unittest.TestCase):
             "author_name": "a",
             "gift_name": "玫瑰",
             "num": 2,
+            "uid": "douyin:100",
+            "medal_name": "粉丝团",
+            "medal_level": 6,
+            "total_coin": 200,
+            "identity_ext": {"platform_meta": {"membership_name": "星守护"}},
         }
         mod.config.get_config = lambda: types.SimpleNamespace(
             content_prefix="",
@@ -161,6 +166,11 @@ class RuntimeConfigApplyTests(unittest.TestCase):
         self.assertIn("text", item)
         self.assertEqual(item["gift_name"], "玫瑰")
         self.assertEqual(item["num"], 2)
+        self.assertEqual(item["uid"], "douyin:100")
+        self.assertEqual(item["medal_name"], "粉丝团")
+        self.assertEqual(item["medal_level"], 6)
+        self.assertEqual(item["membership_name"], "星守护")
+        self.assertEqual(item["total_coin"], 200)
         self.assertIn("time", item)
 
         def _text(_item, **_kwargs):

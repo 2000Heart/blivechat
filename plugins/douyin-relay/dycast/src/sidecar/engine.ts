@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
 import fs from 'fs';
 import path from 'path';
-import vm from 'vm';
 import { createRequire } from 'module';
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { RelayCast } from '../core/relay';
 import { resolveBrowserExecutablePath } from './cookie-login-browser';
+import { loadMssdkFrontier } from './mssdk-runtime.ts';
 interface DyLiveInfo {
   roomNum?: string;
   roomId: string;
@@ -80,31 +80,6 @@ export function setSidecarModuleLoader(loader: ModuleLoader | null): void {
 function ensureNodeRuntime(origin: string): void {
   if (runtimeReady) return;
   const g = globalThis as any;
-  const url = new URL(origin);
-  const runtimeLocation = {
-    origin: `${url.protocol}//${url.host}`,
-    protocol: url.protocol,
-    host: url.host,
-    hostname: url.hostname,
-    port: url.port,
-    href: url.toString()
-  };
-  const runtimeNavigator = {
-    userAgent:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-    appVersion:
-      '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-    appCodeName: 'Mozilla'
-  };
-  const runtimeDocument = {
-    cookie: '',
-    referrer: '',
-    visibilityState: 'visible',
-    hidden: false,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    createEvent: () => ({ initEvent: () => {} })
-  };
   if (!g.WebSocket) {
     try {
       const wsMod = nodeRequire('ws');
@@ -114,43 +89,16 @@ function ensureNodeRuntime(origin: string): void {
     }
   }
   const mssdkPath = path.join(process.cwd(), 'public', 'mssdk.js');
-  const code = fs.readFileSync(mssdkPath, 'utf-8');
-  const sandboxWindow = {
-    byted_acrawler: undefined as any,
-    location: runtimeLocation,
-    navigator: runtimeNavigator,
-    document: runtimeDocument,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval
-  } as any;
-  const sandbox = {
-    window: sandboxWindow,
-    self: sandboxWindow,
-    document: runtimeDocument,
-    location: runtimeLocation,
-    navigator: runtimeNavigator,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-    require: nodeRequire,
-    module: { exports: {} },
-    exports: {}
-  } as any;
-  vm.runInNewContext(code, sandbox, { filename: 'mssdk.js' });
-  const bytedAcrawler =
-    sandboxWindow?.byted_acrawler && typeof sandboxWindow.byted_acrawler.frontierSign === 'function'
-      ? sandboxWindow.byted_acrawler
-      : null;
-  if (bytedAcrawler) {
-    g.__dy_frontierSign = (payload: Record<string, unknown>) => bytedAcrawler.frontierSign(payload);
-    g.byted_acrawler = bytedAcrawler;
-    if (!g.window || typeof g.window !== 'object') g.window = {};
-    g.window.byted_acrawler = bytedAcrawler;
+  if (!fs.existsSync(mssdkPath)) {
+    runtimeReady = true;
+    return;
+  }
+  try {
+    const loaded = loadMssdkFrontier(mssdkPath);
+    g.__dy_frontierSign = (payload: Record<string, unknown>) => loaded.frontierSign(payload);
+    g.byted_acrawler = { frontierSign: loaded.frontierSign };
+  } catch {
+    // frontierSign 缺失时不抛错，getSignature 走原回退。
   }
   runtimeReady = true;
 }

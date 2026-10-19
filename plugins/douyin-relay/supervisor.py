@@ -107,7 +107,6 @@ class LiveSupervisor:
         return []
 
     def on_cast_status(self, state, error=''):
-        del error
         if state == 'connected':
             if self._held:
                 return []
@@ -120,6 +119,12 @@ class LiveSupervisor:
             if self._held:
                 return []
             self._arm_probe()
+            return []
+        if state == 'connect_failed':
+            if self._held:
+                return []
+            self._phase = 'error'
+            self._clear_due()
             return []
         if state == 'closed':
             if self._held:

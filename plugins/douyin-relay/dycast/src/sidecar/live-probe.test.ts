@@ -143,10 +143,19 @@ test('live page login uses the same three signals, and only with a cookie for 40
   }), 'ok')
 })
 
-test('empty push server does not become the vite socket', () => {
-  assert.equal(danmakuWebSocketUrl('', null), null)
-  assert.equal(danmakuWebSocketUrl('   ', null), null)
-  assert.equal(danmakuWebSocketUrl(undefined, null), null)
+test('headless empty push server uses the fixed webcast host', () => {
+  assert.equal(
+    danmakuWebSocketUrl('', null),
+    'wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/',
+  )
+  assert.equal(
+    danmakuWebSocketUrl('   ', null),
+    'wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/',
+  )
+  assert.equal(
+    danmakuWebSocketUrl(undefined, null),
+    'wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/',
+  )
   assert.equal(
     danmakuWebSocketUrl('webcast5-ws-web-lf.douyin.com', null),
     'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/',
@@ -158,6 +167,10 @@ test('empty push server does not become the vite socket', () => {
   assert.equal(
     danmakuWebSocketUrl('', 'http://localhost:5173'),
     'ws://localhost:5173/socket/webcast/im/push/v2/',
+  )
+  assert.equal(
+    danmakuWebSocketUrl('webcast100-ws-web-lq.douyin.com', 'http://127.0.0.1:5173'),
+    'ws://127.0.0.1:5173/socket/webcast/im/push/v2/',
   )
 })
 

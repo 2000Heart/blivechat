@@ -24,7 +24,7 @@ import type {
   Text,
   User
 } from './model';
-import { pickStarGuardMembership } from './membership';
+import { pickUserMembership } from './membership';
 import { fetchUser, getImInfo, getLiveInfo, upstreamCookieHeader } from './request';
 import { danmakuWebSocketUrl } from '../sidecar/live-probe.ts';
 import { getSignature } from './signature';
@@ -105,10 +105,12 @@ export interface CastUser {
   medalLevel?: number;
   /** 粉丝团名称（user.fans_club.data.club_name）→ medal_name */
   medalName?: string;
-  /** 星守护等会员类型，供中继映射 privilege / guard_level */
+  /** 星守护，供中继映射 privilege / guard_level */
   membershipType?: string;
-  /** 会员展示名，如「星守护」 */
+  /** 星守护展示名 */
   membershipName?: string;
+  /** 直播会员展示名，与星守护独立 */
+  liveMemberName?: string;
 }
 
 export interface CastGift {
@@ -618,7 +620,8 @@ export class DyCast {
           readyState: this.ws?.readyState,
           reconnectCount: this.reconnectCount
         });
-        this.emitter.emit('error', Error(ev.type || 'Unknown Error'));
+        const message = (ev as { message?: string }).message || ev.type || 'Unknown Error';
+        this.emitter.emit('error', Error(message));
       });
       this.ws.addEventListener('message', (ev: MessageEvent) => {
         this.handleMessage(ev.data);
@@ -997,7 +1000,7 @@ export class DyCast {
   private _getCastUser(data?: User): CastUser | undefined {
     if (!data) return void 0;
     const { medalLevel, medalName } = this._pickFansClubDisplay(data);
-    const membership = pickStarGuardMembership(data);
+    const membership = pickUserMembership(data);
     return {
       id: data.secUid,
       name: data.nickname,
@@ -1005,7 +1008,8 @@ export class DyCast {
       avatar: data.avatarThumb?.urlList?.[0],
       medalLevel,
       medalName,
-      ...(membership || {})
+      ...(membership?.starGuard || {}),
+      ...(membership?.member ? { liveMemberName: membership.member.membershipName } : {})
     };
   }
 
@@ -1208,6 +1212,17 @@ export class DyCast {
     }, '');
   }
 
+  private async publishBrowserPushServer(host: string): Promise<void> {
+    const origin = (globalThis as { location?: { origin?: string } }).location?.origin;
+    const nodeRuntime = typeof (globalThis as { process?: { versions?: { node?: string } } }).process?.versions?.node === 'string';
+    if (!origin || nodeRuntime || !host.trim()) return;
+    await fetch(`${origin}/__api/dycast/socket-host`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ host }),
+    });
+  }
+
   /**
    * 获取连接信息
    * @param roomNum
@@ -1221,6 +1236,7 @@ export class DyCast {
       await fetchUser();
       const res = await getImInfo(info.roomId, info.uniqueId, this.strictIm);
       this.imInfo = res;
+      await this.publishBrowserPushServer(res.pushServer || '');
     } catch (err) {
       // CLog.error('DyCast LiveInfo Request Error =>', err);
       return Promise.reject(err);

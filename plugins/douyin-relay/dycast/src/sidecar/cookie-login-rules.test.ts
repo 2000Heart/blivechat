@@ -5,6 +5,15 @@ import { judgeDouyinLogin, serializeDouyinCookies } from './cookie-login-rules.t
 const session = { name: 'sessionid', value: 'abc', domain: '.douyin.com' }
 const filler = { name: 'ttwid', value: 'x'.repeat(220), domain: 'live.douyin.com' }
 
+test('serialize replaces the same cookie name with the more specific domain', () => {
+  const raw = serializeDouyinCookies([
+    { name: 'sessionid', value: 'old', domain: '.douyin.com' },
+    { name: 'sessionid', value: 'new', domain: 'live.douyin.com' },
+    { name: 'ttwid', value: 'keep', domain: '.douyin.com' },
+  ])
+  assert.equal(raw, 'sessionid=new; ttwid=keep')
+})
+
 test('serialize keeps douyin cookies only', () => {
   const raw = serializeDouyinCookies([
     session,

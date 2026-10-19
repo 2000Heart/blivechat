@@ -18,7 +18,7 @@ sidecar 连接抖音直播依赖 `douyin_cookie`（完整 Cookie，含 HttpOnly�
 
 - 不申请 / 不复用抖音开放平台 OAuth（直播站 Cookie 无对等设备授权流）。
 - 不读取系统日常 Chrome 用户配置目录。
-- 不把管理后台改成 Web（HTTP API 预留，便于日后迁移）。
+- 管理界面见 `2026-10-16-douyin-relay-dycast-console-design.md`（dycast 控制台面板，不再使用桌面窗口或独立管理页）。本文只覆盖 Cookie 登录与续期；`login_start` / `login_cancel` / `login_finish` 语义不变。
 - 不做「连房运行中 Cookie 突然失效后自动弹窗重登」的完整闭环（仅日志 + status；后续可加）。
 
 ## 为何不走「OAuth 回调」
@@ -42,9 +42,9 @@ sidecar 已存在 `playwright-core` 与 `resolveBrowserExecutablePath()` / `CHRO
 ## 架构
 
 ```text
-管理 UI (macOS: Tk；其它: PySide6)
-        ←→ 插件 Python（写 config.ini）
-        ←→ dycast sidecar login API
+dycast 控制台 RelayPanel
+        ←→ 插件 Python（写 config.ini；login_finish）
+        ←→ dycast sidecar login API（login_start / status / cancel）
               Playwright persistent context
               持久 profile
               browserContext.cookies()
@@ -157,7 +157,7 @@ phase 互斥：
 
 ## 管理 UI
 
-macOS 实际走 Tk（`admin_ui.py` 在 darwin 上不走 PySide6）。Tk 与 PySide6 **同一套** action 与文案。
+控件在 dycast `IndexView` 的 `RelayPanel` 上，交互见 `2026-10-16-douyin-relay-dycast-console-design.md`。不再使用 Tk 或 PySide6。
 
 - 按钮：「登录抖音」「取消登录」（仅 `phase=running` 且 mode 为 interactive 时启用取消）。
 - 状态文案：idle / 静默续期中 / 等待浏览器登录 / 已更新（只显示长度）/ 需要重新登录 / 已取消 / 错误信息。
@@ -172,7 +172,7 @@ macOS 实际走 Tk（`admin_ui.py` 在 darwin 上不走 PySide6）。Tk 与 PySi
 | `dycast/vite.douyin-proxy-cookie.ts` | 注册 login 路由 |
 | `dycast/src/sidecar/engine.ts` | 抽出浏览器路径解析（`CHROME_PATH` → channel → Win/mac/Linux 路径）；与 login 实例隔离 |
 | `main.py` 及 runtime 相关 | 先静默续期再连房、写配置、status |
-| `admin_ui.py` | Tk 与 PySide6 均提供登录/取消与不含 Cookie 正文的状态 |
+| `dycast/src/components/RelayPanel.vue` | 登录/取消与不含 Cookie 正文的状态，见控制台规格 |
 | `config.py`、`data/config.example.ini` | 新配置键 |
 | `README.md` | 用户文档：首次登录 + 之后静默 |
 | `.gitignore` 或插件级忽略 | `douyin-browser-profile/` |

@@ -4,7 +4,7 @@ import { decodeResponse } from './model';
 import { getMsToken } from './signature';
 import { makeUrlParams, parseLiveHtml } from './util';
 import { CLog } from '@/utils/logUtil';
-import { classifyDirectRequest, directRequestKind, mergeCookieHeader } from '../sidecar/live-probe.ts';
+import { classifyDirectRequest, DEFAULT_WEBCAST_HOST, directRequestKind, mergeCookieHeader } from '../sidecar/live-probe.ts';
 
 let upstreamOrigin: string | null = null;
 const upstreamJar = new Map<string, string>();
@@ -218,6 +218,18 @@ const defaultIMFetchParams = {
   version_code: VERSION_CODE
 };
 
+function fallbackImInfo(roomId: string, uniqueId: string, reqMs: number): DyImInfo {
+  const now = Date.now();
+  return {
+    cursor: `r-7497180536918546638_d-1_u-1_fh-7497179772733760010_t-${now}`,
+    internalExt: `internal_src:dim|wss_push_room_id:${roomId}|wss_push_did:${uniqueId}|first_req_ms:${reqMs}|fetch_time:${now}|seq:1|wss_info:0-${now}-0-0|wrds_v:7497180515443673855`,
+    pushServer: DEFAULT_WEBCAST_HOST,
+  };
+}
+
+const IM_FETCH_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36';
+
 /**
  * 请求初次连接信息
  *  - im/fetch
@@ -226,33 +238,24 @@ const defaultIMFetchParams = {
  * @param roomNum 房间号；暂不需要
  */
 export const fetchImInfo = async function (roomId: string, uniqueId: string) {
-  // 请求需要一些关键参数：msToken、a_bogus
   // 请求成功后会响应 protobuf 二进制数据，解码为 model 的 Response 类型
   // 主要需要里面的 cursor、internal_ext 值
   try {
-    const msToken = getMsToken(184);
     const params = Object.assign({}, defaultIMFetchParams, {
-      msToken,
       room_id: roomId,
-      user_unique_id: uniqueId
+      user_unique_id: uniqueId,
+      browser_name: 'Mozilla',
+      browser_platform: 'Win32',
+      browser_version:
+        '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
     });
-    const paramStr = makeUrlParams(
-      Object.assign({}, defaultIMFetchParams, {
-        room_id: roomId,
-        user_unique_id: uniqueId,
-        live_pc: roomId
-      })
-    );
-    // 一个加密参数，须通过上侧 params 参数计算，感兴趣自己去逆向，这里不解析，不一定验证
-    // const aBogus = '00000000';
-    const aBogus = getAbogus(paramStr, USER_AGENT);
-    Object.assign(params, {
-      live_pc: roomId,
-      a_bogus: aBogus
-    });
-    const buffer = await fetchUpstream(`/dylive/webcast/im/fetch/?${makeUrlParams(params)}`).then(res =>
-      res.arrayBuffer()
-    );
+    const paramStr = new URLSearchParams(
+      Object.entries(params).map(([key, value]) => [key, value == null ? '' : String(value)])
+    ).toString();
+    const aBogus = getAbogus(paramStr, IM_FETCH_USER_AGENT);
+    const buffer = await fetchUpstream(
+      `/dylive/webcast/im/fetch/?${paramStr}&a_bogus=${encodeURIComponent(aBogus)}`
+    ).then(res => res.arrayBuffer());
     return buffer;
   } catch (err) {
     if (err instanceof UpstreamAuthError) return Promise.reject(err);
@@ -270,7 +273,6 @@ export const getImInfo = async function (roomId: string, uniqueId: string, stric
   const reqMs = Date.now();
   try {
     const buffer = await fetchImInfo(roomId, uniqueId);
-    // 请求出错返回的可能为json
     const res = decodeResponse(new Uint8Array(buffer));
     return {
       cursor: res.cursor,
@@ -286,17 +288,12 @@ export const getImInfo = async function (roomId: string, uniqueId: string, stric
       if (err instanceof UpstreamAuthError) throw err;
       throw new Error('im_fetch_failed');
     }
-    const now = Date.now();
     CLog.error('getImInfo fallback cursor/internalExt', {
       roomId,
       uniqueId,
       error: err instanceof Error ? err.message : String(err)
     });
-    // 确保能返回 cursor、internalExt
-    return {
-      cursor: `r-7497180536918546638_d-1_u-1_fh-7497179772733760010_t-${now}`,
-      internalExt: `internal_src:dim|wss_push_room_id:${roomId}|wss_push_did:${uniqueId}|first_req_ms:${reqMs}|fetch_time:${now}|seq:1|wss_info:0-${now}-0-0|wrds_v:7497180515443673855`
-    };
+    return fallbackImInfo(roomId, uniqueId, reqMs);
   }
 };
 

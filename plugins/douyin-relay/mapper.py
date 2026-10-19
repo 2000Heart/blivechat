@@ -211,6 +211,21 @@ def _pick_membership_fields(
     return mtype, mname
 
 
+def _pick_live_member_name(
+    msg: Dict[str, Any],
+    user: Optional[Dict[str, Any]],
+) -> Optional[str]:
+    sources: List[Dict[str, Any]] = []
+    if isinstance(user, dict):
+        sources.append(user)
+    sources.append(msg)
+    for src in sources:
+        name = _as_optional_non_empty_str(src.get('live_member_name', src.get('liveMemberName')))
+        if name:
+            return name
+    return None
+
+
 def _is_star_guard(membership_type: Optional[str], membership_name: Optional[str]) -> bool:
     t = (membership_type or '').strip().lower()
     n = (membership_name or '').strip()
@@ -230,6 +245,7 @@ def _base_douyin_platform_meta(msg: Dict[str, Any], user: Optional[Dict[str, Any
         'room_num': str(msg.get('roomNum') or '').strip(),
         'membership_type': membership_type,
         'membership_name': membership_name,
+        'live_member_name': _pick_live_member_name(msg, user),
         'fans_badge_level': _as_optional_non_negative_int(medal_level),
         'fans_badge_name': _as_optional_non_empty_str(medal_name),
     }
@@ -419,6 +435,7 @@ def _unified_event_to_inject_item(
     medal_name = str(meta.get('fans_badge_name') or '')
     membership_type = str(meta.get('membership_type') or '').strip().lower()
     membership_name = str(meta.get('membership_name') or '').strip()
+    live_member_name = str(meta.get('live_member_name') or '').strip()
     # blcsdk当前无平台扩展字段，这里通过稳定前缀传递来源平台，前端据此分流样式。
     raw_uid = str(actor.get('id') or '')
     uid = f'douyin:{raw_uid}' if raw_uid else 'douyin:'
@@ -432,6 +449,7 @@ def _unified_event_to_inject_item(
             'room_num': str(meta.get('room_num') or ''),
             'membership_type': membership_type or None,
             'membership_name': membership_name or None,
+            'live_member_name': live_member_name or None,
             'fans_badge_level': medal_level,
             'fans_badge_name': medal_name or None,
         },

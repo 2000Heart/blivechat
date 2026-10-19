@@ -24,11 +24,26 @@ export function isLoginUrl(url: string): boolean {
   }
 }
 
+function domainRank(domain: string): number {
+  return domain
+    .trim()
+    .toLowerCase()
+    .replace(/^\./, '')
+    .split('.')
+    .filter(Boolean).length
+}
+
 export function serializeDouyinCookies(cookies: CookieRecord[]): string {
-  return cookies
-    .filter((c) => c.name && c.domain.includes('douyin.com'))
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ')
+  const chosen = new Map<string, { value: string; rank: number; index: number }>()
+  cookies.forEach((cookie, index) => {
+    if (!cookie.name || !cookie.domain.includes('douyin.com')) return
+    const rank = domainRank(cookie.domain)
+    const prev = chosen.get(cookie.name)
+    if (!prev || rank > prev.rank || (rank === prev.rank && index >= prev.index)) {
+      chosen.set(cookie.name, { value: cookie.value, rank, index })
+    }
+  })
+  return [...chosen.entries()].map(([name, item]) => `${name}=${item.value}`).join('; ')
 }
 
 export function judgeDouyinLogin(input: {

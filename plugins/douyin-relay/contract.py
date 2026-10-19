@@ -47,6 +47,7 @@ class DouyinPlatformMeta(TypedDict, total=False):
     room_num: str
     membership_type: Optional[str]
     membership_name: Optional[str]
+    live_member_name: Optional[str]
     fans_badge_level: Optional[int]
     fans_badge_name: Optional[str]
 

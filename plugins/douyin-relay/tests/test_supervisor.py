@@ -144,10 +144,24 @@ class SupervisorTest(unittest.TestCase):
         self.assertEqual(sup.on_cast_status(state='closed', error='im_fetch_failed'), [])
         now[0] = 182
         self.assertEqual(sup.tick(), [{'cmd': 'connect', 'roomNum': '1'}])
-        sup.on_cast_status(state='connected')
-        self.assertEqual(sup.on_cast_status(state='closed', error='empty_signature'), [])
-        now[0] = 184
-        self.assertEqual(sup.tick(), [{'cmd': 'connect', 'roomNum': '1'}])
+
+    def test_connect_failed_does_not_reconnect(self):
+        now = [0.0]
+        sup = LiveSupervisor(interval_seconds=180, auto_refresh=False, now=lambda: now[0])
+        sup.start(room_id='1', has_cookie=True)
+        sup.on_probe(ok=True, living=True, error='')
+        self.assertEqual(sup.on_cast_status(state='connect_failed', error='empty_signature'), [])
+        self.assertEqual(sup.phase, 'error')
+        now[0] = 120
+        self.assertEqual(sup.tick(), [])
+
+        sup2 = LiveSupervisor(interval_seconds=180, auto_refresh=False, now=lambda: now[0])
+        sup2.start(room_id='1', has_cookie=True)
+        sup2.on_probe(ok=True, living=True, error='')
+        sup2.on_cast_status(state='connected')
+        self.assertEqual(sup2.on_cast_status(state='closed', error='empty_signature'), [])
+        now[0] = 122
+        self.assertEqual(sup2.tick(), [{'cmd': 'connect', 'roomNum': '1'}])
 
     def test_login_failure_while_held_stays_disconnected(self):
         sup = LiveSupervisor(auto_refresh=True, now=lambda: 0.0)

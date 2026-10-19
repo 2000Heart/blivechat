@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <script src="/mssdk.js"></script>
+</head>
+<body>
+  <script type="module">
+    const room = new URLSearchParams(location.search).get('room') || ''
+    const { DyCast } = await import('/src/core/dycast.ts')
+    const cast = new DyCast(room, { maxReconnectCount: 0, strictIm: true })
+    window.__dyCast = cast
+    const emit = (evt) => {
+      const fn = window.__dyCastEvent
+      if (typeof fn === 'function') void fn(evt)
+    }
+    cast.on('open', () => emit({ type: 'open' }))
+    cast.on('message', (payload) => emit({ type: 'message', payload }))
+    cast.on('error', (err) => emit({ type: 'error', message: err && err.message ? err.message : 'error' }))
+    cast.on('close', (code, reason) => emit({ type: 'close', code, reason: reason || '' }))
+    if (room) await cast.connect()
+  </script>
+</body>
+</html>

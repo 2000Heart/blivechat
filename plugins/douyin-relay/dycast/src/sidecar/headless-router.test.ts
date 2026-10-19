@@ -5,6 +5,7 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { HeadlessRouter } from './headless-router.ts'
+import { replacePageCookie } from '../../vite.douyin-proxy-cookie.ts'
 
 test('login_start while running is busy and does not launch again', () => {
   let launches = 0
@@ -22,6 +23,38 @@ test('login_start while running is busy and does not launch again', () => {
   assert.equal(second.ok, false)
   assert.equal(second.error, 'busy')
   assert.equal(launches, 1)
+})
+
+test('login cookie replaces the same names already on the page', () => {
+  assert.equal(
+    replacePageCookie('sessionid=old; __ac_nonce=abc', 'sessionid=new; ttwid=fresh'),
+    'sessionid=new; __ac_nonce=abc; ttwid=fresh',
+  )
+})
+
+test('login done emits a login event without the cookie body', async () => {
+  const lines: string[] = []
+  const router = new HeadlessRouter({
+    write: (line) => lines.push(line),
+    launch: async () => ({
+      goto: async () => {},
+      url: () => 'https://live.douyin.com/1',
+      cookies: async () => [
+        { name: 'sessionid', value: 'abc', domain: '.douyin.com' },
+        { name: 'ttwid', value: 'x'.repeat(220), domain: 'live.douyin.com' },
+      ],
+      close: async () => {},
+    }),
+  })
+  router.handle(JSON.stringify({ id: 'login-1', cmd: 'login_start', mode: 'silent' }))
+  for (let i = 0; i < 50 && !lines.some((line) => line.includes('"type":"login"')); i++) {
+    await new Promise((resolve) => setImmediate(resolve))
+  }
+  const login = lines.map((line) => JSON.parse(line)).find((row) => row.type === 'login')
+  assert.equal(login.phase, 'done')
+  assert.equal(login.id, 'login-1')
+  assert.ok(login.cookieLength >= 200)
+  assert.equal(login.cookie, undefined)
 })
 
 test('login_consume returns cookie once then idle', () => {
@@ -146,4 +179,65 @@ test('CLog.debug stays off stdout when headless redirects console first', async 
   assert.equal(stdout.includes('CLOG_DEBUG_MARKER'), false)
   assert.equal(stderr.includes('CLOG_DEBUG_MARKER'), true)
   assert.equal(stderr.includes('console.error replaced'), false)
+})
+
+test('empty signature and handshake rejection do not look like a drop', async () => {
+  const lines: string[] = []
+  const router = new HeadlessRouter({
+    write: (line) => lines.push(line),
+    launch: async () => { throw new Error('unused') },
+    connectCast: async (_room, _opts, hooks) => {
+      hooks.fail('error', new Error('empty_signature'))
+    },
+  })
+  router.handle(JSON.stringify({ id: 's', cmd: 'connect', roomNum: '1', rawHeaders: 'a=b' }))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const signatureStatus = JSON.parse(lines.filter((line) => line.includes('empty_signature'))[0])
+  assert.equal(signatureStatus.state, 'connect_failed')
+
+  const lines2: string[] = []
+  const router2 = new HeadlessRouter({
+    write: (line) => lines2.push(line),
+    launch: async () => { throw new Error('unused') },
+    connectCast: async (_room, _opts, hooks) => {
+      hooks.fail('error', new Error('Unexpected server response: 200'))
+      hooks.fail('close', 1006)
+    },
+  })
+  router2.handle(JSON.stringify({ id: 'h', cmd: 'connect', roomNum: '1', rawHeaders: 'a=b' }))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const statuses = lines2.map((line) => JSON.parse(line)).filter((row) => row.type === 'status')
+  assert.equal(statuses.length, 1)
+  assert.equal(statuses[0].state, 'connect_failed')
+})
+
+test('close before open is connect_failed and a received message stays a drop', async () => {
+  const lines: string[] = []
+  const router = new HeadlessRouter({
+    write: (line) => lines.push(line),
+    launch: async () => { throw new Error('unused') },
+    connectCast: async (_room, _opts, hooks) => {
+      hooks.fail('close', 1006)
+    },
+  })
+  router.handle(JSON.stringify({ id: 'e', cmd: 'connect', roomNum: '1', rawHeaders: 'a=b' }))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const early = lines.map((line) => JSON.parse(line)).filter((row) => row.type === 'status')
+  assert.equal(early.length, 1)
+  assert.equal(early[0].state, 'connect_failed')
+
+  const lines2: string[] = []
+  const router2 = new HeadlessRouter({
+    write: (line) => lines2.push(line),
+    launch: async () => { throw new Error('unused') },
+    connectCast: async (_room, _opts, hooks) => {
+      hooks.open()
+      hooks.message([{ kind: 'text' }])
+      hooks.fail('close', 1006)
+    },
+  })
+  router2.handle(JSON.stringify({ id: 'm', cmd: 'connect', roomNum: '1', rawHeaders: 'a=b' }))
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  const later = lines2.map((line) => JSON.parse(line)).filter((row) => row.type === 'status')
+  assert.equal(later.map((row) => row.state).join(','), 'connected,closed')
 })

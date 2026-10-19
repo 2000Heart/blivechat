@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import vm from 'node:vm'
 import { createRequire } from 'node:module'
 import {
   CookieLoginSession,
@@ -8,16 +7,25 @@ import {
   type LoginMode,
 } from './cookie-login-session.ts'
 import { probeLivePage, type ProbeLivePageResult } from './live-probe.ts'
+import { loadMssdkFrontier } from './mssdk-runtime.ts'
 
 type ConnectOptions = { maxReconnectCount?: number; strictIm?: boolean }
 
 type ConnectHooks = {
   fail: (status: string, detail?: unknown) => void
+  open: () => void
+  message: (payload: unknown) => void
+  ready: (cast: ClosableCast) => void
 }
 
 type ProbeFn = (roomNum: string, rawHeaders: string) => Promise<ProbeLivePageResult>
 
-type ConnectCastFn = (room: string, options: ConnectOptions, hooks: ConnectHooks) => Promise<void>
+type ConnectCastFn = (
+  room: string,
+  options: ConnectOptions,
+  hooks: ConnectHooks,
+  cookie: string,
+) => Promise<void>
 
 type Command = {
   id?: string
@@ -35,6 +43,8 @@ type Inflight = {
   terminal: boolean
   sawError: boolean
   sawClose: boolean
+  sawOpen: boolean
+  sawMessage: boolean
   pendingError: unknown
   pendingCode: number | null
   failTimer?: ReturnType<typeof setTimeout>
@@ -42,11 +52,8 @@ type Inflight = {
 
 type ClosableCast = {
   close: (code?: number, reason?: string) => void
-  on: (event: string, listener: (...args: never[]) => void) => void
-  connect: () => Promise<void>
 }
 
-const LIVE_DOUYIN_ORIGIN = 'https://live.douyin.com'
 let castRuntimeReady = false
 
 function isAuthError(error: unknown): boolean {
@@ -78,68 +85,12 @@ function ensureCastRuntime(): void {
     castRuntimeReady = true
     return
   }
-  const code = fs.readFileSync(mssdkPath, 'utf-8')
-  const runtimeLocation = {
-    origin: LIVE_DOUYIN_ORIGIN,
-    protocol: 'https:',
-    host: 'live.douyin.com',
-    hostname: 'live.douyin.com',
-    port: '',
-    href: `${LIVE_DOUYIN_ORIGIN}/`,
-  }
-  const runtimeNavigator = {
-    userAgent:
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-    appVersion:
-      '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-    appCodeName: 'Mozilla',
-  }
-  const runtimeDocument = {
-    cookie: '',
-    referrer: '',
-    visibilityState: 'visible',
-    hidden: false,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    createEvent: () => ({ initEvent: () => {} }),
-  }
-  const sandboxWindow = {
-    byted_acrawler: undefined as { frontierSign?: (payload: Record<string, unknown>) => Record<string, unknown> } | undefined,
-    location: runtimeLocation,
-    navigator: runtimeNavigator,
-    document: runtimeDocument,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-  }
-  const nodeRequire = createRequire(import.meta.url)
-  const sandbox = {
-    window: sandboxWindow,
-    self: sandboxWindow,
-    document: runtimeDocument,
-    location: runtimeLocation,
-    navigator: runtimeNavigator,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-    require: nodeRequire,
-    module: { exports: {} },
-    exports: {},
-  }
-  vm.runInNewContext(code, sandbox, { filename: 'mssdk.js' })
-  const bytedAcrawler =
-    sandboxWindow.byted_acrawler && typeof sandboxWindow.byted_acrawler.frontierSign === 'function'
-      ? sandboxWindow.byted_acrawler
-      : null
-  if (bytedAcrawler) {
-    g.__dy_frontierSign = (payload) => bytedAcrawler.frontierSign!(payload)
-    g.byted_acrawler = bytedAcrawler
-    if (!g.window || typeof g.window !== 'object') g.window = {}
-    g.window.byted_acrawler = bytedAcrawler
+  try {
+    const loaded = loadMssdkFrontier(mssdkPath)
+    g.__dy_frontierSign = (payload) => loaded.frontierSign(payload)
+    g.byted_acrawler = { frontierSign: loaded.frontierSign }
+  } catch {
+    // frontierSign 缺失时不抛错，getSignature 走原回退。
   }
   castRuntimeReady = true
 }
@@ -173,12 +124,25 @@ export class HeadlessRouter {
   private pendingCookie = ''
   private activeCast: ClosableCast | null = null
 
+  private loginId = ''
+
   constructor(opts: HeadlessRouterOptions) {
     this.write = opts.write
     this.session = new CookieLoginSession({
       launch: opts.launch,
       interactiveTimeoutMs: opts.interactiveTimeoutMs ?? 300_000,
       silentTimeoutMs: opts.silentTimeoutMs ?? 30_000,
+      onPhase: (st) => {
+        if (st.phase === 'running' || st.phase === 'idle') return
+        this.writeLine({
+          type: 'login',
+          id: this.loginId,
+          phase: st.phase,
+          mode: st.mode,
+          cookieLength: st.cookieLength,
+          message: st.message,
+        })
+      },
     })
     this.probeFn = opts.probe ?? ((roomNum, rawHeaders) => probeLivePage(roomNum, rawHeaders, globalThis.fetch))
     this.connectCastFn = opts.connectCast
@@ -299,38 +263,55 @@ export class HeadlessRouter {
           ...(detail !== undefined ? { error: detail } : {}),
         })
       },
+      open: () => {
+        const slot = this.inflight
+        if (!slot || slot.generation !== generation || slot.cancelled || slot.terminal) return
+        slot.sawOpen = true
+        this.writeLine({ type: 'status', state: 'connected', id })
+      },
+      message: (payload: unknown) => {
+        const slot = this.inflight
+        if (!slot || slot.generation !== generation || slot.cancelled || slot.terminal) return
+        slot.sawMessage = true
+        this.writeLine({ type: 'messages', payload })
+      },
+      ready: (cast: ClosableCast) => {
+        if (!this.owns(generation)) return
+        this.activeCast = cast
+      },
     }
     const run = this.connectCastFn
-      ? this.connectCastFn(roomNum, options, hooks)
-      : this.defaultConnectCast(roomNum, options, generation)
+      ? this.connectCastFn(roomNum, options, hooks, this.pendingCookie)
+      : this.defaultConnectCast(roomNum, options, generation, hooks)
     void Promise.resolve(run).catch((err: unknown) => {
       this.noteConnectFailure(generation, { error: err })
     })
   }
 
-  private async defaultConnectCast(room: string, options: ConnectOptions, generation: number): Promise<void> {
+  private async defaultConnectCast(
+    room: string,
+    options: ConnectOptions,
+    generation: number,
+    hooks: ConnectHooks,
+  ): Promise<void> {
     const [{ DyCast }, requestMod] = await Promise.all([
       import('../core/dycast.ts'),
       import('../core/request.ts'),
     ])
     if (!this.owns(generation)) return
     requestMod.clearUpstreamJar()
-    requestMod.setUpstreamOrigin(LIVE_DOUYIN_ORIGIN)
     ;(globalThis as { __dy_cookie?: string }).__dy_cookie = this.pendingCookie
     ensureCastRuntime()
     const cast = new DyCast(room, {
       maxReconnectCount: options.maxReconnectCount ?? 0,
       strictIm: options.strictIm === true,
-    }) as ClosableCast
-    this.activeCast = cast
-    const id = this.inflight?.id ?? ''
+    })
+    hooks.ready(cast)
     cast.on('open', () => {
-      if (!this.owns(generation)) return
-      this.writeLine({ type: 'status', state: 'connected', id })
+      hooks.open()
     })
     cast.on('message', ((payload: unknown) => {
-      if (!this.owns(generation)) return
-      this.writeLine({ type: 'messages', payload })
+      hooks.message(payload)
     }) as (...args: never[]) => void)
     cast.on('error', ((err: unknown) => {
       this.noteConnectFailure(generation, { error: err })
@@ -369,6 +350,8 @@ export class HeadlessRouter {
       terminal: false,
       sawError: false,
       sawClose: false,
+      sawOpen: false,
+      sawMessage: false,
       pendingError: null,
       pendingCode: null,
     }
@@ -406,20 +389,26 @@ export class HeadlessRouter {
     if (!slot.sawError && !slot.sawClose && slot.pendingError == null && slot.pendingCode == null) return
     slot.terminal = true
     if (slot.failTimer) clearTimeout(slot.failTimer)
-    const { id, pendingError, pendingCode } = slot
+    const { id, pendingError, pendingCode, sawOpen, sawMessage } = slot
     this.inflight = null
     this.activeCast = null
-    this.writeTerminalStatus(id, pendingCode, pendingError)
+    this.writeTerminalStatus(id, pendingCode, pendingError, sawOpen, sawMessage)
   }
 
-  private writeTerminalStatus(id: string, code: number | null, error: unknown): void {
+  private writeTerminalStatus(
+    id: string,
+    code: number | null,
+    error: unknown,
+    sawOpen: boolean,
+    sawMessage: boolean,
+  ): void {
     const message = error instanceof Error ? error.message : ''
     if (isAuthError(error)) {
       this.writeLine({ type: 'status', state: 'auth_failed', id })
       return
     }
-    if (message === 'empty_signature') {
-      this.writeLine({ type: 'status', state: 'closed', error: 'empty_signature', id })
+    if (message === 'empty_signature' || message.includes('Unexpected server response')) {
+      this.writeLine({ type: 'status', state: 'connect_failed', error: message, id })
       return
     }
     if (message === 'im_fetch_failed') {
@@ -428,6 +417,10 @@ export class HeadlessRouter {
     }
     if (code === 4001 || code === 1000) {
       this.writeLine({ type: 'status', state: 'live_end', code, id })
+      return
+    }
+    if (!sawOpen || !sawMessage) {
+      this.writeLine({ type: 'status', state: 'connect_failed', error: message, id })
       return
     }
     if (code != null) {
@@ -442,8 +435,11 @@ export class HeadlessRouter {
       this.emitResult(id, { ok: false, error: 'bad_args' })
       return
     }
+    const previousLoginId = this.loginId
+    this.loginId = id
     const res = this.session.start(mode)
     if (res.status === 409) {
+      this.loginId = previousLoginId
       this.emitResult(id, {
         ok: false,
         error: 'busy',
